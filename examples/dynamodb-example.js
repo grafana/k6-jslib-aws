@@ -1,4 +1,4 @@
-import {getItem} from "./dynamodb.js";
+import {getItem} from "../dynamodb.js";
 
 export default function () {
 	var key = "coolkey"

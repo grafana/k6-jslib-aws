@@ -1,5 +1,5 @@
 import http from "k6/http";
-import { signWithHeaders } from "./core.js";
+import { signWithHeaders } from "../core.js";
 
 export default function () {
   var region = "us-east-1";
