@@ -1,5 +1,5 @@
 import http from "k6/http";
-import {signWithHeaders} from "./header.js"
+import {signWithHeaders} from "./core.js"
 
 export function getItem(table, key, value, region) {
 	var body = `{

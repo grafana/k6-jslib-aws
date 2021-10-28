@@ -1,5 +1,5 @@
 import http from "k6/http";
-import {createPresignedURL} from "./cores.js";
+import {createPresignedURL} from "./core.js";
 
 export function getSecret(region, keyname, params = {}) {
   var body = `{"SecretId": "${keyname}"}`

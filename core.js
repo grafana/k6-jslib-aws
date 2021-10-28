@@ -5,7 +5,7 @@
 // http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
 import crypto from "k6/crypto";
 
-export function createCanonicalRequest(
+function createCanonicalRequest(
   method,
   pathname,
   query,
@@ -64,7 +64,7 @@ function createCanonicalPayload(payload) {
   return hash(payload || "", "hex");
 }
 
-export function createCanonicalQueryString(params) {
+function createCanonicalQueryString(params) {
   if (!params) {
     return "";
   }
@@ -85,7 +85,7 @@ export function createCanonicalQueryString(params) {
     .join("&");
 };
 
-export function createCanonicalHeaders(headers) {
+function createCanonicalHeaders(headers) {
   return Object.keys(headers)
     .map(function (name) {
       var values = Array.isArray(headers[name])
@@ -106,7 +106,7 @@ export function createCanonicalHeaders(headers) {
     .join("");
 };
 
-export function createSignedHeaders(headers) {
+function createSignedHeaders(headers) {
   return Object.keys(headers)
     .map(function (name) {
       return name.toLowerCase().trim();
@@ -115,12 +115,12 @@ export function createSignedHeaders(headers) {
     .join(";");
 };
 
-export function createCredentialScope(time, region, service) {
+function createCredentialScope(time, region, service) {
   return [toDate(time), region, service, "aws4_request"].join("/");
 };
 
 
-export function createStringToSign(time, region, service, request) {
+function createStringToSign(time, region, service, request) {
   return [
     "AWS4-HMAC-SHA256",
     toTime(time),
@@ -129,7 +129,7 @@ export function createStringToSign(time, region, service, request) {
   ].join("\n");
 };
 
-export function createAuthorizationHeader(
+function createAuthorizationHeader(
   key,
   scope,
   signedHeaders,
@@ -142,7 +142,7 @@ export function createAuthorizationHeader(
   ].join(", ");
 };
 
-export function createSignature(
+function createSignature(
   secret,
   time,
   region,
@@ -233,7 +233,7 @@ export function createPresignedURL(
 };
 
 
-export function toTime(time) {
+function toTime(time) {
   return new Date(time).toISOString().replace(/[:\-]|\.\d{3}/g, "");
 }
 
@@ -247,4 +247,96 @@ function hmac(key, data, encoding) {
 
 function hash(string, encoding) {
   return crypto.sha256(string, encoding);
+}
+
+
+function fillOptions(options) {
+  options = options || {};
+  options.key = options.key || __ENV.AWS_ACCESS_KEY_ID;
+  options.secret = options.secret || __ENV.AWS_SECRET_ACCESS_KEY;
+  options.sessionToken = options.sessionToken || __ENV.AWS_SESSION_TOKEN;
+  options.protocol = options.protocol || "https";
+  options.timestamp = options.timestamp || Date.now();
+  options.region = options.region || __ENV.AWS_REGION || __ENV.AWS_DEFAULT_REGION;
+  options.expires = options.expires || 86400; // 24 hours
+  options.headers = options.headers || {};
+  options.signSessionToken = options.signSessionToken || false;
+  options.doubleEscape =
+    options.doubleEscape !== undefined ? options.doubleEscape : true;
+  return options;
+}
+
+export function signWithHeaders(method, service, region = "", target = "", path = "", body = null, query = "", headers = {}, serviceSubDomain = null) {
+  var options = { headers: headers, region:region }
+  options = fillOptions(options);
+  options.headers["X-Amz-Date"] = toTime(options.timestamp)
+  if (serviceSubDomain === null) {
+    serviceSubDomain = service
+  }
+  var host = serviceSubDomain.concat(".", options.region, ".amazonaws.com")
+  options.headers["Host"] = host
+
+  if (options.sessionToken) {
+    options.headers["X-Amz-Security-Token"] = options.sessionToken
+  }
+
+  if (target) {
+    options.headers["X-Amz-Target"] = target;
+  }
+
+  var credential = options.key +
+    "/" +
+    createCredentialScope(options.timestamp, options.region, service);
+  var signedHeaders = createSignedHeaders(options.headers);
+  var signature = generateSignature(
+    service, method, path, query, body,
+    options.headers, options.doubleEscape, options.timestamp, options.region, options.secret);
+
+  var signatureHeader = "AWS4-HMAC-SHA256 Credential=".concat(
+    credential,
+    ", SignedHeaders=",
+    signedHeaders,
+    ", Signature=",
+    signature,
+  )
+
+  options.headers["Authorization"] = signatureHeader;
+
+  if (query != "") {
+    query = "?" + query;
+  }
+
+  var url = options.protocol.concat("://", host, path, query)
+  return {
+    url: url,
+    headers: options.headers,
+  }
+}
+
+function generateSignature(service, method, path, query, body, headers, doubleEscape, timestamp, region, secret) {
+  var canonicalRequest = createCanonicalRequest(
+    method,
+    path,
+    query,
+    headers,
+    body,
+    doubleEscape
+  );
+
+  var stringToSign = createStringToSign(
+    timestamp,
+    region,
+    service,
+    canonicalRequest
+  );
+
+  var signature = createSignature(
+    secret,
+    timestamp,
+    region,
+    service,
+    stringToSign
+  );
+
+  return signature
 }
