@@ -1,7 +1,7 @@
-var http = require("k6/http");
-var aws = require("./core.js");
+import http from "k6/http";
+import {createPresignedURL} from "./cores.js";
 
-function getSecret(region, keyname, params = {}) {
+export function getSecret(region, keyname, params = {}) {
   var body = `{"SecretId": "${keyname}"}`
   var options = {};
   options.method = "POST";
@@ -14,7 +14,7 @@ function getSecret(region, keyname, params = {}) {
   options.headers["X-Amz-Target"] = "secretsmanager.GetSecretValue";
   options.headers["Content-Type"] = "application/x-amz-json-1.1";
   params.headers = options.headers
-  var url = aws.createPresignedURL(
+  var url = createPresignedURL(
     options.method,
     "secretsmanager." + region + ".amazonaws.com",
     "/",
@@ -25,5 +25,3 @@ function getSecret(region, keyname, params = {}) {
 
   return http.request(options.method, url, body, params)
 }
-
-exports.getSecret = getSecret;

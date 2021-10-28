@@ -1,14 +1,11 @@
-/* eslint-__ENV node */
-/* eslint no-use-before-define: [0, "nofunc"] */
 "use strict";
 
 // sources of inspiration:
 // https://web-identity-federation-playground.s3.amazonaws.com/js/sigv4.js
 // http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
-var crypto = require("k6/crypto");
-var http = require("k6/http");
+import crypto from "k6/crypto";
 
-function createCanonicalRequest(
+export function createCanonicalRequest(
   method,
   pathname,
   query,
@@ -32,7 +29,6 @@ function createCanonicalRequest(
     createCanonicalPayload(payload)
   ].join("\n");
 };
-exports.createCanonicalRequest = createCanonicalRequest;
 
 function createCanonicalURI(uri) {
   var url = uri;
@@ -68,7 +64,7 @@ function createCanonicalPayload(payload) {
   return hash(payload || "", "hex");
 }
 
-function createCanonicalQueryString(params) {
+export function createCanonicalQueryString(params) {
   if (!params) {
     return "";
   }
@@ -88,9 +84,8 @@ function createCanonicalQueryString(params) {
     })
     .join("&");
 };
-createCanonicalQueryString = createCanonicalQueryString;
 
-function createCanonicalHeaders(headers) {
+export function createCanonicalHeaders(headers) {
   return Object.keys(headers)
     .map(function (name) {
       var values = Array.isArray(headers[name])
@@ -110,9 +105,8 @@ function createCanonicalHeaders(headers) {
     .sort()
     .join("");
 };
-exports.createCanonicalHeaders = createCanonicalHeaders;
 
-function createSignedHeaders(headers) {
+export function createSignedHeaders(headers) {
   return Object.keys(headers)
     .map(function (name) {
       return name.toLowerCase().trim();
@@ -120,15 +114,13 @@ function createSignedHeaders(headers) {
     .sort()
     .join(";");
 };
-exports.createSignedHeaders = createSignedHeaders;
 
-function createCredentialScope(time, region, service) {
+export function createCredentialScope(time, region, service) {
   return [toDate(time), region, service, "aws4_request"].join("/");
 };
 
-exports.createCredentialScope = createCredentialScope;
 
-function createStringToSign(time, region, service, request) {
+export function createStringToSign(time, region, service, request) {
   return [
     "AWS4-HMAC-SHA256",
     toTime(time),
@@ -136,9 +128,8 @@ function createStringToSign(time, region, service, request) {
     hash(request, "hex")
   ].join("\n");
 };
-exports.createStringToSign = createStringToSign;
 
-function createAuthorizationHeader(
+export function createAuthorizationHeader(
   key,
   scope,
   signedHeaders,
@@ -150,9 +141,8 @@ function createAuthorizationHeader(
     "Signature=" + signature
   ].join(", ");
 };
-exports.createAuthorizationHeader = createAuthorizationHeader;
 
-function createSignature(
+export function createSignature(
   secret,
   time,
   region,
@@ -165,9 +155,8 @@ function createSignature(
   var h4 = hmac(h3, "aws4_request", "binary"); // signing-key
   return hmac(h4, stringToSign, "hex");
 };
-exports.createSignature = createSignature;
 
-function createPresignedURL(
+export function createPresignedURL(
   method,
   host,
   path,
@@ -243,12 +232,10 @@ function createPresignedURL(
   );
 };
 
-exports.createPresignedURL = createPresignedURL;
 
-function toTime(time) {
+export function toTime(time) {
   return new Date(time).toISOString().replace(/[:\-]|\.\d{3}/g, "");
 }
-exports.toTime = toTime;
 
 function toDate(time) {
   return toTime(time).substring(0, 8);

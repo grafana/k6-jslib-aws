@@ -1,6 +1,6 @@
-var createPresignedURL = require("./core.js").createPresignedURL;
+import { createPresignedURL } from "./core.js";
 
-function createPresignedS3URL(name, options) {
+export function createPresignedS3URL(name, options) {
   options = options || {};
   options.method = options.method || "GET";
   options.bucket = options.bucket || __ENV.AWS_S3_BUCKET;
@@ -15,5 +15,3 @@ function createPresignedS3URL(name, options) {
     options
   );
 };
-
-exports.createPresignedS3URL = createPresignedS3URL;

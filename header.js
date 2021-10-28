@@ -16,7 +16,7 @@ function fillOptions(options) {
   return options;
 }
 
-function signWithHeaders(method, service, region = "", target = "", path = "", body = null, query = "", headers = {}, serviceSubDomain = null) {
+export function signWithHeaders(method, service, region = "", target = "", path = "", body = null, query = "", headers = {}, serviceSubDomain = null) {
   var options = { headers: headers, region:region }
   options = fillOptions(options);
   options.headers["X-Amz-Date"] = toTime(options.timestamp)
@@ -62,10 +62,8 @@ function signWithHeaders(method, service, region = "", target = "", path = "", b
     headers: options.headers,
   }
 }
-exports.signWithHeaders = signWithHeaders;
 
 function generateSignature(service, method, path, query, body, headers, doubleEscape, timestamp, region, secret) {
-
   var canonicalRequest = createCanonicalRequest(
     method,
     path,
