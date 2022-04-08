@@ -1,0 +1,28 @@
+{
+  "name": "k6-jslib-aws",
+  "version": "0.0.1",
+  "description": "Create a distribution file for the aws jslib",
+  "main": "src/index.js",
+  "devDependencies": {
+    "@babel/core": "^7.4.4",
+    "@babel/plugin-transform-block-scoping": "^7.14.1",
+    "@babel/preset-env": "^7.4.4",
+    "@types/k6": "^0.37.0",
+    "babel-loader": "^8.0.6",
+    "chai": "4.3.4",
+    "uglifyjs-webpack-plugin": "^2.2.0",
+    "webpack": "^4.31.0",
+    "webpack-cli": "^3.3.2"
+  },
+  "engines": {},
+  "scripts": {
+    "webpack": "webpack",
+    "test": "npm run webpack && k6 run tests/index.js"
+  },
+  "keywords": [
+    "k6",
+    "aws"
+  ],
+  "author": "k6 team",
+  "license": "MIT"
+}
