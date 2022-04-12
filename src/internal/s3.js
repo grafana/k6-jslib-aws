@@ -3,22 +3,20 @@ import { parseHTML } from 'k6/html'
 import { sha256 } from 'k6/crypto'
 
 import { signHeaders, InvalidSignatureError, URIEncodingConfig, toTime } from './signature.js'
+import { AWSClient } from './client.js'
 import { AWSError } from './error.js'
 import { AWSConfig } from './config.js'
 
 /** Class allowing to interact with Amazon AWS's S3 service */
-export class S3Client {
+export class S3Client extends AWSClient {
     /**
      * Create a S3Client
      *
      * @param {AWSConfig} awsConfig - configuration attributes to use when interacting with AWS' APIs
      */
     constructor(awsConfig) {
-        this.awsConfig = awsConfig
-        this.serviceName = 's3'
-        this.URIencodingConfig = new URIEncodingConfig(false, true)
-
-        // TODO: define host getter
+        const URIencodingConfig = new URIEncodingConfig(false, true)
+        super(awsConfig, 's3', URIencodingConfig)
     }
 
     /**
@@ -35,7 +33,9 @@ export class S3Client {
         const method = 'GET'
         const host = `${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
         const body = ''
-        const { url, headers } = this._buildRequest(method, host, '/', '', body, {})
+        const { url, headers } = super.buildRequest(method, host, '/', '', body, {
+            'X-Amz-Content-SHA256': sha256(body, 'hex'),
+        })
 
         const res = http.request(method, url, body, { headers: headers })
         this._handle_error(res.error_code, res.error, res.body)
@@ -83,7 +83,9 @@ export class S3Client {
         const method = 'GET'
         const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
         const body = ''
-        const { url, headers } = this._buildRequest(method, host, '/', 'list-type=2', body, {})
+        const { url, headers } = super.buildRequest(method, host, '/', 'list-type=2', body, {
+            'X-Amz-Content-SHA256': sha256(body, 'hex'),
+        })
 
         const res = http.request(method, url, body, { headers: headers })
         this._handle_error(res.error_code, res.error, res.body)
@@ -138,7 +140,9 @@ export class S3Client {
         const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
         const path = `/${objectKey}`
         const body = ''
-        const { url, headers } = this._buildRequest(method, host, path, '', body, {})
+        const { url, headers } = super.buildRequest(method, host, path, '', body, {
+            'X-Amz-Content-SHA256': sha256(body, 'hex'),
+        })
 
         const res = http.request(method, url, body, { headers: headers })
         this._handle_error(res.error_code, res.error, res.body)
@@ -170,7 +174,9 @@ export class S3Client {
         const path = `/${objectKey}`
         const queryString = ''
         const body = data
-        const { url, headers } = this._buildRequest(method, host, path, queryString, body, {})
+        const { url, headers } = super.buildRequest(method, host, path, queryString, body, {
+            'X-Amz-Content-SHA256': sha256(body, 'hex'),
+        })
 
         const res = http.request(method, url, body, { headers: headers })
         this._handle_error(res.error_code, res.error, res.body)
@@ -192,59 +198,12 @@ export class S3Client {
         const path = `/${objectKey}`
         const queryString = ''
         const body = ''
-        const { url, headers } = this._buildRequest(method, host, path, queryString, body, {})
+        const { url, headers } = super.buildRequest(method, host, path, queryString, body, {
+            'X-Amz-Content-SHA256': sha256(body, 'hex'),
+        })
 
         const res = http.request(method, url, body, { headers: headers })
         this._handle_error(res.error_code, res.error, res.body)
-    }
-
-    _buildRequest(method, host, path, queryString, body, headers) {
-        const requestTimestamp = Date.now()
-        const date = toTime(requestTimestamp)
-
-        headers['Host'] = host
-        headers['X-Amz-Date'] = date
-        headers['X-Amz-Content-SHA256'] = sha256(body, 'hex')
-
-        headers = signHeaders(
-            // headers
-            headers,
-
-            // requestTimestamp
-            requestTimestamp,
-
-            // method
-            method,
-
-            // path
-            path,
-
-            // querystring
-            queryString,
-
-            // body
-            body,
-
-            // AWS configuration
-            this.awsConfig,
-
-            // AwS target service name
-            this.serviceName,
-
-            // doubleEncoding: S3 does single-encoding of the uri component
-            // pathURIEncoding: S3 manipulates object keys, and forward slashes
-            // shouldn't be URI encoded
-            this.URIencodingConfig
-        )
-
-        // '?' should not be part of the querystring when we sign the headers
-        path = path !== '' ? path : '/'
-        let url = `https://${host}${path}`
-        if (queryString !== '') {
-            url += `?${queryString}`
-        }
-
-        return { url: url, headers: headers }
     }
 
     // FIXME: remove dependency to `error_message`
@@ -258,7 +217,6 @@ export class S3Client {
         // See: https://github.com/grafana/k6/issues/2474
         // See: https://github.com/golang/go/issues/49281
         if (error_message && error_message.startsWith('301')) {
-            console.log('HERE')
             // Bucket not found
             throw new S3ServiceError('Resource not found', 'ResourceNotFound', 'getObject')
         }

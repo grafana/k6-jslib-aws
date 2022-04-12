@@ -1,23 +1,31 @@
 import http, { head } from 'k6/http'
+import { AWSClient } from './client.js'
 import { AWSError } from './error.js'
-import { signHeaders, InvalidSignatureError, toTime } from './signature.js'
+import { InvalidSignatureError, URIEncodingConfig } from './signature.js'
 import { v4 as uuidv4 } from './uuid.js'
 
 /**
  * Class allowing to interact with Amazon AWS's SecretsManager service
  */
-export class SecretsManagerClient {
+export class SecretsManagerClient extends AWSClient {
     /**
      * Create a SecretsManagerClient
      * @param  {AWSConfig} awsConfig - configuration attributes to use when interacting with AWS' APIs
      */
     constructor(awsConfig) {
-        this.awsConfig = awsConfig
-        this.serviceName = 'secretsmanager'
+        const URIencodingConfig = new URIEncodingConfig(true, false)
+        super(awsConfig, 'secretsmanager', URIencodingConfig)
+
+        // this.serviceName = 'secretsmanager'
 
         // All interactions with the Secrets Manager service
         // are made via the GET or POST method.
         this.method = 'POST'
+
+        this.commonHeaders = {
+            'Accept-Encoding': 'identity',
+            'Content-Type': 'application/x-amz-json-1.1',
+        }
     }
 
     /**
@@ -30,11 +38,13 @@ export class SecretsManagerClient {
      */
     listSecrets() {
         const body = JSON.stringify({})
-        const { url, headers } = this._buildRequest(this.method, this.host, '/', '', body, {})
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
-        headers['X-Amz-Target'] = `${this.serviceName}.ListSecrets`
+        const { url, headers } = super.buildRequest(this.method, this.host, '/', '', body, {
+            ...this.commonHeaders,
+            'X-Amz-Target': `${this.serviceName}.ListSecrets`,
+        })
 
         const res = http.request(this.method, url, body, { headers: headers })
         this._handle_error('ListSecrets', res)
@@ -52,11 +62,13 @@ export class SecretsManagerClient {
      */
     getSecret(secretID) {
         const body = JSON.stringify({ SecretId: secretID })
-        const { url, headers } = this._buildRequest(this.method, this.host, '/', '', body, {})
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
-        headers['X-Amz-Target'] = `${this.serviceName}.GetSecretValue`
+        const { url, headers } = super.buildRequest(this.method, this.host, '/', '', body, {
+            ...this.commonHeaders,
+            'X-Amz-Target': `${this.serviceName}.GetSecretValue`,
+        })
 
         const res = http.request(this.method, url, body, { headers: headers })
         this._handle_error('GetSecretValue', res)
@@ -93,11 +105,14 @@ export class SecretsManagerClient {
             Tags: tags,
         })
 
-        const { url, headers } = this._buildRequest(this.method, this.host, '/', '', body, {})
+        const { url, headers } = super.buildRequest(this.method, this.host, '/', '', body, {
+            ...this.commonHeaders,
+            'X-Amz-Target': `${this.serviceName}.CreateSecret`,
+        })
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
-        headers['X-Amz-Target'] = `${this.serviceName}.CreateSecret`
+        // headers['X-Amz-Target'] = `${this.serviceName}.CreateSecret`
 
         const res = http.request(this.method, url, body, { headers: headers })
         this._handle_error('CreateSecret', res)
@@ -125,11 +140,12 @@ export class SecretsManagerClient {
             ClientRequestToken: versionID,
         })
 
-        const { url, headers } = this._buildRequest(this.method, this.host, '/', '', body, {})
-
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
-        headers['X-Amz-Target'] = `${this.serviceName}.PutSecretValue`
+        const { url, headers } = super.buildRequest(this.method, this.host, '/', '', body, {
+            ...this.commonHeaders,
+            'X-Amz-Target': `${this.serviceName}.PutSecretValue`,
+        })
 
         const res = http.request(this.method, url, body, { headers: headers })
         this._handle_error('PutSecretValue', res)
@@ -162,11 +178,13 @@ export class SecretsManagerClient {
         }
 
         const body = JSON.stringify(payload)
-        const { url, headers } = this._buildRequest(this.method, this.host, '/', '', body, {})
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
-        headers['X-Amz-Target'] = `${this.serviceName}.DeleteSecret`
+        const { url, headers } = super.buildRequest(this.method, this.host, '/', '', body, {
+            ...this.commonHeaders,
+            'X-Amz-Target': `${this.serviceName}.DeleteSecret`,
+        })
 
         const res = http.request(this.method, url, body, { headers: headers })
         this._handle_error('DeleteSecret', res)
@@ -174,56 +192,6 @@ export class SecretsManagerClient {
 
     get host() {
         return `${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
-    }
-
-    _buildRequest(method, host, path, queryString, body, headers) {
-        const requestTimestamp = Date.now()
-        const date = toTime(requestTimestamp)
-
-        headers['Host'] = host
-        headers['X-Amz-Date'] = date
-        headers['Accept-Encoding'] = 'identity'
-        headers['Content-Type'] = 'application/x-amz-json-1.1'
-
-        headers = signHeaders(
-            // headers
-            headers,
-
-            // requestTimestamp
-            requestTimestamp,
-
-            // method
-            method,
-
-            // path
-            path,
-
-            // querystring
-            queryString,
-
-            // body
-            body,
-
-            // AWS configuration
-            this.awsConfig,
-
-            // AwS target service name
-            this.serviceName,
-
-            // doubleEncoding: S3 does single-encoding of the uri component
-            // pathURIEncoding: S3 manipulates object keys, and forward slashes
-            // shouldn't be URI encoded
-            this.URIencodingConfig
-        )
-
-        // '?' should not be part of the querystring when we sign the headers
-        path = path !== '' ? path : '/'
-        let url = `https://${host}${path}`
-        if (queryString !== '') {
-            url += `?${queryString}`
-        }
-
-        return { url: url, headers: headers }
     }
 
     _handle_error(operation, response) {
