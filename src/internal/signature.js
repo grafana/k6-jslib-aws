@@ -336,6 +336,7 @@ export function createCanonicalHeaders(headers) {
  *
  * @param  {Object} headers
  * @return {string}
+ * @throws {TypeError} - on headers not being an Object, or being empty.
  */
 export function createSignedHeaders(headers) {
     if (headers.constructor !== Object) {

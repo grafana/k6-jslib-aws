@@ -17,6 +17,8 @@ export class S3Client {
         this.awsConfig = awsConfig
         this.serviceName = 's3'
         this.URIencodingConfig = new URIEncodingConfig(false, true)
+
+        // TODO: define host getter
     }
 
     /**
@@ -25,6 +27,8 @@ export class S3Client {
      *
      * @return  {Array.<S3Bucket>} buckets - An array of objects describing S3 buckets
      *     with the following fields: name, and creationDate.
+     * @throws  {S3ServiceError}
+     * @throws  {InvalidSignatureError}
      */
     listBuckets() {
         // Prepare request
@@ -71,6 +75,8 @@ export class S3Client {
      * @param  {string} prefix='' - Limits the response to keys that begin with the specified prefix.
      * @return {Array.<S3Object>} - returns an array of objects describing S3 objects
      *     with the following fields: key, lastModified, etag, size and storageClass.
+     * @throws  {S3ServiceError}
+     * @throws  {InvalidSignatureError}
      */
     listObjects(bucketName, prefix = '') {
         // Prepare request
@@ -123,6 +129,8 @@ export class S3Client {
      * @param  {string} bucketName - The bucket name containing the object.
      * @param  {string} objectKey - Key of the object to get.
      * @return {S3Object} - returns the content of the fetched S3 Object.
+     * @throws  {S3ServiceError}
+     * @throws  {InvalidSignatureError}
      */
     getObject(bucketName, objectKey) {
         // Prepare request
@@ -152,6 +160,8 @@ export class S3Client {
      * @param  {string} bucketName - The bucket name containing the object.
      * @param  {string} objectKey - Key of the object to put.
      * @param  {string | ArrayBuffer} data - the content of the S3 Object to upload.
+     * @throws  {S3ServiceError}
+     * @throws  {InvalidSignatureError}
      */
     putObject(bucketName, objectKey, data) {
         // Prepare request
@@ -172,6 +182,8 @@ export class S3Client {
      *
      * @param  {string} bucketName - The bucket name containing the object.
      * @param  {string} objectKey - Key of the object to delete.
+     * @throws  {S3ServiceError}
+     * @throws  {InvalidSignatureError}
      */
     deleteObject(bucketName, objectKey) {
         // Prepare request
@@ -235,6 +247,8 @@ export class S3Client {
         return { url: url, headers: headers }
     }
 
+    // FIXME: remove dependency to `error_message`
+    // FIXME: just pass it the response?
     _handle_error(error_code, error_message, error_body) {
         if (error_message == '' || error_code === 0) {
             return
