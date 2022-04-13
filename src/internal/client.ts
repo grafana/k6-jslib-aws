@@ -1,4 +1,6 @@
-import { signHeaders, toTime } from './signature.js'
+import { HTTPMethod, HTTPHeaders } from './http'
+import { AWSConfig } from './config'
+import { signHeaders, URIEncodingConfig, toTime } from './signature'
 
 /**
  * Class allowing to build requests targeting AWS APIs
@@ -8,20 +10,31 @@ import { signHeaders, toTime } from './signature.js'
  * usage examples.
  */
 export class AWSClient {
+    awsConfig: AWSConfig
+    serviceName: string
+    URIencodingConfig: URIEncodingConfig
+
     /**
      * @param {AWSConfig} awsConfig - configuration attributes to use when interacting with AWS' APIs
      * @param  {string} serviceName - name of the service to target.
      * @param  {URIEncodingConfig} URIencodingConfig - configures how requests URIs should be encoded.
      */
-    constructor(awsConfig, serviceName, URIencodingConfig) {
+    constructor(awsConfig: AWSConfig, serviceName: string, URIencodingConfig: URIEncodingConfig) {
         this.awsConfig = awsConfig
         this.serviceName = serviceName
         this.URIencodingConfig = URIencodingConfig
     }
 
-    buildRequest(method, host, path, queryString, body, headers) {
-        const requestTimestamp = Date.now()
-        const date = toTime(requestTimestamp)
+    buildRequest(
+        method: HTTPMethod,
+        host: string,
+        path: string,
+        queryString: string,
+        body: string | ArrayBuffer,
+        headers: HTTPHeaders
+    ): AWSRequest {
+        const requestTimestamp: number = Date.now()
+        const date: string = toTime(requestTimestamp)
 
         headers['Host'] = host
         headers['X-Amz-Date'] = date
@@ -66,4 +79,12 @@ export class AWSClient {
 
         return { url: url, headers: headers }
     }
+}
+
+/**
+ * Type alias representing the result of an AWSClient.buildRequest call
+ */
+export interface AWSRequest {
+    url: string
+    headers: HTTPHeaders
 }

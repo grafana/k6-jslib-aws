@@ -1,5 +1,9 @@
 /** Class holding an AWS connection information */
 export class AWSConfig {
+    region: string
+    accessKeyID: string
+    secretAccessKey: string
+
     /**
      * Create an AWSConfig.
      *
@@ -8,7 +12,7 @@ export class AWSConfig {
      * @param {string} secretAccessKey - Your user's AWS secret access key credential
      * @throws {InvalidArgumentException}
      */
-    constructor(region, accessKeyID, secretAccessKey) {
+    constructor(region: string, accessKeyID: string, secretAccessKey: string) {
         if (typeof region !== 'string' || region === '') {
             throw new InvalidAWSConfigError(
                 'invalid AWS region; reason: should be a non empty string'
@@ -35,7 +39,7 @@ export class AWSConfig {
 
 /** Class representing an invalid AWS configuration */
 export class InvalidAWSConfigError extends Error {
-    constructor(...params) {
-        super(...params)
+    constructor(message: string) {
+        super(message)
     }
 }
