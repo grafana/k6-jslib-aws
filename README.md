@@ -22,7 +22,7 @@ import {
     // listBuckets,
     AWSConfig,
     S3Client,
-} from 'https://jslib.k6.io/aws/0.1.0/index.js'
+} from 'https://jslib.k6.io/aws/0.2.0/index.js'
 
 const testFile = open('./bonjour.txt', 'r')
 
@@ -69,7 +69,7 @@ export default function () {
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SecretsManagerClient } from '../build/aws.min.js'
+import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.2.0/index.js'
 
 const awsConfig = new AWSConfig(
     __ENV.AWS_REGION,
@@ -115,7 +115,7 @@ export default function () {
 
 ### Contributing
 
-The scope of this library has been kept quite small and limited to the use cases we, and our clients need. If the library doesn't catter to your needs just yet, feel free to add it, and open a pull-request. We welcome contributions.
+The scope of this library has been kept minimal and limited to the use cases we, and our clients, need. If the library doesn't cater to your needs just yet, feel free to add it, and open a pull-request. We welcome contributions.
 
 ### Build
 
