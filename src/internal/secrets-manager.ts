@@ -1,18 +1,25 @@
-import http, { head } from 'k6/http'
-import { AWSClient } from './client.js'
-import { AWSError } from './error.js'
-import { InvalidSignatureError, URIEncodingConfig } from './signature.js'
-import { v4 as uuidv4 } from './uuid.js'
+import { JSONArray, JSONObject } from 'k6'
+import http, { RefinedResponse, ResponseType } from 'k6/http'
+
+import { AWSClient, AWSRequest } from './client'
+import { AWSError } from './error'
+import { AWSConfig } from './config'
+import { InvalidSignatureError, URIEncodingConfig } from './signature'
+import { v4 as uuidv4 } from 'uuid'
+import { HTTPMethod, HTTPHeaders } from './http'
 
 /**
  * Class allowing to interact with Amazon AWS's SecretsManager service
  */
 export class SecretsManagerClient extends AWSClient {
+    method: HTTPMethod
+    commonHeaders: HTTPHeaders
+
     /**
      * Create a SecretsManagerClient
      * @param  {AWSConfig} awsConfig - configuration attributes to use when interacting with AWS' APIs
      */
-    constructor(awsConfig) {
+    constructor(awsConfig: AWSConfig) {
         const URIencodingConfig = new URIEncodingConfig(true, false)
         super(awsConfig, 'secretsmanager', URIencodingConfig)
 
@@ -36,20 +43,30 @@ export class SecretsManagerClient extends AWSClient {
      * @throws  {SecretsManagerServiceError}
      * @throws  {InvalidSignatureError}
      */
-    listSecrets() {
+    listSecrets(): Array<Secret> {
         const body = JSON.stringify({})
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
-        const { url, headers } = super.buildRequest(this.method, this.host, '/', '', body, {
-            ...this.commonHeaders,
-            'X-Amz-Target': `${this.serviceName}.ListSecrets`,
+        const signedRequest: AWSRequest = super.buildRequest(
+            this.method,
+            this.host,
+            '/',
+            '',
+            body,
+            {
+                ...this.commonHeaders,
+                'X-Amz-Target': `${this.serviceName}.ListSecrets`,
+            }
+        )
+
+        const res = http.request(this.method, signedRequest.url, body, {
+            headers: signedRequest.headers,
         })
-
-        const res = http.request(this.method, url, body, { headers: headers })
         this._handle_error('ListSecrets', res)
+        const json: JSONArray = res.json('SecretList') as JSONArray
 
-        return res.json('SecretList').map((s) => Secret.fromJSON(s))
+        return json.map((s) => Secret.fromJSON(s as JSONObject))
     }
 
     /**
@@ -60,20 +77,29 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {SecretsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    getSecret(secretID) {
+    getSecret(secretID: string): Secret | undefined {
         const body = JSON.stringify({ SecretId: secretID })
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
-        const { url, headers } = super.buildRequest(this.method, this.host, '/', '', body, {
-            ...this.commonHeaders,
-            'X-Amz-Target': `${this.serviceName}.GetSecretValue`,
-        })
+        const signedRequest: AWSRequest = super.buildRequest(
+            this.method,
+            this.host,
+            '/',
+            '',
+            body,
+            {
+                ...this.commonHeaders,
+                'X-Amz-Target': `${this.serviceName}.GetSecretValue`,
+            }
+        )
 
-        const res = http.request(this.method, url, body, { headers: headers })
+        const res = http.request(this.method, signedRequest.url, body, {
+            headers: signedRequest.headers,
+        })
         this._handle_error('GetSecretValue', res)
 
-        return Secret.fromJSON(res.json())
+        return Secret.fromJSON(res.json() as JSONObject)
     }
 
     /**
@@ -94,7 +120,13 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {SecretsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    createSecret(name, secretString, description, versionID = null, tags = []) {
+    createSecret(
+        name: string,
+        secretString: string,
+        description: string,
+        versionID?: string,
+        tags?: Array<Object>
+    ): Secret {
         versionID = versionID || uuidv4()
 
         const body = JSON.stringify({
@@ -105,19 +137,28 @@ export class SecretsManagerClient extends AWSClient {
             Tags: tags,
         })
 
-        const { url, headers } = super.buildRequest(this.method, this.host, '/', '', body, {
-            ...this.commonHeaders,
-            'X-Amz-Target': `${this.serviceName}.CreateSecret`,
-        })
+        const signedRequest: AWSRequest = super.buildRequest(
+            this.method,
+            this.host,
+            '/',
+            '',
+            body,
+            {
+                ...this.commonHeaders,
+                'X-Amz-Target': `${this.serviceName}.CreateSecret`,
+            }
+        )
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
         // headers['X-Amz-Target'] = `${this.serviceName}.CreateSecret`
 
-        const res = http.request(this.method, url, body, { headers: headers })
+        const res = http.request(this.method, signedRequest.url, body, {
+            headers: signedRequest.headers,
+        })
         this._handle_error('CreateSecret', res)
 
-        return Secret.fromJSON(res.json())
+        return Secret.fromJSON(res.json() as JSONObject)
     }
     /**
      * Update a secret's value.
@@ -131,7 +172,7 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {SecretsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    putSecretValue(secretID, secretString, versionID = null) {
+    putSecretValue(secretID: string, secretString: string, versionID?: string): Secret {
         versionID = versionID || uuidv4()
 
         const body = JSON.stringify({
@@ -142,15 +183,24 @@ export class SecretsManagerClient extends AWSClient {
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
-        const { url, headers } = super.buildRequest(this.method, this.host, '/', '', body, {
-            ...this.commonHeaders,
-            'X-Amz-Target': `${this.serviceName}.PutSecretValue`,
-        })
+        const signedRequest: AWSRequest = super.buildRequest(
+            this.method,
+            this.host,
+            '/',
+            '',
+            body,
+            {
+                ...this.commonHeaders,
+                'X-Amz-Target': `${this.serviceName}.PutSecretValue`,
+            }
+        )
 
-        const res = http.request(this.method, url, body, { headers: headers })
+        const res = http.request(this.method, signedRequest.url, body, {
+            headers: signedRequest.headers,
+        })
         this._handle_error('PutSecretValue', res)
 
-        return Secret.fromJSON(res.json())
+        return Secret.fromJSON(res.json() as JSONObject)
     }
 
     /**
@@ -165,8 +215,11 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {SecretsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    deleteSecret(secretID, { recoveryWindow = 30, noRecovery = false }) {
-        const payload = {
+    deleteSecret(
+        secretID: string,
+        { recoveryWindow = 30, noRecovery = false }: { recoveryWindow: number; noRecovery: boolean }
+    ) {
+        const payload: { [key: string]: string | boolean | number } = {
             SecretId: secretID,
         }
 
@@ -181,12 +234,21 @@ export class SecretsManagerClient extends AWSClient {
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
-        const { url, headers } = super.buildRequest(this.method, this.host, '/', '', body, {
-            ...this.commonHeaders,
-            'X-Amz-Target': `${this.serviceName}.DeleteSecret`,
-        })
+        const signedRequest: AWSRequest = super.buildRequest(
+            this.method,
+            this.host,
+            '/',
+            '',
+            body,
+            {
+                ...this.commonHeaders,
+                'X-Amz-Target': `${this.serviceName}.DeleteSecret`,
+            }
+        )
 
-        const res = http.request(this.method, url, body, { headers: headers })
+        const res = http.request(this.method, signedRequest.url, body, {
+            headers: signedRequest.headers,
+        })
         this._handle_error('DeleteSecret', res)
     }
 
@@ -194,17 +256,19 @@ export class SecretsManagerClient extends AWSClient {
         return `${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
     }
 
-    _handle_error(operation, response) {
+    // TODO: operation should be an enum
+    _handle_error(operation: string, response: RefinedResponse<ResponseType | undefined>) {
         const errorCode = response.error_code
         if (errorCode === 0) {
             return
         }
 
-        const error = response.json()
+        const error = response.json() as JSONObject
         if (errorCode >= 1400 && errorCode <= 1499) {
             // In the event of certain errors, the message is not set.
             // Also, note the inconsistency in casing...
-            const errorMessage = error.Message || error.message || error.__type
+            const errorMessage: string =
+                (error.Message as string) || (error.message as string) || (error.__type as string)
 
             // Handle specifically the case of an invalid signature
             if (error.__type === 'InvalidSignatureException') {
@@ -212,7 +276,7 @@ export class SecretsManagerClient extends AWSClient {
             }
 
             // Otherwise throw a standard service error
-            throw new SecretsManagerError(errorMessage, error.__type, operation)
+            throw new SecretsManagerError(errorMessage, error.__type as string, operation)
         }
 
         if (errorCode === 1500) {
@@ -225,10 +289,20 @@ export class SecretsManagerClient extends AWSClient {
     }
 }
 
+// TODO: create a Tags type
+
 /**
  * Class representing a Secret Manager's secret
  */
 export class Secret {
+    name: string
+    arn: string
+    secret: string
+    createdDate: number
+    lastAccessedDate: number
+    lastChangedDate: number
+    tags: Array<{ [key: string]: string }>
+
     /**
      * Constructs a Secret Manager's Secret
      *
@@ -241,17 +315,17 @@ export class Secret {
      * @param  {Array.<Object>} tags - The list of user-defined tags associated with the secret.
      */
     constructor(
-        name,
-        arn,
-        secretString,
-        createdDate,
-        lastAccessedDate,
-        lastChangedDate,
-        tags = []
+        name: string,
+        arn: string,
+        secretString: string,
+        createdDate: number,
+        lastAccessedDate: number,
+        lastChangedDate: number,
+        tags: Array<{ [key: string]: string }> = []
     ) {
         this.name = name
         this.arn = arn
-        this.secretString = secretString
+        this.secret = secretString
         this.createdDate = createdDate
         this.lastAccessedDate = lastAccessedDate
         this.lastChangedDate = lastChangedDate
@@ -266,21 +340,22 @@ export class Secret {
      *     the AWS service's API call.
      * @returns {Secret}
      */
-    static fromJSON(json) {
+    static fromJSON(json: JSONObject) {
         return new Secret(
-            json.Name,
-            json.ARN,
-            json.SecretString,
-            json.CreatedDate,
-            json.LastAccessedDate,
-            json.LastChangeddAt,
-            json.Tags
+            json.Name as string,
+            json.ARN as string,
+            json.SecretString as string,
+            json.CreatedDate as number,
+            json.LastAccessedDate as number,
+            json.LastChangedDate as number,
+            json.Tags as Array<{ [key: string]: string }>
         )
     }
 }
 
-// TODO: derive a AWSServiceError to extend instead? (to save kb of code?)
 export class SecretsManagerError extends AWSError {
+    operation: string
+
     /**
      * Constructs a SecretsManagerError
      *
@@ -288,7 +363,7 @@ export class SecretsManagerError extends AWSError {
      * @param  {string} code - A unique short code representing the error that was emitted
      * @param  {string} operation - Name of the failed Operation
      */
-    constructor(message, code, operation) {
+    constructor(message: string, code: string, operation: string) {
         super(message, code)
         this.name = 'SecretsManagerServiceError'
         this.operation = operation

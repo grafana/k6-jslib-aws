@@ -1,11 +1,12 @@
+import { bytes } from 'k6'
 import http from 'k6/http'
 import { parseHTML } from 'k6/html'
 import { sha256 } from 'k6/crypto'
 
-import { signHeaders, InvalidSignatureError, URIEncodingConfig, toTime } from './signature.js'
-import { AWSClient } from './client.js'
-import { AWSError } from './error.js'
-import { AWSConfig } from './config.js'
+import { InvalidSignatureError, URIEncodingConfig } from './signature'
+import { AWSClient, AWSRequest } from './client'
+import { AWSError } from './error'
+import { AWSConfig } from './config'
 
 /** Class allowing to interact with Amazon AWS's S3 service */
 export class S3Client extends AWSClient {
@@ -14,7 +15,7 @@ export class S3Client extends AWSClient {
      *
      * @param {AWSConfig} awsConfig - configuration attributes to use when interacting with AWS' APIs
      */
-    constructor(awsConfig) {
+    constructor(awsConfig: AWSConfig) {
         const URIencodingConfig = new URIEncodingConfig(false, true)
         super(awsConfig, 's3', URIencodingConfig)
     }
@@ -28,41 +29,42 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    listBuckets() {
+    listBuckets(): Array<S3Bucket> {
         // Prepare request
         const method = 'GET'
         const host = `${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
         const body = ''
-        const { url, headers } = super.buildRequest(method, host, '/', '', body, {
+        const signedRequest: AWSRequest = super.buildRequest(method, host, '/', '', body, {
             'X-Amz-Content-SHA256': sha256(body, 'hex'),
         })
 
-        const res = http.request(method, url, body, { headers: headers })
-        this._handle_error(res.error_code, res.error, res.body)
+        const res = http.request(method, signedRequest.url, body, {
+            headers: signedRequest.headers,
+        })
+        this._handle_error(res.error_code, res.error, res.body as string)
 
-        let buckets = []
+        let buckets: Array<S3Bucket> = []
 
-        const doc = parseHTML(res.body)
+        const doc = parseHTML(res.body as string)
 
         doc.find('Buckets')
             .children()
             .each((_, bucketDefinition) => {
-                let bucket = new S3Bucket()
+                let bucket = {}
 
                 bucketDefinition.children().forEach((child) => {
                     switch (child.nodeName()) {
                         case 'name':
                             Object.assign(bucket, { name: child.textContent() })
+                            break
                         case 'creationdate':
-                            const parsed = Date.parse(
-                                child.textContent(),
-                                'YYYY-MM-ddTHH:mm:ss.sssZ'
-                            )
-                            Object.assign(bucket, { creationDate: parsed })
+                            Object.assign(bucket, {
+                                creationDate: Date.parse(child.textContent()),
+                            })
                     }
                 })
 
-                buckets.push(bucket)
+                buckets.push(bucket as S3Bucket)
             })
 
         return buckets
@@ -72,53 +74,66 @@ export class S3Client extends AWSClient {
      * Returns some or all (up to 1,000) of the objects in a bucket.
      *
      * @param  {string} bucketName - Bucket name to list.
-     * @param  {string} prefix='' - Limits the response to keys that begin with the specified prefix.
+     * @param  {string?} prefix='' - Limits the response to keys that begin with the specified prefix.
      * @return {Array.<S3Object>} - returns an array of objects describing S3 objects
      *     with the following fields: key, lastModified, etag, size and storageClass.
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    listObjects(bucketName, prefix = '') {
+    listObjects(bucketName: string, prefix?: string): Array<S3Object> {
         // Prepare request
         const method = 'GET'
         const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
         const body = ''
-        const { url, headers } = super.buildRequest(method, host, '/', 'list-type=2', body, {
-            'X-Amz-Content-SHA256': sha256(body, 'hex'),
+        const signedRequest: AWSRequest = super.buildRequest(
+            method,
+            host,
+            '/',
+            'list-type=2',
+            body,
+            {
+                'X-Amz-Content-SHA256': sha256(body, 'hex'),
+            }
+        )
+
+        const res = http.request(method, signedRequest.url, body, {
+            headers: signedRequest.headers,
         })
+        this._handle_error(res.error_code, res.error, res.body as string)
 
-        const res = http.request(method, url, body, { headers: headers })
-        this._handle_error(res.error_code, res.error, res.body)
-
-        let objects = []
+        let objects: Array<S3Object> = []
 
         // Extract the objects definition from
         // the XML response
-        parseHTML(res.body)
+        parseHTML(res.body as string)
             .find('Contents')
             .each((_, objectDefinition) => {
-                let obj = new S3Object()
+                let obj = {}
 
                 objectDefinition.children().forEach((child) => {
                     switch (child.nodeName()) {
                         case 'key':
                             Object.assign(obj, { key: child.textContent() })
+                            break
                         case 'lastmodified':
-                            const parsed = Date.parse(
-                                child.textContent(),
-                                'YYYY-MM-ddTHH:mm:ss.sssZ'
-                            )
-                            Object.assign(obj, { lastModified: parsed })
+                            // const parsed = Date.parse(
+                            //     child.textContent(),
+                            //     'YYYY-MM-ddTHH:mm:ss.sssZ'
+                            // )
+                            Object.assign(obj, { lastModified: Date.parse(child.textContent()) })
+                            break
                         case 'etag':
                             Object.assign(obj, { etag: child.textContent() })
+                            break
                         case 'size':
                             Object.assign(obj, { size: parseInt(child.textContent()) })
+                            break
                         case 'storageclass':
                             Object.assign(obj, { storageClass: child.textContent() })
                     }
                 })
 
-                objects.push(obj)
+                objects.push(obj as S3Object)
             })
 
         return objects
@@ -134,25 +149,27 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    getObject(bucketName, objectKey) {
+    getObject(bucketName: string, objectKey: string): S3Object {
         // Prepare request
         const method = 'GET'
         const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
         const path = `/${objectKey}`
         const body = ''
-        const { url, headers } = super.buildRequest(method, host, path, '', body, {
+        const signedRequest: AWSRequest = super.buildRequest(method, host, path, '', body, {
             'X-Amz-Content-SHA256': sha256(body, 'hex'),
         })
 
-        const res = http.request(method, url, body, { headers: headers })
-        this._handle_error(res.error_code, res.error, res.body)
+        const res = http.request(method, signedRequest.url, body, {
+            headers: signedRequest.headers,
+        })
+        this._handle_error(res.error_code, res.error, res.body as string)
 
         return new S3Object(
             objectKey,
-            res.headers['Last-Modified'],
+            Date.parse(res.headers['Last-Modified']),
             res.headers['ETag'],
-            res.headers['Content-Length'],
-            '', // GetObject response doesn't contain the storage class
+            parseInt(res.headers['Content-Length']),
+            undefined, // GetObject response doesn't contain the storage class
             res.body
         )
     }
@@ -167,19 +184,28 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    putObject(bucketName, objectKey, data) {
+    putObject(bucketName: string, objectKey: string, data: string | ArrayBuffer) {
         // Prepare request
         const method = 'PUT'
         const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
         const path = `/${objectKey}`
         const queryString = ''
         const body = data
-        const { url, headers } = super.buildRequest(method, host, path, queryString, body, {
-            'X-Amz-Content-SHA256': sha256(body, 'hex'),
-        })
+        const signedRequest: AWSRequest = super.buildRequest(
+            method,
+            host,
+            path,
+            queryString,
+            body,
+            {
+                'X-Amz-Content-SHA256': sha256(body, 'hex'),
+            }
+        )
 
-        const res = http.request(method, url, body, { headers: headers })
-        this._handle_error(res.error_code, res.error, res.body)
+        const res = http.request(method, signedRequest.url, body, {
+            headers: signedRequest.headers,
+        })
+        this._handle_error(res.error_code, res.error, res.body as string)
     }
 
     /**
@@ -191,24 +217,33 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    deleteObject(bucketName, objectKey) {
+    deleteObject(bucketName: string, objectKey: string): void {
         // Prepare request
         const method = 'DELETE'
         const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
         const path = `/${objectKey}`
         const queryString = ''
         const body = ''
-        const { url, headers } = super.buildRequest(method, host, path, queryString, body, {
-            'X-Amz-Content-SHA256': sha256(body, 'hex'),
-        })
+        const signedRequest: AWSRequest = super.buildRequest(
+            method,
+            host,
+            path,
+            queryString,
+            body,
+            {
+                'X-Amz-Content-SHA256': sha256(body, 'hex'),
+            }
+        )
 
-        const res = http.request(method, url, body, { headers: headers })
-        this._handle_error(res.error_code, res.error, res.body)
+        const res = http.request(method, signedRequest.url, body, {
+            headers: signedRequest.headers,
+        })
+        this._handle_error(res.error_code, res.error, res.body as string)
     }
 
     // FIXME: remove dependency to `error_message`
     // FIXME: just pass it the response?
-    _handle_error(error_code, error_message, error_body) {
+    _handle_error(error_code: number, error_message: string, error_body: string) {
         if (error_message == '' || error_code === 0) {
             return
         }
@@ -231,22 +266,34 @@ export class S3Client extends AWSClient {
     }
 }
 
+// TODO: use interface instead?
 /** Class representing a S3 Bucket */
 export class S3Bucket {
+    name: string
+    creationDate: Date
+
     /**
      * Create an S3 Bucket
      *
      * @param  {string} name - S3 bucket's name
      * @param  {Date} creationDate - S3 bucket's creation date
      */
-    constructor(name, creationDate) {
+    constructor(name: string, creationDate: Date) {
         this.name = name
         this.creationDate = creationDate
     }
 }
 
+// TODO: use interface instead?
 /** Class representing an S3 Object */
 export class S3Object {
+    key: string
+    lastModified: number
+    etag: string
+    size: number
+    storageClass: StorageClass
+    data?: string | bytes | null
+
     /**
      * Create an S3 Object
      *
@@ -254,15 +301,22 @@ export class S3Object {
      * @param  {Date} lastModified - S3 object last modification date
      * @param  {string} etag - S3 object's etag
      * @param  {number} size - S3 object's size
-     * @param  {string} storageClass - S3 object's storage class
-     * @param  {string} data=null - S3 Object's data
+     * @param  {StorageClass} storageClass - S3 object's storage class
+     * @param  {string | bytes | null} data=null - S3 Object's data
      */
-    constructor(key, lastModified, etag, size, storageClass, data = null) {
+    constructor(
+        key: string,
+        lastModified: number,
+        etag: string,
+        size: number,
+        storageClass: StorageClass,
+        data?: string | bytes | null
+    ) {
         this.key = key
         this.lastModified = lastModified
         this.etag = etag
         this.size = size
-        this.storageClass = storageClass || ''
+        this.storageClass = storageClass
         this.data = data
     }
 }
@@ -276,6 +330,8 @@ export class S3Object {
  *   * https://github.com/aws/aws-sdk-js/blob/master/lib/error.d.ts
  */
 export class S3ServiceError extends AWSError {
+    operation: string
+
     /**
      * Constructs a S3ServiceError
      *
@@ -283,9 +339,23 @@ export class S3ServiceError extends AWSError {
      * @param  {string} code - A unique short code representing the error that was emitted
      * @param  {string} operation - Name of the failed Operation
      */
-    constructor(message, code, operation) {
+    constructor(message: string, code: string, operation: string) {
         super(message, code)
         this.name = 'S3ServiceError'
         this.operation = operation
     }
 }
+
+/**
+ * Describes the class of storage used to store a S3 object.
+ */
+type StorageClass =
+    | 'STANDARD'
+    | 'REDUCED_REDUNDANCY'
+    | 'GLACIER'
+    | 'STANDARD_IA'
+    | 'INTELLIGENT_TIERING'
+    | 'DEEP_ARCHIVE'
+    | 'OUTPOSTS'
+    | 'GLACIER_IR'
+    | undefined

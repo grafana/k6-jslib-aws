@@ -29,11 +29,11 @@ export default function () {
 
     // Now that we know the secret exist, let's update its value
     const newTestSecretValue = 'new-test-value'
-    secretsManager.putSecretValue(testSecretName, newTestSecretValue)
+    const u = secretsManager.putSecretValue(testSecretName, newTestSecretValue)
 
     // Let's get its value and verify it was indeed updated
     const updatedSecret = secretsManager.getSecret(testSecretName)
-    if (updatedSecret.secretString !== newTestSecretValue) {
+    if (updatedSecret.secret !== newTestSecretValue) {
         exec.test.abort('unable to update test secret')
     }
 

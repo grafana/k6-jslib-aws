@@ -1,6 +1,5 @@
-'use strict'
-
 import crypto, { hmac, sha256 } from 'k6/crypto'
+import { HTTPMethod, HTTPHeaders } from './http'
 import { AWSConfig } from './config'
 import { AWSError } from './error'
 
@@ -27,16 +26,16 @@ import { AWSError } from './error'
  * @param  {URIEncodingConfig} - URI encoding configuration
  */
 export function signHeaders(
-    headers,
-    requestTimestamp,
-    method,
-    path,
-    queryString,
-    body,
-    awsConfig,
-    service,
-    URIencodingConfig
-) {
+    headers: HTTPHeaders,
+    requestTimestamp: number,
+    method: HTTPMethod,
+    path: string,
+    queryString: string,
+    body: string | ArrayBuffer,
+    awsConfig: AWSConfig,
+    service: string,
+    URIencodingConfig: URIEncodingConfig
+): HTTPHeaders {
     const derivedSigningKey = deriveSigningKey(
         awsConfig.secretAccessKey,
         requestTimestamp,
@@ -84,7 +83,7 @@ export class InvalidSignatureError extends AWSError {
      *
      * @param  {string} message - human readable error message
      */
-    constructor(message, code) {
+    constructor(message: string, code: string) {
         super(message, code)
         this.name = 'InvalidSignatureError'
     }
@@ -97,7 +96,7 @@ export class InvalidSignatureError extends AWSError {
  * @param  {string} stringToSign - String to sign as computed by `createStringToSign`
  * @return {string}
  */
-export function calculateSignature(derivedSigningKey, stringToSign) {
+export function calculateSignature(derivedSigningKey: ArrayBuffer, stringToSign: string): string {
     return hmac('sha256', derivedSigningKey, stringToSign, 'hex')
 }
 /**
@@ -117,14 +116,21 @@ export function calculateSignature(derivedSigningKey, stringToSign) {
  * @param  {string} service - targeted AWS service. MUST be UTF-8 encoded.
  * @return {string}
  */
-export function deriveSigningKey(secretAccessKey, time, region, service) {
+export function deriveSigningKey(
+    secretAccessKey: string,
+    time: number,
+    region: string,
+    service: string
+): ArrayBuffer {
     const kSecret = secretAccessKey
     const date = toDate(time)
 
-    const kDate = hmac('sha256', 'AWS4' + kSecret, date, 'binary')
-    const kRegion = hmac('sha256', kDate, region, 'binary')
-    const kService = hmac('sha256', kRegion, service, 'binary')
-    const kSigning = hmac('sha256', kService, 'aws4_request', 'binary')
+    // FIXME: hmac takes ArrayBuffer as input, but returns bytes (number[]).
+    // How does one convert from one to the other?
+    const kDate: any = hmac('sha256', 'AWS4' + kSecret, date, 'binary')
+    const kRegion: any = hmac('sha256', kDate, region, 'binary')
+    const kService: any = hmac('sha256', kRegion, service, 'binary')
+    const kSigning: any = hmac('sha256', kService, 'aws4_request', 'binary')
 
     return kSigning
 }
@@ -153,7 +159,12 @@ export const UnsignedPayload = 'UNSIGNED-PAYLOAD'
  *     hashed using the SHA256 algorithm (encoded in hexadecimal format).
  * @return {string}
  */
-export function createStringToSign(requestTimestamp, region, service, hashedCanonicalRequest) {
+export function createStringToSign(
+    requestTimestamp: number,
+    region: string,
+    service: string,
+    hashedCanonicalRequest: string
+): string {
     // the request date specified in ISO8601 format: YYYYMMDD'T'HHMMSS'Z'
     const requestDateTime = toTime(requestTimestamp)
 
@@ -193,7 +204,11 @@ export function createStringToSign(requestTimestamp, region, service, hashedCano
  * @param  {string} service - targeted AWS service name. MUST be UTF-8 encoded.
  * @return {string}
  */
-export function createCredentialScope(requestTimestamp, region, service) {
+export function createCredentialScope(
+    requestTimestamp: number,
+    region: string,
+    service: string
+): string {
     return [toDate(requestTimestamp), region, service, 'aws4_request'].join('/')
 }
 
@@ -205,11 +220,18 @@ export function createCredentialScope(requestTimestamp, region, service) {
  * @param  {string} uri - URI-encoded version of the absolute path component of the URI
  * @param  {string} query - request's query string
  * @param  {Object} headers - all the HTTP headers that you wish to include with the signed request
- * @param  {String | ArrayBuffer} payload -  payload to include as the body of the request
- * @param  {URIEncodingConfig} - URI encoding configuration
+ * @param  {string | ArrayBuffer} payload -  payload to include as the body of the request
+ * @param  {URIEncodingConfig} URIencodingConfig- URI encoding configuration
  * @return {string}
  */
-export function createCanonicalRequest(method, uri, query, headers, payload, URIencodingConfig) {
+export function createCanonicalRequest(
+    method: HTTPMethod,
+    uri: string,
+    query: string,
+    headers: HTTPHeaders,
+    payload: string | ArrayBuffer,
+    URIencodingConfig: URIEncodingConfig
+): string {
     const httpRequestMethod = method.toUpperCase()
     const canonicalURI = createCanonicalURI(uri, URIencodingConfig)
     const canonicalQueryString = createCanonicalQueryString(query)
@@ -239,7 +261,7 @@ export function createCanonicalRequest(method, uri, query, headers, payload, URI
  * @param  {URIEncodingConfig} - URI encoding configuration
  * @return {string} - canonical URL
  */
-export function createCanonicalURI(uri, URIencodingConfig) {
+export function createCanonicalURI(uri: string, URIencodingConfig: URIEncodingConfig): string {
     if (uri == '/') {
         return uri
     }
@@ -254,6 +276,7 @@ export function createCanonicalURI(uri, URIencodingConfig) {
     return URIencodingConfig.double ? URIEncode(canonicalURI, URIencodingConfig.path) : canonicalURI
 }
 
+// FIXME: does it work as expected?
 /**
  * Creates the canonical form of the request's query
  * string. If the request does not include a query string,
@@ -262,23 +285,31 @@ export function createCanonicalURI(uri, URIencodingConfig) {
  * @param  {String | Object} qs - query string to canonize
  * @return {string}
  */
-export function createCanonicalQueryString(qs) {
-    if (!qs) {
+export function createCanonicalQueryString(qs: string): string {
+    if (qs === '') {
         return ''
     }
 
-    if (typeof qs == 'string') {
-        qs = parseQueryString(qs)
-    }
+    // const intermediary: { [key: string]: string } = parseQueryString(qs)
 
-    return Object.keys(qs)
-        .sort()
-        .map((key) => {
-            const values = Array.isArray(qs[key]) ? qs[key] : [qs[key]]
-            return values
-                .sort()
-                .map((val) => encodeURIComponent(key) + '=' + encodeURIComponent(val))
-                .join('&')
+    // return Object.keys(intermediary)
+    //     .sort()
+    //     .map((key: string) => {
+    //         // const values: string[] = Array.isArray(intermediary[key])
+    //         //     ? intermediary[key]
+    //         //     : [intermediary[key]]
+    //         const values = intermediary[key]
+
+    //         return values
+    //             .sort()
+    //             .map((val: string) => encodeURIComponent(key) + '=' + encodeURIComponent(val))
+    //             .join('&')
+    //     })
+    //     .join('&')
+
+    return parseQueryString(qs)
+        .map(([key, value]: [string, string]): string => {
+            return encodeURIComponent(key) + '=' + encodeURIComponent(value)
         })
         .join('&')
 }
@@ -296,7 +327,7 @@ export function createCanonicalQueryString(qs) {
  * @param  {Object} headers
  * @return {string}
  */
-export function createCanonicalHeaders(headers) {
+export function createCanonicalHeaders(headers: HTTPHeaders) {
     if (headers.constructor !== Object || Object.entries(headers).length === 0) {
         return ''
     }
@@ -338,7 +369,7 @@ export function createCanonicalHeaders(headers) {
  * @return {string}
  * @throws {TypeError} - on headers not being an Object, or being empty.
  */
-export function createSignedHeaders(headers) {
+export function createSignedHeaders(headers: { [key: string]: string }) {
     if (headers.constructor !== Object) {
         throw new TypeError('headers should be an object')
     }
@@ -372,7 +403,7 @@ export function createSignedHeaders(headers) {
  * @param  {String | ArrayBuffer} payload
  * @return {string}
  */
-export function createCanonicalPayload(payload) {
+export function createCanonicalPayload(payload: string | ArrayBuffer) {
     if (payload === UnsignedPayload) {
         return payload
     }
@@ -407,14 +438,14 @@ export function createCanonicalPayload(payload) {
  *     but in paths, set to false when encoding a path
  * @return {string} the URI encoded result
  */
-export function URIEncode(uri, path) {
+export function URIEncode(uri: string, path: boolean): string {
     if (uri == '') {
         return uri
     }
 
     return uri
         .split('') // to be able to map over a string, because... javascript...
-        .map((letter) => {
+        .map((letter: string) => {
             if (isAlpha(letter) || isNumeric(letter) || '-._~'.includes(letter)) {
                 return letter
             }
@@ -439,13 +470,16 @@ export function URIEncode(uri, path) {
  * Class holding URI encoding configuration
  */
 export class URIEncodingConfig {
+    double: boolean
+    path: boolean
+
     /**
      *
      * @param {boolean} double - should the URI be double encoded?
      * @param {boolean} path - is the URI a path? If so, its forward
      *     slashes won't be URIencoded.
      */
-    constructor(double, path) {
+    constructor(double: boolean, path: boolean) {
         this.double = double
         this.path = path
     }
@@ -458,7 +492,7 @@ export class URIEncodingConfig {
  * @param  {number} timestamp
  * @return {string}
  */
-export function toTime(timestamp) {
+export function toTime(timestamp: number): string {
     return new Date(timestamp).toISOString().replace(/[:\-]|\.\d{3}/g, '')
 }
 /**
@@ -467,9 +501,11 @@ export function toTime(timestamp) {
  * @param  {number} timestamp
  * @return {string}
  */
-export function toDate(timestamp) {
+export function toDate(timestamp: number): string {
     return toTime(timestamp).substring(0, 8)
 }
+
+// FIXME: does it work as expected?
 /**
  * Parse a HTTP request URL's querystring into an object
  * containing its `key=value` pairs.
@@ -477,32 +513,28 @@ export function toDate(timestamp) {
  * @param  {string} qs
  * @return {object}
  */
-export function parseQueryString(qs) {
-    if (typeof qs !== 'string' || qs.length === 0) {
-        return {}
+export function parseQueryString(qs: string): Array<[string, string]> {
+    if (qs.length === 0) {
+        return []
     }
 
-    var result = {}
-    var split = qs.split('&').filter((e) => e) // filter drops empty elements
-
-    for (let i = 0; i < split.length; i++) {
-        let parts = split[i].split('=')
-
-        if (parts.length === 2) {
-            result[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1])
-        } else {
-            result[decodeURIComponent(split[i])] = ''
-        }
-    }
-
-    return result
+    return qs
+        .split('&')
+        .filter((e) => e)
+        .map((v: string): [string, string] => {
+            const parts = v.split('=', 2) as [string, string]
+            return [decodeURIComponent(parts[0]), decodeURIComponent(parts[1])]
+        })
+        .sort((a: [string, string], b: [string, string]) => {
+            return a[0].localeCompare(b[0])
+        })
 }
 
-function isAlpha(c) {
+function isAlpha(c: string): boolean {
     return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
 }
 
-function isNumeric(c) {
+function isNumeric(c: string): boolean {
     return c >= '0' && c <= '9'
 }
 
