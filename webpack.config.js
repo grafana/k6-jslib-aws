@@ -6,12 +6,15 @@ const TerserPlugin = require('terser-webpack-plugin')
 
 module.exports = {
     mode: 'production',
-    // entry: './src/index.js',
-    entry: GlobEntries('./src/index.ts'),
+    entry: {
+        aws: path.resolve(__dirname, './src/index.ts'),
+        s3: path.resolve(__dirname, './src/s3.ts'),
+        'secrets-manager': path.resolve(__dirname, './src/secrets-manager.ts'),
+    },
     output: {
         path: path.resolve(__dirname, 'build'),
         libraryTarget: 'commonjs',
-        filename: 'aws.min.js',
+        filename: '[name].min.js',
     },
     resolve: {
         extensions: ['.ts', '.js'],
@@ -34,7 +37,6 @@ module.exports = {
     },
     plugins: [
         new CleanWebpackPlugin(),
-
         // Copy assets to the destination folder
         // see `src/post-file-test.ts` for an test example using an asset
         new CopyPlugin({

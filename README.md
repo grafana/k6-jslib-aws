@@ -22,7 +22,7 @@ import {
     // listBuckets,
     AWSConfig,
     S3Client,
-} from 'https://jslib.k6.io/aws/0.2.0/index.js'
+} from 'https://jslib.k6.io/aws/0.3.0/s3.js'
 
 const testFile = open('./bonjour.txt', 'r')
 
@@ -69,7 +69,7 @@ export default function () {
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.2.0/index.js'
+import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.3.0/secrets-manager.js'
 
 const awsConfig = new AWSConfig(
     __ENV.AWS_REGION,
