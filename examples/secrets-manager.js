@@ -1,6 +1,6 @@
 import exec from 'k6/execution'
 
-import { AWSConfig, SecretsManagerClient } from '../build/aws.min.js'
+import { AWSConfig, SecretsManagerClient } from '../build/secrets-manager.min.js'
 
 const awsConfig = new AWSConfig(
     __ENV.AWS_REGION,
@@ -29,11 +29,11 @@ export default function () {
 
     // Now that we know the secret exist, let's update its value
     const newTestSecretValue = 'new-test-value'
-    secretsManager.putSecretValue(testSecretName, newTestSecretValue)
+    const u = secretsManager.putSecretValue(testSecretName, newTestSecretValue)
 
     // Let's get its value and verify it was indeed updated
     const updatedSecret = secretsManager.getSecret(testSecretName)
-    if (updatedSecret.secretString !== newTestSecretValue) {
+    if (updatedSecret.secret !== newTestSecretValue) {
         exec.test.abort('unable to update test secret')
     }
 
