@@ -72,13 +72,13 @@ export class SecretsManagerClient extends AWSClient {
     /**
      * Retrieves a secret from Amazon Sercets Manager
      *
-     * @param {string} secretID - The ARN or name of the secret to retrieve.
+     * @param {string} id - The ARN or name of the secret to retrieve.
      * @returns {Secret} - returns the content of the fetched Secret object.
      * @throws {SecretsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    getSecret(secretID: string): Secret | undefined {
-        const body = JSON.stringify({ SecretId: secretID })
+    getSecret(id: string): Secret | undefined {
+        const body = JSON.stringify({ SecretId: id })
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
@@ -109,7 +109,7 @@ export class SecretsManagerClient extends AWSClient {
      *
      * @param  {string} name - The name of the new secret.
      *     The secret name can contain ASCII letters, numbers, and the following characters: /_+=.@
-     * @param  {string} secretString - The text data to encrypt and store in this new version of the secret.
+     * @param  {string} secret - The text data to encrypt and store in this new version of the secret.
      * @param  {string} description - The description of the secret.
      * @param  {string} versionID=null - Version of the secret. This value helps ensure idempotency.
      *     As a default, if no versionID is provided, one will be created for you using the UUID v4
@@ -122,7 +122,7 @@ export class SecretsManagerClient extends AWSClient {
      */
     createSecret(
         name: string,
-        secretString: string,
+        secret: string,
         description: string,
         versionID?: string,
         tags?: Array<Object>
@@ -132,7 +132,7 @@ export class SecretsManagerClient extends AWSClient {
         const body = JSON.stringify({
             Name: name,
             Description: description,
-            SecretString: secretString,
+            SecretString: secret,
             ClientRequestToken: versionID,
             Tags: tags,
         })
@@ -165,19 +165,19 @@ export class SecretsManagerClient extends AWSClient {
      *
      * Note that this method only support string-based values at the moment.
      *
-     * @param  {string} secretID - The ARN or name of the secret to update.
-     * @param  {string} secretString - The text data to encrypt and store in this new version of the secret.
+     * @param  {string} id - The ARN or name of the secret to update.
+     * @param  {string} secret - The text data to encrypt and store in this new version of the secret.
      * @param  {} versionID=null  - A unique identifier for the new version of the secret. This value helps ensure idempotency.
      *     As a default, if no versionID is provided, one will be created for you using the UUID v4
      * @throws {SecretsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    putSecretValue(secretID: string, secretString: string, versionID?: string): Secret {
+    putSecretValue(id: string, secret: string, versionID?: string): Secret {
         versionID = versionID || uuidv4()
 
         const body = JSON.stringify({
-            SecretId: secretID,
-            SecretString: secretString,
+            SecretId: id,
+            SecretString: secret,
             ClientRequestToken: versionID,
         })
 
@@ -216,11 +216,11 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {InvalidSignatureError}
      */
     deleteSecret(
-        secretID: string,
+        id: string,
         { recoveryWindow = 30, noRecovery = false }: { recoveryWindow: number; noRecovery: boolean }
     ) {
         const payload: { [key: string]: string | boolean | number } = {
-            SecretId: secretID,
+            SecretId: id,
         }
 
         // noRecovery and recoveryWindow are exclusive parameters
