@@ -164,7 +164,11 @@ export class S3Client extends AWSClient {
             Date.parse(res.headers['Last-Modified']),
             res.headers['ETag'],
             parseInt(res.headers['Content-Length']),
-            undefined, // GetObject response doesn't contain the storage class
+
+            // The X-Amz-Storage-Class header is only set if the storage class is
+            // not the default 'STANDARD' one.
+            (res.headers['X-Amz-Storage-Class'] ?? 'STANDARD') as StorageClass,
+
             res.body
         )
     }
