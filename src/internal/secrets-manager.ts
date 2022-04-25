@@ -276,11 +276,11 @@ export class SecretsManagerClient extends AWSClient {
             }
 
             // Otherwise throw a standard service error
-            throw new SecretsManagerError(errorMessage, error.__type as string, operation)
+            throw new SecretsManagerServiceError(errorMessage, error.__type as string, operation)
         }
 
         if (errorCode === 1500) {
-            throw new SecretsManagerError(
+            throw new SecretsManagerServiceError(
                 'An error occured on the server side',
                 'InternalServiceError',
                 operation
@@ -353,11 +353,11 @@ export class Secret {
     }
 }
 
-export class SecretsManagerError extends AWSError {
+export class SecretsManagerServiceError extends AWSError {
     operation: string
 
     /**
-     * Constructs a SecretsManagerError
+     * Constructs a SecretsManagerServiceError
      *
      * @param  {string} message - human readable error message
      * @param  {string} code - A unique short code representing the error that was emitted
