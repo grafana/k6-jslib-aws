@@ -276,7 +276,6 @@ export function createCanonicalURI(uri: string, URIencodingConfig: URIEncodingCo
     return URIencodingConfig.double ? URIEncode(canonicalURI, URIencodingConfig.path) : canonicalURI
 }
 
-// FIXME: does it work as expected?
 /**
  * Creates the canonical form of the request's query
  * string. If the request does not include a query string,
@@ -505,7 +504,6 @@ export function toDate(timestamp: number): string {
     return toTime(timestamp).substring(0, 8)
 }
 
-// FIXME: does it work as expected?
 /**
  * Parse a HTTP request URL's querystring into an object
  * containing its `key=value` pairs.

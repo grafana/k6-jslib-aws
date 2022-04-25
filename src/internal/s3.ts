@@ -1,5 +1,5 @@
 import { bytes } from 'k6'
-import http from 'k6/http'
+import http, { RefinedResponse, ResponseType } from 'k6/http'
 import { parseHTML } from 'k6/html'
 import { sha256 } from 'k6/crypto'
 
@@ -41,7 +41,7 @@ export class S3Client extends AWSClient {
         const res = http.request(method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(res.error_code, res.error, res.body as string)
+        this._handle_error('ListBuckets', res)
 
         let buckets: Array<S3Bucket> = []
 
@@ -85,21 +85,16 @@ export class S3Client extends AWSClient {
         const method = 'GET'
         const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
         const body = ''
-        const signedRequest: AWSRequest = super.buildRequest(
-            method,
-            host,
-            '/',
-            'list-type=2',
-            body,
-            {
-                'X-Amz-Content-SHA256': sha256(body, 'hex'),
-            }
-        )
+        const querystring = `list-type=2&prefix=${prefix}`
+        const signedRequest: AWSRequest = super.buildRequest(method, host, '/', querystring, body, {
+            'X-Amz-Content-SHA256': sha256(body, 'hex'),
+            Prefix: prefix ?? '',
+        })
 
         const res = http.request(method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(res.error_code, res.error, res.body as string)
+        this._handle_error('ListObjectsV2', res)
 
         let objects: Array<S3Object> = []
 
@@ -116,10 +111,6 @@ export class S3Client extends AWSClient {
                             Object.assign(obj, { key: child.textContent() })
                             break
                         case 'lastmodified':
-                            // const parsed = Date.parse(
-                            //     child.textContent(),
-                            //     'YYYY-MM-ddTHH:mm:ss.sssZ'
-                            // )
                             Object.assign(obj, { lastModified: Date.parse(child.textContent()) })
                             break
                         case 'etag':
@@ -162,14 +153,18 @@ export class S3Client extends AWSClient {
         const res = http.request(method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(res.error_code, res.error, res.body as string)
+        this._handle_error('GetObject', res)
 
         return new S3Object(
             objectKey,
             Date.parse(res.headers['Last-Modified']),
             res.headers['ETag'],
             parseInt(res.headers['Content-Length']),
-            undefined, // GetObject response doesn't contain the storage class
+
+            // The X-Amz-Storage-Class header is only set if the storage class is
+            // not the default 'STANDARD' one.
+            (res.headers['X-Amz-Storage-Class'] ?? 'STANDARD') as StorageClass,
+
             res.body
         )
     }
@@ -205,7 +200,7 @@ export class S3Client extends AWSClient {
         const res = http.request(method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(res.error_code, res.error, res.body as string)
+        this._handle_error('PutObject', res)
     }
 
     /**
@@ -238,35 +233,34 @@ export class S3Client extends AWSClient {
         const res = http.request(method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(res.error_code, res.error, res.body as string)
+        this._handle_error('DeleteObject', res)
     }
 
-    // FIXME: remove dependency to `error_message`
-    // FIXME: just pass it the response?
-    _handle_error(error_code: number, error_message: string, error_body: string) {
-        if (error_message == '' || error_code === 0) {
+    _handle_error(operation: S3Operation, response: RefinedResponse<ResponseType | undefined>) {
+        const errorCode: number = response.error_code
+        const errorMessage: string = response.error
+
+        if (errorMessage == '' || errorCode === 0) {
             return
         }
 
-        // FIXME: should be error_code === 1301 instead
+        // FIXME: should be errorCode === 1301 instead
         // See: https://github.com/grafana/k6/issues/2474
         // See: https://github.com/golang/go/issues/49281
-        if (error_message && error_message.startsWith('301')) {
-            // Bucket not found
-            throw new S3ServiceError('Resource not found', 'ResourceNotFound', 'getObject')
+        if (errorMessage && errorMessage.startsWith('301')) {
+            throw new S3ServiceError('Resource not found', 'ResourceNotFound', operation)
         }
 
-        const awsError = AWSError.parseXML(error_body)
+        const awsError = AWSError.parseXML(response.body as string)
         switch (awsError.code) {
             case 'AuthorizationHeaderMalformed':
                 throw new InvalidSignatureError(awsError.message, awsError.code)
             default:
-                throw new S3ServiceError(awsError.message, awsError.code, 'listObjects')
+                throw new S3ServiceError(awsError.message, awsError.code, operation)
         }
     }
 }
 
-// TODO: use interface instead?
 /** Class representing a S3 Bucket */
 export class S3Bucket {
     name: string
@@ -284,7 +278,6 @@ export class S3Bucket {
     }
 }
 
-// TODO: use interface instead?
 /** Class representing an S3 Object */
 export class S3Object {
     key: string
@@ -345,6 +338,12 @@ export class S3ServiceError extends AWSError {
         this.operation = operation
     }
 }
+
+/**
+ * S3Operation describes possible values for S3 API operations,
+ * as defined by AWS APIs.
+ */
+type S3Operation = 'ListBuckets' | 'ListObjectsV2' | 'GetObject' | 'PutObject' | 'DeleteObject'
 
 /**
  * Describes the class of storage used to store a S3 object.

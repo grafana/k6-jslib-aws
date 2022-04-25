@@ -2,7 +2,11 @@
 import { signHeaders, InvalidSignatureError, URIEncodingConfig } from './internal/signature'
 import { AWSConfig, InvalidAWSConfigError } from './internal/config'
 import { S3Client, S3Bucket, S3Object, S3ServiceError } from './internal/s3'
-import { SecretsManagerClient, Secret, SecretsManagerError } from './internal/secrets-manager'
+import {
+    SecretsManagerClient,
+    Secret,
+    SecretsManagerServiceError,
+} from './internal/secrets-manager'
 
 // Re-Export public symbols
 export {
@@ -21,5 +25,5 @@ export {
     // SecretsManager
     SecretsManagerClient,
     Secret,
-    SecretsManagerError,
+    SecretsManagerServiceError,
 }
