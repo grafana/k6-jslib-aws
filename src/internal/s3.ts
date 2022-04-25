@@ -111,10 +111,6 @@ export class S3Client extends AWSClient {
                             Object.assign(obj, { key: child.textContent() })
                             break
                         case 'lastmodified':
-                            // const parsed = Date.parse(
-                            //     child.textContent(),
-                            //     'YYYY-MM-ddTHH:mm:ss.sssZ'
-                            // )
                             Object.assign(obj, { lastModified: Date.parse(child.textContent()) })
                             break
                         case 'etag':
