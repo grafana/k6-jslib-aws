@@ -13,21 +13,33 @@ export class AWSConfig {
      * @throws {InvalidArgumentException}
      */
     constructor(region: string, accessKeyID: string, secretAccessKey: string) {
-        if (typeof region !== 'string' || region === '') {
+        if (region === '') {
             throw new InvalidAWSConfigError(
                 'invalid AWS region; reason: should be a non empty string'
             )
         }
 
-        if (typeof accessKeyID !== 'string' || accessKeyID === '') {
+        if (accessKeyID === '') {
             throw new InvalidAWSConfigError(
                 'invalid AWS access key ID; reason: should be a non empty string'
             )
         }
 
-        if (typeof secretAccessKey !== 'string' || secretAccessKey === '') {
+        if (accessKeyID.length < 16 || accessKeyID.length > 128) {
+            throw new InvalidAWSConfigError(
+                `invalid AWS access key ID; reason: size should be between 16 and 128 characters, got ${accessKeyID.length}`
+            )
+        }
+
+        if (secretAccessKey === '') {
             throw new InvalidAWSConfigError(
                 'invalid AWS secret access key; reason: should be a non empty string'
+            )
+        }
+
+        if (secretAccessKey.length < 16 || secretAccessKey.length > 128) {
+            throw new InvalidAWSConfigError(
+                `invalid AWS secret access key; reason: size should be between 16 and 128 characters, got ${secretAccessKey.length}`
             )
         }
 
