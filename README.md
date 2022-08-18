@@ -15,61 +15,75 @@ At the moment, this library provides the following:
 
 ### S3
 
+Consult the `S3Client` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/s3client) for more details on its methods and how to use it.   
+
+### Practical example
+
 ```javascript
-import exec from 'k6/execution'
+import { check } from 'k6';
+import exec from 'k6/execution';
+import http from 'k6/http';
 
-import {
-    // listBuckets,
-    AWSConfig,
-    S3Client,
-} from 'https://jslib.k6.io/aws/0.3.0/s3.js'
-
-const testFile = open('./bonjour.txt', 'r')
+import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.4.0/s3.js';
 
 const awsConfig = new AWSConfig(
-    __ENV.AWS_REGION,
-    __ENV.AWS_ACCESS_KEY_ID,
-    __ENV.AWS_SECRET_ACCESS_KEY
-)
+  __ENV.AWS_REGION,
+  __ENV.AWS_ACCESS_KEY_ID,
+  __ENV.AWS_SECRET_ACCESS_KEY
+);
 
-const s3 = new S3Client(awsConfig)
+const s3 = new S3Client(awsConfig);
+const testBucketName = 'test-jslib-aws';
+const testInputFileKey = 'productIDs.json';
+const testOutputFileKey = `results-${Date.now()}.json`;
 
-const testBucketName = 'test-jslib-aws'
-const testFileKey = 'bonjour.txt'
+export function setup() {
+  // If our test bucket does not exist, abort the execution.
+  const buckets = s3.listBuckets();
+  if (buckets.filter((b) => b.name === testBucketName).length == 0) {
+    exec.test.abort();
+  }
 
-export default function () {
-    // List the buckets the AWS authentication configuration
-    // gives us access to.
-    const buckets = s3.listBuckets()
+  // If our test object does not exist, abort the execution.
+  const objects = s3.listObjects(testBucketName);
+  if (objects.filter((o) => o.key === testInputFileKey).length == 0) {
+    exec.test.abort();
+  }
 
-    // If our test bucket does not exist, abort the execution.
-    if (buckets.filter((b) => b.name === testBucketName).length == 0) {
-        exec.test.abort()
-    }
+  // Download the S3 object containing our test data
+  const inputObject = s3.getObject(testBucketName, testInputFileKey);
 
-    // Let's upload our test file to the bucket
-    s3.putObject(testBucketName, testFileKey, testFile)
+  // Let's return the downloaded S3 object's data from the
+  // setup function to allow the default function to use it.
+  return {
+    productIDs: JSON.parse(inputObject.data),
+  };
+}
 
-    // Let's list the test bucket objects
-    const objects = s3.listObjects(testBucketName)
+export default function (data) {
+  // Pick a random product ID from our test data
+  const randomProductID = data.productIDs[Math.floor(Math.random() * data.productIDs.length)];
 
-    // And verify it does contain our test object
-    if (objects.filter((o) => o.key === testFileKey).length == 0) {
-        exec.test.abort()
-    }
+  // Query our ecommerce website's product page using the ID
+  const res = http.get(`http://your.website.com/product/${randomProductID}/`);
+  check(res, { 'is status 200': res.status === 200 });
+}
 
-    // Let's redownload it verify it's correct, and delete it
-    const obj = s3.getObject(testBucketName, testFileKey)
-    s3.deleteObject(testBucketName, testFileKey)
+export function handleSummary(data) {
+  // Once the load test is over, let's upload the results to our
+  // S3 bucket. This is executed after teardown.
+  s3.putObject(testBucketName, testOutputFileKey, JSON.stringify(data));
 }
 ```
 
 ### Secrets Manager
 
+Consult the `SecretsManagerClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/secretsmanagerclient) for more details on its methods and how to use it. 
+
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.3.0/secrets-manager.js'
+import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.4.0/secrets-manager.js'
 
 const awsConfig = new AWSConfig(
     __ENV.AWS_REGION,
