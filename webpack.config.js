@@ -10,6 +10,7 @@ module.exports = {
         aws: path.resolve(__dirname, './src/index.ts'),
         s3: path.resolve(__dirname, './src/s3.ts'),
         'secrets-manager': path.resolve(__dirname, './src/secrets-manager.ts'),
+        kms: path.resolve(__dirname, 'src/kms.ts')
     },
     output: {
         path: path.resolve(__dirname, 'build'),
