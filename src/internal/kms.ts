@@ -70,7 +70,7 @@ export class KMSClient extends AWSClient {
         })
         this._handle_error('GenerateDataKey', res)
 
-        return DataKeyResp.fromJSON(res.json() as JSONObject)
+        return DataKey.fromJSON(res.json() as JSONObject)
     }
     
     get host() {
