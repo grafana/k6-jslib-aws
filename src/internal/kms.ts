@@ -5,7 +5,6 @@ import { AWSClient, AWSRequest } from './client'
 import { AWSError } from './error'
 import { AWSConfig } from './config'
 import { InvalidSignatureError, URIEncodingConfig } from './signature'
-import { v4 as uuidv4 } from 'uuid'
 import { HTTPMethod, HTTPHeaders } from './http'
 
 /**
