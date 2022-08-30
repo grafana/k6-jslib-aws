@@ -85,7 +85,7 @@ export class S3Client extends AWSClient {
         const method = 'GET'
         const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
         const body = ''
-        const querystring = `list-type=2&prefix=${prefix}`
+        const querystring = `list-type=2&prefix=${prefix || ''}`
         const signedRequest: AWSRequest = super.buildRequest(method, host, '/', querystring, body, {
             'X-Amz-Content-SHA256': sha256(body, 'hex'),
             Prefix: prefix ?? '',
