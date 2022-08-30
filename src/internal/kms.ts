@@ -149,7 +149,7 @@ export class KMSServiceError extends AWSError {
     operation: string
 
     /**
-     * Constructs a SecretsManagerServiceError
+     * Constructs a KMSServiceError
      *
      * @param  {string} message - human readable error message
      * @param  {string} code - A unique short code representing the error that was emitted
