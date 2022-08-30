@@ -3,6 +3,7 @@ export class AWSConfig {
     region: string
     accessKeyID: string
     secretAccessKey: string
+    sessionToken?: string
 
     /**
      * Create an AWSConfig.
@@ -10,9 +11,15 @@ export class AWSConfig {
      * @param {string} region - the AWS region to connect to, as listed: https://docs.aws.amazon.com/general/latest/gr/rande.html
      * @param {string} accessKeyID - Your user's AWS access key id credential
      * @param {string} secretAccessKey - Your user's AWS secret access key credential
+     * @param {string?} [sessionToken] - Your user's AWS session token credential
      * @throws {InvalidArgumentException}
      */
-    constructor(region: string, accessKeyID: string, secretAccessKey: string) {
+    constructor(
+        region: string,
+        accessKeyID: string,
+        secretAccessKey: string,
+        sessionToken?: string
+    ) {
         if (region === '') {
             throw new InvalidAWSConfigError(
                 'invalid AWS region; reason: should be a non empty string'
@@ -46,6 +53,7 @@ export class AWSConfig {
         this.region = region
         this.accessKeyID = accessKeyID
         this.secretAccessKey = secretAccessKey
+        this.sessionToken = sessionToken
     }
 }
 
