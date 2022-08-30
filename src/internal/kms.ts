@@ -100,7 +100,6 @@ export class KMSClient extends AWSClient {
     }
 }
 
-// TODO: create a Tags type
 
 export class DataKeyResp {
     CiphertextBlob: string
