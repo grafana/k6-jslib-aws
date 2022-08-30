@@ -36,6 +36,12 @@ export function signHeaders(
     service: string,
     URIencodingConfig: URIEncodingConfig
 ): HTTPHeaders {
+    // If the config contains a session token, we should add it to the headers
+    // as a `X-Amz-Security-Token` header, cf: https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
+    if (awsConfig.sessionToken) {
+        headers['X-Amz-Security-Token'] = awsConfig.sessionToken
+    }
+
     const derivedSigningKey = deriveSigningKey(
         awsConfig.secretAccessKey,
         requestTimestamp,
