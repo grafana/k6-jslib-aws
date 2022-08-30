@@ -18,6 +18,6 @@ export {
     InvalidAWSConfigError,
     // KMS
     KMSClient,
-    DataKeyResp,
+    DataKey,
     KMSServiceError,
 }
