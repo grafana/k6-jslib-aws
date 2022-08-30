@@ -101,22 +101,34 @@ export class KMSClient extends AWSClient {
 }
 
 
-export class DataKeyResp {
-    CiphertextBlob: string
-    KeyId: string
-    Plaintext: string
+/**
+ * Class representing a data key
+ */
+export class DataKey {
+    /**
+     * The Amazon Resource Name (key ARN) of the KMS key that encrypted the data key.
+     */
+    id: string
 
-    constructor(
-        CiphertextBlob: string,
-        KeyId: string,
-        Plaintext: string
-    ){
-        this.CiphertextBlob = CiphertextBlob
-        this.KeyId = KeyId
-        this.Plaintext = Plaintext
+    /**
+     * The (base64-encoded) encrypted copy of the data key.
+     */
+    ciphertextBlob: string
+
+    /**
+     * The plaintext data key.
+     * Use this data key to encrypt your data outside of KMS. Then, remove it from memory as soon as possible.
+     */
+    plaintext: string
+
+    constructor(CiphertextBlob: string, KeyId: string, Plaintext: string) {
+        this.ciphertextBlob = CiphertextBlob
+        this.id = KeyId
+        this.plaintext = Plaintext
     }
+
     static fromJSON(json: JSONObject) {
-        return new DataKeyResp(
+        return new DataKey(
             json.CiphertextBlob as string,
             json.KeyId as string,
             json.Plaintext as string
