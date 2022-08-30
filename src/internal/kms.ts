@@ -141,3 +141,11 @@ export class KMSServiceError extends AWSError {
         this.operation = operation
     }
 }
+
+/**
+ *  KMSKeyLength describes possible key lenght values for KMS API data key operations.
+ */
+enum KMSKeyLength {
+    KeySize256 = 32,
+    KeySize512 = 64,
+}
