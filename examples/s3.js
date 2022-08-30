@@ -4,11 +4,12 @@ import { AWSConfig, S3Client } from '../build/s3.min.js'
 
 const testFile = open('./bonjour.txt', 'r')
 
-const awsConfig = new AWSConfig(
-    __ENV.AWS_REGION,
-    __ENV.AWS_ACCESS_KEY_ID,
-    __ENV.AWS_SECRET_ACCESS_KEY
-)
+const awsConfig = new AWSConfig({
+    region: __ENV.AWS_REGION,
+    accessKeyId: __ENV.AWS_ACCESS_KEY_ID,
+    secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
+    sessionToken: __ENV.AWS_SESSION_TOKEN,
+})
 
 const s3 = new S3Client(awsConfig)
 
