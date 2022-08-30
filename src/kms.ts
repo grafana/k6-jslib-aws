@@ -3,7 +3,7 @@ import { signHeaders, InvalidSignatureError, URIEncodingConfig } from './interna
 import { AWSConfig, InvalidAWSConfigError } from './internal/config'
 import {
     KMSClient,
-    DataKeyResp,
+    DataKey,
     KMSServiceError,
 } from './internal/kms'
 
