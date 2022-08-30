@@ -34,16 +34,26 @@ export class KMSClient extends AWSClient {
             'Content-Type': 'application/x-amz-json-1.1',
         }
     }
+
     /**
-     * GenerateDataKey
+     * GenerateDataKey returns a unique symmetric data key for use outside of AWS KMS.
+     *
+     * This operation returns a plaintext copy of the data key and a copy that is encrypted under a symmetric encryption KMS key that you specify.
+     * The bytes in the plaintext key are random; they are not related to the caller or the KMS key.
+     * You can use the plaintext key to encrypt your data outside of AWS KMS and store the encrypted data key with the encrypted data.
+     *
+     * To generate a data key, specify the symmetric encryption KMS key that will be used to encrypt the data key.
+     * You cannot use an asymmetric KMS key to encrypt data keys.
+     *
      * Used to generate data key with the KMS key defined
-     * @param {string} KeyId
-     * @param {number} NumberOfBytes
+     * @param {string} id - Specifies the symmetric encryption KMS key that encrypts the data key. Use its key ID, key ARN, alias name, or alias ARN.
+     * @param {KMKeySize} size - Specifies the length of the data key in bytes. For example, use the value 64 to generate a 512-bit data key (64 bytes is 512 bits). Default is 32, and generates a 256-bit data key.
      * @throws {KMSServiceError}
      * @throws {InvalidSignatureError}
+     * @returns {DataKey} - The generated data key.
      */
-    GenerateDataKey(KeyId: string, NumberOfBytes: number = 32): DataKeyResp | undefined {
-        const body = JSON.stringify({ KeyId: KeyId, NumberOfBytes : NumberOfBytes })
+    GenerateDataKey(id: string, size: KMSKeySize = KMSKeySize.Size256): DataKey | undefined {
+        const body = JSON.stringify({ KeyId: id, NumberOfBytes: size })
         const signedRequest: AWSRequest = super.buildRequest(
             this.method,
             this.host,
