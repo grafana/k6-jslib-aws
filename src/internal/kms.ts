@@ -1,4 +1,4 @@
-import { JSONArray, JSONObject } from 'k6'
+import { JSONObject } from 'k6'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
 import { AWSClient, AWSRequest } from './client'
