@@ -240,7 +240,7 @@ export class S3Client extends AWSClient {
         const errorCode: number = response.error_code
         const errorMessage: string = response.error
 
-        if (errorMessage == '' || errorCode === 0) {
+        if (errorMessage == '' && errorCode === 0) {
             return
         }
 
