@@ -19,7 +19,7 @@ import {
     parseQueryString,
     toTime,
     toDate,
-} from '../../src/internal/signature.js'
+} from '../../build/aws.min.js'
 
 export function signatureTestSuite() {
     describe('signing headers set the Authorization header', () => {
@@ -31,8 +31,8 @@ export function signatureTestSuite() {
             '/', // path
             '', // querystring
             '', // body
-            'MCLUKL4AX3ITESWH2RAB', // accessKeyID (fake value, pre-generated for the purpose of the test) 
-            'bba74e802bcf6c0fb52ba3b60e9e3c5a076ec3b268599255ddad2c1fc0da5771', // secretAccessKey (fake value, pre-generated for the purpose of the test) 
+            'MCLUKL4AX3ITESWH2RAB', // accessKeyID (fake value, pre-generated for the purpose of the test)
+            'bba74e802bcf6c0fb52ba3b60e9e3c5a076ec3b268599255ddad2c1fc0da5771', // secretAccessKey (fake value, pre-generated for the purpose of the test)
             'us-east-1', // region
             'dynamodb' // service
         )
