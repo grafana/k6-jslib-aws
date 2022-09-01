@@ -72,7 +72,7 @@ export class AWSClient {
 
         // '?' should not be part of the querystring when we sign the headers
         path = path !== '' ? path : '/'
-        let url = `https://${host}${path}`
+        let url = `${this.awsConfig.scheme}://${host}${path}`
         if (queryString !== '') {
             url += `?${queryString}`
         }
