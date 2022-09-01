@@ -12,7 +12,19 @@ import { HTTPMethod, HTTPHeaders } from './http'
  * Class allowing to interact with Amazon AWS's SecretsManager service
  */
 export class SecretsManagerClient extends AWSClient {
+    /**
+     * HTTP Method to use when interacting with the Secrets Manager service.
+     */
     method: HTTPMethod
+
+    /**
+     * HTTP Host to use when interacting with the Secrets Manager service.
+     */
+    host: string
+
+    /**
+     * HTTP headers to use accross all requests to the Secrets Manager service.
+     */
     commonHeaders: HTTPHeaders
 
     /**
@@ -23,12 +35,10 @@ export class SecretsManagerClient extends AWSClient {
         const URIencodingConfig = new URIEncodingConfig(true, false)
         super(awsConfig, 'secretsmanager', URIencodingConfig)
 
-        // this.serviceName = 'secretsmanager'
-
         // All interactions with the Secrets Manager service
         // are made via the GET or POST method.
         this.method = 'POST'
-
+        this.host = `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
         this.commonHeaders = {
             'Accept-Encoding': 'identity',
             'Content-Type': 'application/x-amz-json-1.1',
@@ -250,10 +260,6 @@ export class SecretsManagerClient extends AWSClient {
             headers: signedRequest.headers,
         })
         this._handle_error('DeleteSecret', res)
-    }
-
-    get host() {
-        return `${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
     }
 
     // TODO: operation should be an enum
