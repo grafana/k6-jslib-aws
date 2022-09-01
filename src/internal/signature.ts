@@ -314,10 +314,16 @@ export function createCanonicalQueryString(qs: string): string {
 
     return parseQueryString(qs)
         .map(([key, value]: [string, string]): string => {
-            return encodeURIComponent(key) + '=' + encodeURIComponent(value)
+            let uriComponent = encodeURIComponent(key) + '='
+            if (value !== 'undefined') {
+                uriComponent += encodeURIComponent(value)
+            }
+
+            return uriComponent
         })
         .join('&')
 }
+
 /**
  * Create the canonical form of the request's headers.
  * Canonical headers consist of all the HTTP headers you
@@ -527,7 +533,12 @@ export function parseQueryString(qs: string): Array<[string, string]> {
         .filter((e) => e)
         .map((v: string): [string, string] => {
             const parts = v.split('=', 2) as [string, string]
-            return [decodeURIComponent(parts[0]), decodeURIComponent(parts[1])]
+            const key = decodeURIComponent(parts[0])
+            let value = decodeURIComponent(parts[1])
+            if (value === 'undefined') {
+                value = ''
+            }
+            return [key, value]
         })
         .sort((a: [string, string], b: [string, string]) => {
             return a[0].localeCompare(b[0])

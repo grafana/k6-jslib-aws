@@ -80,7 +80,7 @@ export function setup() {
 }
 
 export default function testSuite(data) {
-    // signatureTestSuite(data)
+    signatureTestSuite(data)
     s3TestSuite(data)
     secretsManagerTestSuite(data)
 }
