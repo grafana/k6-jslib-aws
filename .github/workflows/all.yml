@@ -25,4 +25,4 @@ jobs:
         run: npm install
 
       - name: Test
-        run: npm run webpack && k6 run tests/index.js
+        run: npm run webpack && npm run ci-test

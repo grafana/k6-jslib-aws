@@ -1,0 +1,46 @@
+// Import only symbols we wish to re-export publicly
+import {
+    signHeaders,
+    InvalidSignatureError,
+    URIEncodingConfig,
+    calculateSignature,
+    deriveSigningKey,
+    createStringToSign,
+    createCredentialScope,
+    createCanonicalRequest,
+    createCanonicalURI,
+    createCanonicalQueryString,
+    createCanonicalHeaders,
+    createSignedHeaders,
+    createCanonicalPayload,
+    URIEncode,
+    toTime,
+    toDate,
+    parseQueryString,
+    HashingAlgorithm,
+    UnsignedPayload,
+} from './internal/signature'
+
+// Re-Export public symbols
+export {
+    // AWS Signature V4
+    signHeaders,
+    InvalidSignatureError,
+    URIEncodingConfig,
+    calculateSignature,
+    deriveSigningKey,
+    createStringToSign,
+    createCredentialScope,
+    createCanonicalRequest,
+    createCanonicalURI,
+    createCanonicalQueryString,
+    createCanonicalHeaders,
+    createSignedHeaders,
+    createCanonicalPayload,
+    URIEncode,
+    toTime,
+    toDate,
+    parseQueryString,
+    HashingAlgorithm,
+    UnsignedPayload,
+}
