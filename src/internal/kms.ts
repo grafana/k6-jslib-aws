@@ -73,7 +73,7 @@ export class KMSClient extends AWSClient {
     }
 
     get host() {
-        return `${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
+        return `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
     }
 
     // TODO: operation should be an enum
