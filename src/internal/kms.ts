@@ -51,7 +51,7 @@ export class KMSClient extends AWSClient {
      * @throws {InvalidSignatureError}
      * @returns {DataKey} - The generated data key.
      */
-    GenerateDataKey(id: string, size: KMSKeySize = KMSKeySize.Size256): DataKey | undefined {
+    generateDataKey(id: string, size: KMSKeySize = KMSKeySize.Size256): DataKey | undefined {
         const body = JSON.stringify({ KeyId: id, NumberOfBytes: size })
         const signedRequest: AWSRequest = super.buildRequest(
             this.method,
