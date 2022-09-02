@@ -71,11 +71,11 @@ export class KMSClient extends AWSClient {
 
         return DataKey.fromJSON(res.json() as JSONObject)
     }
-    
+
     get host() {
         return `${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
     }
-    
+
     // TODO: operation should be an enum
     _handle_error(operation: string, response: RefinedResponse<ResponseType | undefined>) {
         const errorCode = response.error_code
@@ -108,7 +108,6 @@ export class KMSClient extends AWSClient {
         }
     }
 }
-
 
 /**
  * Class representing a data key
@@ -165,7 +164,7 @@ export class KMSServiceError extends AWSError {
 /**
  *  KMSKeyLength describes possible key lenght values for KMS API data key operations.
  */
-enum KMSKeyLength {
-    KeySize256 = 32,
-    KeySize512 = 64,
+enum KMSKeySize {
+    Size256 = 32,
+    Size512 = 64,
 }
