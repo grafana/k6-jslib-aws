@@ -11,6 +11,7 @@ module.exports = {
         s3: path.resolve(__dirname, './src/s3.ts'),
         'secrets-manager': path.resolve(__dirname, './src/secrets-manager.ts'),
         kms: path.resolve(__dirname, 'src/kms.ts')
+        _signature: path.resolve(__dirname, 'src/signature.ts'),
     },
     output: {
         path: path.resolve(__dirname, 'build'),

@@ -1,10 +1,86 @@
 import { chai } from 'https://jslib.k6.io/k6chaijs/4.3.4.0/index.js'
+import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js'
+
+import { AWSConfig, S3Client, SecretsManagerClient } from '../build/aws.min.js'
 
 import { signatureTestSuite } from './internal/signature.js'
+import { s3TestSuite } from './internal/s3.js'
+import { secretsManagerTestSuite } from './internal/secrets-manager.js'
 
 chai.config.aggregateChecks = false
 chai.config.logFailures = true
 
-export default function testSuite() {
-    signatureTestSuite()
+// Must know:
+//   * end2end tests such as these rely on the localstack
+//   docker compose stack to be running. See the docker-compose.yml
+//   file in the root of the project.
+//   * The localstack docker compose stack is initialized with
+//   some data using the scripts found in tests/localstack_init/*.sh.
+//   These scripts are ran everytime the localstack container starts.
+//   The following tests rely on the data created by these scripts.
+export function setup() {
+    // Initialize an AWS configuration set to use the localstack service.
+    const awsConfig = new AWSConfig({
+        // Localstack talks http
+        scheme: 'http',
+
+        // Localstack runs on localhost:4566
+        endpoint: 'localhost:4566',
+
+        // Localstack is setup to use the us-east-1 region
+        region: 'us-east-1',
+
+        // Dummy value to keep the client happy
+        accessKeyId: 'RUSZHYJUBIXGH4A5AAIX',
+
+        // Dummy value to keep the client happy
+        secretAccessKey: '9g7dpx9QU4XNawNHkMnXUQ6LgTfZIPG6fnIdADDQ',
+
+        // Dummy value to keep the client happy
+        sessionToken: 'sessiontoken',
+    })
+
+    const s3Client = new S3Client(awsConfig)
+    const secretsmanagerClient = new SecretsManagerClient(awsConfig)
+
+    return {
+        awsConfig: awsConfig,
+
+        // S3 tests specific data
+        s3: {
+            testBucketName: 'test-jslib-aws',
+            testObjects: [
+                {
+                    key: 'bonjour.txt',
+                    body: 'Bonjour le monde!',
+                },
+                {
+                    key: 'tschuss.txt',
+                    body: 'Tschuss, welt!',
+                },
+                {
+                    key: 'delete.txt',
+                    body: 'Delete me in a test!',
+                },
+            ],
+        },
+
+        // Secrets Manager tests specific data
+        secretsManager: {
+            createdSecretName: `test-created-secret-${randomIntBetween(0, 10000)}`,
+            deleteSecretName: 'test-delete-secret',
+            testSecrets: [
+                {
+                    name: 'test-secret',
+                    secret: 'test-secret-value',
+                },
+            ],
+        },
+    }
+}
+
+export default function testSuite(data) {
+    signatureTestSuite(data)
+    s3TestSuite(data)
+    secretsManagerTestSuite(data)
 }

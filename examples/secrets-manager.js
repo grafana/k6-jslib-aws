@@ -2,11 +2,12 @@ import exec from 'k6/execution'
 
 import { AWSConfig, SecretsManagerClient } from '../build/secrets-manager.min.js'
 
-const awsConfig = new AWSConfig(
-    __ENV.AWS_REGION,
-    __ENV.AWS_ACCESS_KEY_ID,
-    __ENV.AWS_SECRET_ACCESS_KEY
-)
+const awsConfig = new AWSConfig({
+    region: __ENV.AWS_REGION,
+    accessKeyId: __ENV.AWS_ACCESS_KEY_ID,
+    secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
+    sessionToken: __ENV.AWS_SESSION_TOKEN,
+})
 
 const secretsManager = new SecretsManagerClient(awsConfig)
 const testSecretName = 'jslib-test-secret'

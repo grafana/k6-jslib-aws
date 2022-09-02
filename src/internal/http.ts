@@ -1,4 +1,9 @@
 /**
+ * Type representing HTTP schemes
+ */
+export type HTTPScheme = 'http' | 'https'
+
+/**
  * Type representing HTTP Methods
  *
  */

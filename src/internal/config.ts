@@ -1,52 +1,149 @@
+import { HTTPScheme } from './http'
+
 /** Class holding an AWS connection information */
 export class AWSConfig {
+    /**
+     * The AWS region to connect to, as listed: https://docs.aws.amazon.com/general/latest/gr/rande.html
+     *
+     * @type {string}
+     */
     region: string
+
+    /**
+     * Your user's AWS access key id credential.
+     *
+     * @type {string}
+     */
     accessKeyID: string
+
+    /**
+     * Your user's AWS secret access key credential.
+     *
+     * @type {string}
+     */
     secretAccessKey: string
+
+    /**
+     * Your user's AWS session token credential.
+     *
+     * @type {string}
+     */
+    sessionToken?: string
+
+    /**
+     * The HTTP scheme to use when connecting to AWS.
+     *
+     * @type {HTTPScheme} ['https']
+     */
+    scheme: HTTPScheme = 'https'
+
+    /**
+     * The AWS hostname to connect to.
+     *
+     * @type {string} ['amazonaws.com']
+     */
+    endpoint: string = 'amazonaws.com'
 
     /**
      * Create an AWSConfig.
      *
-     * @param {string} region - the AWS region to connect to, as listed: https://docs.aws.amazon.com/general/latest/gr/rande.html
-     * @param {string} accessKeyID - Your user's AWS access key id credential
-     * @param {string} secretAccessKey - Your user's AWS secret access key credential
+     * @param {AWSConfigOptions} options - configuration attributes to use when interacting with AWS' APIs
      * @throws {InvalidArgumentException}
      */
-    constructor(region: string, accessKeyID: string, secretAccessKey: string) {
-        if (region === '') {
+    constructor(options: AWSConfigOptions) {
+        if (options.region === '') {
             throw new InvalidAWSConfigError(
                 'invalid AWS region; reason: should be a non empty string'
             )
         }
 
-        if (accessKeyID === '') {
+        if (options.accessKeyId === '') {
             throw new InvalidAWSConfigError(
                 'invalid AWS access key ID; reason: should be a non empty string'
             )
         }
 
-        if (accessKeyID.length < 16 || accessKeyID.length > 128) {
+        if (options.accessKeyId.length < 16 || options.accessKeyId.length > 128) {
             throw new InvalidAWSConfigError(
-                `invalid AWS access key ID; reason: size should be between 16 and 128 characters, got ${accessKeyID.length}`
+                `invalid AWS access key ID; reason: size should be between 16 and 128 characters, got ${options.accessKeyId.length}`
             )
         }
 
-        if (secretAccessKey === '') {
+        if (options.secretAccessKey === '') {
             throw new InvalidAWSConfigError(
                 'invalid AWS secret access key; reason: should be a non empty string'
             )
         }
 
-        if (secretAccessKey.length < 16 || secretAccessKey.length > 128) {
+        if (options.secretAccessKey.length < 16 || options.secretAccessKey.length > 128) {
             throw new InvalidAWSConfigError(
-                `invalid AWS secret access key; reason: size should be between 16 and 128 characters, got ${secretAccessKey.length}`
+                `invalid AWS secret access key; reason: size should be between 16 and 128 characters, got ${options.secretAccessKey.length}`
             )
         }
 
-        this.region = region
-        this.accessKeyID = accessKeyID
-        this.secretAccessKey = secretAccessKey
+        this.region = options.region
+        this.accessKeyID = options.accessKeyId
+        this.secretAccessKey = options.secretAccessKey
+
+        if (options.sessionToken !== undefined) {
+            this.sessionToken = options.sessionToken
+        }
+
+        if (options.scheme !== undefined) {
+            this.scheme = options.scheme
+        }
+
+        if (options.endpoint !== undefined) {
+            this.endpoint = options.endpoint
+        }
     }
+}
+
+/**
+ * Interface representing AWSConfig options
+ */
+export interface AWSConfigOptions {
+    /**
+     * The AWS region to connect to, as listed: https://docs.aws.amazon.com/general/latest/gr/rande.html
+     *
+     * @type {string}
+     */
+    region: string
+
+    /**
+     * Your user's AWS access key id credential.
+     *
+     * @type {string}
+     */
+    accessKeyId: string
+
+    /**
+     * Your user's AWS secret access key credential.
+     *
+     * @type {string}
+     */
+    secretAccessKey: string
+
+    /**
+     * Your user's AWS session token credential.
+     *
+     * @type {string}
+     */
+    sessionToken?: string
+
+    /**
+     * The HTTP scheme to use when connecting to AWS.
+     *
+     * @type {HTTPScheme}
+     */
+    scheme?: HTTPScheme
+
+    /**
+     * The AWS hostname to connect to.
+     *
+     * @type {string}
+     */
+    endpoint?: string
 }
 
 /** Class representing an invalid AWS configuration */
