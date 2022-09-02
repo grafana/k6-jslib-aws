@@ -6,6 +6,7 @@ import { AWSConfig, S3Client, SecretsManagerClient } from '../build/aws.min.js'
 import { signatureTestSuite } from './internal/signature.js'
 import { s3TestSuite } from './internal/s3.js'
 import { secretsManagerTestSuite } from './internal/secrets-manager.js'
+import { kmsTestSuite } from './internal/kms.js'
 
 chai.config.aggregateChecks = false
 chai.config.logFailures = true
@@ -83,4 +84,5 @@ export default function testSuite(data) {
     signatureTestSuite(data)
     s3TestSuite(data)
     secretsManagerTestSuite(data)
+    kmsTestSuite(data)
 }

@@ -1,4 +1,4 @@
-import { JSONObject } from 'k6'
+import { JSONArray, JSONObject } from 'k6'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
 import { AWSClient, AWSRequest } from './client'
@@ -35,6 +35,28 @@ export class KMSClient extends AWSClient {
     }
 
     /**
+     * Gets a list of all the KMS keys in the caller's AWS
+     * account and region.
+     *
+     * @returns an array of all the available keys
+     */
+    listKeys(): Array<Key> {
+        const body = ''
+        const signedRequest: AWSRequest = super.buildRequest(this.method, this.host, '/', '', '', {
+            ...this.commonHeaders,
+            'X-Amz-Target': `TrentService.ListKeys`,
+        })
+
+        const res = http.request(this.method, signedRequest.url, body, {
+            headers: signedRequest.headers,
+        })
+        this._handle_error('ListKeys', res)
+
+        const json: JSONArray = res.json('Keys') as JSONArray
+        return json.map((k) => Key.fromJSON(k as JSONObject))
+    }
+
+    /**
      * GenerateDataKey returns a unique symmetric data key for use outside of AWS KMS.
      *
      * This operation returns a plaintext copy of the data key and a copy that is encrypted under a symmetric encryption KMS key that you specify.
@@ -51,7 +73,7 @@ export class KMSClient extends AWSClient {
      * @throws {InvalidSignatureError}
      * @returns {DataKey} - The generated data key.
      */
-    GenerateDataKey(id: string, size: KMSKeySize = KMSKeySize.Size256): DataKey | undefined {
+    generateDataKey(id: string, size: KMSKeySize = KMSKeySize.Size256): DataKey | undefined {
         const body = JSON.stringify({ KeyId: id, NumberOfBytes: size })
         const signedRequest: AWSRequest = super.buildRequest(
             this.method,
@@ -71,11 +93,11 @@ export class KMSClient extends AWSClient {
 
         return DataKey.fromJSON(res.json() as JSONObject)
     }
-    
+
     get host() {
-        return `${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
+        return `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
     }
-    
+
     // TODO: operation should be an enum
     _handle_error(operation: string, response: RefinedResponse<ResponseType | undefined>) {
         const errorCode = response.error_code
@@ -109,6 +131,29 @@ export class KMSClient extends AWSClient {
     }
 }
 
+/**
+ * Class representing a KMS key
+ */
+export class Key {
+    /**
+     * ARN of the key
+     */
+    keyArn: string
+
+    /**
+     * Unique identifier of the key
+     */
+    keyId: string
+
+    constructor(keyArn: string, KeyId: string) {
+        this.keyArn = keyArn
+        this.keyId = KeyId
+    }
+
+    static fromJSON(json: JSONObject) {
+        return new Key(json.KeyArn as string, json.KeyId as string)
+    }
+}
 
 /**
  * Class representing a data key
@@ -165,7 +210,7 @@ export class KMSServiceError extends AWSError {
 /**
  *  KMSKeyLength describes possible key lenght values for KMS API data key operations.
  */
-enum KMSKeyLength {
-    KeySize256 = 32,
-    KeySize512 = 64,
+enum KMSKeySize {
+    Size256 = 32,
+    Size512 = 64,
 }
