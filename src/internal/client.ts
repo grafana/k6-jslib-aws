@@ -79,6 +79,14 @@ export class AWSClient {
 
         return { url: url, headers: headers }
     }
+
+    /**
+     * Property computing the URL to send the requests to when interacting with
+     * the specific AWS service the child class implements the functionalities of.
+     */
+    get host() {
+        return `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
+    }
 }
 
 /**

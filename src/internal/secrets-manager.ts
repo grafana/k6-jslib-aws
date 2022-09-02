@@ -18,11 +18,6 @@ export class SecretsManagerClient extends AWSClient {
     method: HTTPMethod
 
     /**
-     * HTTP Host to use when interacting with the Secrets Manager service.
-     */
-    host: string
-
-    /**
      * HTTP headers to use accross all requests to the Secrets Manager service.
      */
     commonHeaders: HTTPHeaders
@@ -38,7 +33,6 @@ export class SecretsManagerClient extends AWSClient {
         // All interactions with the Secrets Manager service
         // are made via the GET or POST method.
         this.method = 'POST'
-        this.host = `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
         this.commonHeaders = {
             'Accept-Encoding': 'identity',
             'Content-Type': 'application/x-amz-json-1.1',
