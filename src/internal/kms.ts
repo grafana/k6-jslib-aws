@@ -1,4 +1,4 @@
-import { JSONObject } from 'k6'
+import { JSONArray, JSONObject } from 'k6'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
 import { AWSClient, AWSRequest } from './client'
@@ -32,6 +32,28 @@ export class KMSClient extends AWSClient {
             'Accept-Encoding': 'identity',
             'Content-Type': 'application/x-amz-json-1.1',
         }
+    }
+
+    /**
+     * Gets a list of all the KMS keys in the caller's AWS
+     * account and region.
+     *
+     * @returns an array of all the available keys
+     */
+    listKeys(): Array<Key> {
+        const body = ''
+        const signedRequest: AWSRequest = super.buildRequest(this.method, this.host, '/', '', '', {
+            ...this.commonHeaders,
+            'X-Amz-Target': `TrentService.ListKeys`,
+        })
+
+        const res = http.request(this.method, signedRequest.url, body, {
+            headers: signedRequest.headers,
+        })
+        this._handle_error('ListKeys', res)
+
+        const json: JSONArray = res.json('Keys') as JSONArray
+        return json.map((k) => Key.fromJSON(k as JSONObject))
     }
 
     /**
@@ -106,6 +128,30 @@ export class KMSClient extends AWSClient {
                 operation
             )
         }
+    }
+}
+
+/**
+ * Class representing a KMS key
+ */
+export class Key {
+    /**
+     * ARN of the key
+     */
+    keyArn: string
+
+    /**
+     * Unique identifier of the key
+     */
+    keyId: string
+
+    constructor(keyArn: string, KeyId: string) {
+        this.keyArn = keyArn
+        this.keyId = KeyId
+    }
+
+    static fromJSON(json: JSONObject) {
+        return new Key(json.KeyArn as string, json.KeyId as string)
     }
 }
 
