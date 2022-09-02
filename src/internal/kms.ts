@@ -94,10 +94,6 @@ export class KMSClient extends AWSClient {
         return DataKey.fromJSON(res.json() as JSONObject)
     }
 
-    get host() {
-        return `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
-    }
-
     // TODO: operation should be an enum
     _handle_error(operation: string, response: RefinedResponse<ResponseType | undefined>) {
         const errorCode = response.error_code

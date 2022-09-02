@@ -32,9 +32,8 @@ export class S3Client extends AWSClient {
     listBuckets(): Array<S3Bucket> {
         // Prepare request
         const method = 'GET'
-        const host = `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
         const body = ''
-        const signedRequest: AWSRequest = super.buildRequest(method, host, '/', '', body, {
+        const signedRequest: AWSRequest = super.buildRequest(method, this.host, '/', '', body, {
             'X-Amz-Content-SHA256': sha256(body, 'hex'),
         })
 
@@ -83,7 +82,7 @@ export class S3Client extends AWSClient {
     listObjects(bucketName: string, prefix?: string): Array<S3Object> {
         // Prepare request
         const method = 'GET'
-        const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
+        const host = `${bucketName}.${this.host}`
         const body = ''
         const querystring = `list-type=2&prefix=${prefix || ''}`
         const signedRequest: AWSRequest = super.buildRequest(method, host, '/', querystring, body, {
@@ -143,7 +142,7 @@ export class S3Client extends AWSClient {
     getObject(bucketName: string, objectKey: string): S3Object {
         // Prepare request
         const method = 'GET'
-        const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
+        const host = `${bucketName}.${this.host}`
         const path = `/${objectKey}`
         const body = ''
         const signedRequest: AWSRequest = super.buildRequest(method, host, path, '', body, {
@@ -182,7 +181,7 @@ export class S3Client extends AWSClient {
     putObject(bucketName: string, objectKey: string, data: string | ArrayBuffer) {
         // Prepare request
         const method = 'PUT'
-        const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
+        const host = `${bucketName}.${this.host}`
         const path = `/${objectKey}`
         const queryString = ''
         const body = data
@@ -215,7 +214,7 @@ export class S3Client extends AWSClient {
     deleteObject(bucketName: string, objectKey: string): void {
         // Prepare request
         const method = 'DELETE'
-        const host = `${bucketName}.${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
+        const host = `${bucketName}.${this.host}`
         const path = `/${objectKey}`
         const queryString = ''
         const body = ''
