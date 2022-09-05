@@ -40,7 +40,7 @@ export class KMSClient extends AWSClient {
      *
      * @returns an array of all the available keys
      */
-    listKeys(): Array<Key> {
+    listKeys(): Array<KMSKey> {
         const body = ''
         const signedRequest: AWSRequest = super.buildRequest(this.method, this.host, '/', '', '', {
             ...this.commonHeaders,
@@ -53,7 +53,7 @@ export class KMSClient extends AWSClient {
         this._handle_error('ListKeys', res)
 
         const json: JSONArray = res.json('Keys') as JSONArray
-        return json.map((k) => Key.fromJSON(k as JSONObject))
+        return json.map((k) => KMSKey.fromJSON(k as JSONObject))
     }
 
     /**
@@ -71,9 +71,9 @@ export class KMSClient extends AWSClient {
      * @param {KMKeySize} size - Specifies the length of the data key in bytes. For example, use the value 64 to generate a 512-bit data key (64 bytes is 512 bits). Default is 32, and generates a 256-bit data key.
      * @throws {KMSServiceError}
      * @throws {InvalidSignatureError}
-     * @returns {DataKey} - The generated data key.
+     * @returns {KMSDataKey} - The generated data key.
      */
-    generateDataKey(id: string, size: KMSKeySize = KMSKeySize.Size256): DataKey | undefined {
+    generateDataKey(id: string, size: KMSKeySize = KMSKeySize.Size256): KMSDataKey | undefined {
         const body = JSON.stringify({ KeyId: id, NumberOfBytes: size })
         const signedRequest: AWSRequest = super.buildRequest(
             this.method,
@@ -91,7 +91,7 @@ export class KMSClient extends AWSClient {
         })
         this._handle_error('GenerateDataKey', res)
 
-        return DataKey.fromJSON(res.json() as JSONObject)
+        return KMSDataKey.fromJSON(res.json() as JSONObject)
     }
 
     // TODO: operation should be an enum
@@ -130,7 +130,7 @@ export class KMSClient extends AWSClient {
 /**
  * Class representing a KMS key
  */
-export class Key {
+export class KMSKey {
     /**
      * ARN of the key
      */
@@ -147,14 +147,14 @@ export class Key {
     }
 
     static fromJSON(json: JSONObject) {
-        return new Key(json.KeyArn as string, json.KeyId as string)
+        return new KMSKey(json.KeyArn as string, json.KeyId as string)
     }
 }
 
 /**
  * Class representing a data key
  */
-export class DataKey {
+export class KMSDataKey {
     /**
      * The Amazon Resource Name (key ARN) of the KMS key that encrypted the data key.
      */
@@ -178,7 +178,7 @@ export class DataKey {
     }
 
     static fromJSON(json: JSONObject) {
-        return new DataKey(
+        return new KMSDataKey(
             json.CiphertextBlob as string,
             json.KeyId as string,
             json.Plaintext as string

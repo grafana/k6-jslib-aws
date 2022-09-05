@@ -7,6 +7,7 @@ import {
     Secret,
     SecretsManagerServiceError,
 } from './internal/secrets-manager'
+import { KMSClient, KMSDataKey, KMSServiceError } from './internal/kms'
 
 // Re-Export public symbols
 export {
@@ -26,4 +27,8 @@ export {
     SecretsManagerClient,
     Secret,
     SecretsManagerServiceError,
+    // KMS
+    KMSClient,
+    KMSDataKey,
+    KMSServiceError,
 }
