@@ -1,11 +1,7 @@
 // Import only symbols we wish to re-export publicly
 import { signHeaders, InvalidSignatureError, URIEncodingConfig } from './internal/signature'
 import { AWSConfig, InvalidAWSConfigError } from './internal/config'
-import {
-    KMSClient,
-    DataKey,
-    KMSServiceError,
-} from './internal/kms'
+import { KMSClient, KMSDataKey, KMSServiceError } from './internal/kms'
 
 // Re-Export public symbols
 export {
@@ -18,6 +14,6 @@ export {
     InvalidAWSConfigError,
     // KMS
     KMSClient,
-    DataKey,
+    KMSDataKey,
     KMSServiceError,
 }
