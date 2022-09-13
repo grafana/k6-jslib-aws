@@ -7,15 +7,18 @@ This is an AWS client library for k6. It intends to allow interacting with a sub
 ## Supported features
 
 At the moment, this library provides the following:
+
 * `S3Client`: allows to list buckets and bucket's objects, as well as uploading, downloading, and deletion of objects.
 * `SecretsManager`: allows to list, get, create, update and delete secrets from the AWS secrets manager service.
-* `V4 signature`: allows to sign requests to amazon AWS services 
+* `KMS`: allows to list KMS keys and generate a unique symmetric data key for use outside of AWS KMS
+* `SSM`: allows to retrieve a parameter from AWS Systems Manager
+* `V4 signature`: allows to sign requests to amazon AWS services
 
 ## Demo
 
 ### S3
 
-Consult the `S3Client` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/s3client) for more details on its methods and how to use it.   
+Consult the `S3Client` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/s3client) for more details on its methods and how to use it.
 
 ### Practical example
 
@@ -78,7 +81,7 @@ export function handleSummary(data) {
 
 ### Secrets Manager
 
-Consult the `SecretsManagerClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/secretsmanagerclient) for more details on its methods and how to use it. 
+Consult the `SecretsManagerClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/secretsmanagerclient) for more details on its methods and how to use it.
 
 ```javascript
 import exec from 'k6/execution'
@@ -125,6 +128,86 @@ export default function () {
 }
 ```
 
+### KMS
+
+Consult the `KMS` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/kms) for more details on its methods and how to use it.
+
+```javascript
+import exec from 'k6/execution'
+
+import { AWSConfig, KMSClient } from '../build/kms.min.js'
+
+const awsConfig = new AWSConfig(
+    __ENV.AWS_REGION,
+    __ENV.AWS_ACCESS_KEY_ID,
+    __ENV.AWS_SECRET_ACCESS_KEY
+)
+
+const KMS = new KMSClient(awsConfig)
+const KeyId = 'alias/TestKey'
+
+export default function () {
+    // Currently, the keys need to be created before hand
+
+    // First let's list the keys we have available
+    const keys = KMS.listKeys();
+    if (!keys.length == 0) {
+        exec.test.abort('test keys not found')
+    }
+
+    const key = keys.filter((s) => s.keyId === KeyId)
+    if (!key) {
+        exec.test.abort('target test key not found')
+    }
+
+    //Run GenerateDataKey call on the key, with the default 32 byte size
+    const dataKey = KMS.generateDataKey(key.keyId)
+    if (dataKey.ciphertextBlobText == undefined) {
+        exec.test.abort('data key not generated')
+    }
+}
+```
+
+### SSM
+
+Consult the `SystemsManagerClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/systemsmanagerclient) for more details on its methods and how to use it.
+
+```javascript
+import exec from 'k6/execution'
+
+import { AWSConfig, SystemsManagerClient } from '../build/ssm.min.js'
+
+const awsConfig = new AWSConfig({
+    region: __ENV.AWS_REGION,
+    accessKeyId: __ENV.AWS_ACCESS_KEY_ID,
+    secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
+    sessionToken: __ENV.AWS_SESSION_TOKEN,
+})
+
+const systemsManager = new SystemsManagerClient(awsConfig)
+const testParameterName = 'jslib-test-parameter'
+const testParameterValue = 'jslib-test-value'
+const testParameterSecretName = 'jslib-test-parameter-secret'
+// this value was created with --type SecureString
+const testParameterSecretValue = 'jslib-test-secret-value'
+
+export default function () {
+    // Currently the parameter needs to be created before hand
+
+    // Let's get its value
+    const parameter = systemsManager.getParameter(testParameterName)
+    if (parameter.value !== testParameterValue) {
+        exec.test.abort('test parameter not found')
+    }
+
+    // Let's get the secret value with decryption
+    const encryptedParameter = systemsManager.getParameter(testParameterSecretName, true)
+    if (encryptedParameter.value !== testParameterSecretValue) {
+        exec.test.abort('encrypted test parameter not found')
+    }
+}
+```
+
 ## Development
 
 ### Contributing
@@ -145,9 +228,12 @@ npm test
 ```
 
 ### Deploying new versions
+
 1. Build.
-2. Use the `./build/aws.min.js` to make a PR to [jslib.k6.io](https://github.com/grafana/jslib.k6.io). 
+2. Use the `./build/aws.min.js` to make a PR to [jslib.k6.io](https://github.com/grafana/jslib.k6.io).
+
 ## Maintainers
 
 k6-jslib-aws is developped by the k6 core development team. Maintainers of this jslib specifically are the following:
+
 * Théo Crevon, core k6 developer [@oleiade](https://github.com/oleiade/)
