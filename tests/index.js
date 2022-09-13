@@ -1,12 +1,13 @@
 import { chai } from 'https://jslib.k6.io/k6chaijs/4.3.4.0/index.js'
 import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js'
 
-import { AWSConfig, S3Client, SecretsManagerClient } from '../build/aws.min.js'
+import { AWSConfig } from '../build/aws.min.js'
 
 import { signatureTestSuite } from './internal/signature.js'
 import { s3TestSuite } from './internal/s3.js'
 import { secretsManagerTestSuite } from './internal/secrets-manager.js'
 import { kmsTestSuite } from './internal/kms.js'
+import { ssmTestSuite } from './internal/ssm.js'
 
 chai.config.aggregateChecks = false
 chai.config.logFailures = true
@@ -41,9 +42,6 @@ export function setup() {
         sessionToken: 'sessiontoken',
     })
 
-    const s3Client = new S3Client(awsConfig)
-    const secretsmanagerClient = new SecretsManagerClient(awsConfig)
-
     return {
         awsConfig: awsConfig,
 
@@ -77,6 +75,18 @@ export function setup() {
                 },
             ],
         },
+
+        // Systems Manager tests specific data
+        systemsManager: {
+            testParameter: {
+                name: `test-parameter`,
+                value: `test-parameter-value`,
+            },
+            testParameterSecret: {
+                name: `test-parameter-secret`,
+                value: `test-parameter-secret-value`,
+            },
+        },
     }
 }
 
@@ -85,4 +95,5 @@ export default function testSuite(data) {
     s3TestSuite(data)
     secretsManagerTestSuite(data)
     kmsTestSuite(data)
+    ssmTestSuite(data)
 }

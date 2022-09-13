@@ -7,15 +7,16 @@ This is an AWS client library for k6. It intends to allow interacting with a sub
 ## Supported features
 
 At the moment, this library provides the following:
+
 * `S3Client`: allows to list buckets and bucket's objects, as well as uploading, downloading, and deletion of objects.
 * `SecretsManager`: allows to list, get, create, update and delete secrets from the AWS secrets manager service.
-* `V4 signature`: allows to sign requests to amazon AWS services 
+* `V4 signature`: allows to sign requests to amazon AWS services
 
 ## Demo
 
 ### S3
 
-Consult the `S3Client` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/s3client) for more details on its methods and how to use it.   
+Consult the `S3Client` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/s3client) for more details on its methods and how to use it.
 
 ### Practical example
 
@@ -78,7 +79,7 @@ export function handleSummary(data) {
 
 ### Secrets Manager
 
-Consult the `SecretsManagerClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/secretsmanagerclient) for more details on its methods and how to use it. 
+Consult the `SecretsManagerClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/secretsmanagerclient) for more details on its methods and how to use it.
 
 ```javascript
 import exec from 'k6/execution'
@@ -145,9 +146,12 @@ npm test
 ```
 
 ### Deploying new versions
+
 1. Build.
-2. Use the `./build/aws.min.js` to make a PR to [jslib.k6.io](https://github.com/grafana/jslib.k6.io). 
+2. Use the `./build/aws.min.js` to make a PR to [jslib.k6.io](https://github.com/grafana/jslib.k6.io).
+
 ## Maintainers
 
 k6-jslib-aws is developped by the k6 core development team. Maintainers of this jslib specifically are the following:
+
 * Théo Crevon, core k6 developer [@oleiade](https://github.com/oleiade/)
