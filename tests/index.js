@@ -26,7 +26,7 @@ export function setup() {
         scheme: 'http',
 
         // Localstack runs on localhost:4566
-        endpoint: 'localhost:4566',
+        endpoint: 'localhost.localstack.cloud:4566',
 
         // Localstack is setup to use the us-east-1 region
         region: 'us-east-1',
