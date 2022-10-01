@@ -20,14 +20,18 @@ export default function () {
     // Currently the parameter needs to be created before hand
 
     // Let's get its value
-    const parameter = systemsManager.getParameter(testParameterName)
+    // getParameter returns an parameter object: e.g. {parameter: {name: string, value: string...}}
+    const parameter = systemsManager.getParameter(testParameterName).parameter // directly assign the parameter contents
     if (parameter.value !== testParameterValue) {
         exec.test.abort('test parameter not found')
     }
 
     // Let's get the secret value with decryption
-    const encryptedParameter = systemsManager.getParameter(testParameterSecretName, true)
-    if (encryptedParameter.value !== testParameterSecretValue) {
+    // destructure the parameter object to get to the values you want
+    const {
+        parameter: { value: encryptedParameterValue },
+    } = systemsManager.getParameter(testParameterSecretName, true)
+    if (encryptedParameterValue !== testParameterSecretValue) {
         exec.test.abort('encrypted test parameter not found')
     }
 }

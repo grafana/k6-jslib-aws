@@ -35,12 +35,15 @@ export class SystemsManagerClient extends AWSClient {
      * Retrieves a parameter from Amazon Systems Manager
      *
      * @param {string} name - The ARN or name of the parameter to retrieve.
-     * @param {boolean} withDecryption - The ARN or name of the parameter to retrieve.
-     * @returns {Parameter} - returns the content of the fetched Parameter object.
+     * @param {boolean} withDecryption - whether returned secure string parameters should be decrypted.
+     * @returns {SystemsManagerParameter} - returns the fetched Parameter object.
      * @throws {SystemsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    getParameter(name: string, withDecryption: boolean = false): Parameter | undefined {
+    getParameter(
+        name: string,
+        withDecryption: boolean = false
+    ): SystemsManagerParameter | undefined {
         const body = JSON.stringify({ Name: name, WithDecryption: withDecryption })
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
@@ -60,15 +63,15 @@ export class SystemsManagerClient extends AWSClient {
         const res = http.request(this.method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error('GetParameter', res)
-        // a little confusing but need to unnest Parameter...
-        // TODO: make Parameter the root type with ParameterItem as a subtype
-        // TODO: test selector and source to be optional
-        return Parameter.fromJSON((res.json() as JSONObject).Parameter as JSONObject)
+        this._handle_error(SystemsManagerOperation.GetParameter, res);
+
+        return SystemsManagerParameter.fromJSON(res.json() as JSONObject)
     }
 
-    // TODO: operation should be an enum
-    _handle_error(operation: string, response: RefinedResponse<ResponseType | undefined>) {
+    _handle_error(
+        operation: SystemsManagerOperation,
+        response: RefinedResponse<ResponseType | undefined>
+    ) {
         const errorCode = response.error_code
         if (errorCode === 0) {
             return
@@ -103,7 +106,35 @@ export class SystemsManagerClient extends AWSClient {
 /**
  * Class representing a Systems Manager's Parameter
  */
-export class Parameter {
+export class SystemsManagerParameter {
+    parameter: SystemsManagerParameterItem
+
+    /**
+     * Constructs a Systems Manager's Parameter
+     *
+     * @param  {JSONObject} parameter - The response object content for the AWS System Manager.
+     */
+    constructor(parameter: JSONObject) {
+        this.parameter = SystemsManagerParameterItem.fromJSON(parameter)
+    }
+
+    /**
+     * Parses and constructs a Systems Manager's Parameter from the content
+     * of a JSON response returned by the AWS service
+     *
+     * @param  {Object} json - JSON object as returned and parsed from
+     *     the AWS service's API call.
+     * @returns {SystemsManagerParameter}
+     */
+    static fromJSON(json: JSONObject): SystemsManagerParameter {
+        return new SystemsManagerParameter(json.Parameter as JSONObject)
+    }
+}
+
+/**
+ * Class representing a Systems Manager's Parameter Object content
+ */
+class SystemsManagerParameterItem {
     arn: string
     dataType: string
     lastModifiedDate: number
@@ -115,7 +146,7 @@ export class Parameter {
     version: number
 
     /**
-     * Constructs a Systems Manager's Parameter
+     * Constructs a Systems Manager's Parameter object contents
      *
      * @param  {string} arn - The Amazon Resource Name (ARN) of the parameter.
      * @param  {string} dataType - The data type of the parameter, such as text or aws:ec2:image. The default is text.
@@ -152,15 +183,15 @@ export class Parameter {
     }
 
     /**
-     * Parses and constructs a Systems Manager's Parameter from the content
+     * Parses and constructs a Systems Manager's Parameter object from the content
      * of a JSON response returned by the AWS service
      *
      * @param  {Object} json - JSON object as returned and parsed from
      *     the AWS service's API call.
-     * @returns {Parameter}
+     * @returns {SystemsManagerParameterItem}
      */
-    static fromJSON(json: JSONObject): Parameter {
-        return new Parameter(
+    static fromJSON(json: JSONObject): SystemsManagerParameterItem {
+        return new SystemsManagerParameterItem(
             json.ARN as string,
             json.DataType as string,
             json.LastModifiedDate as number,
@@ -174,17 +205,24 @@ export class Parameter {
     }
 }
 
+/**
+ *  SystemsManagerOperation defines all currently implemented Systems Manager operations.
+ */
+enum SystemsManagerOperation {
+    GetParameter = 'GetParameter',
+}
+
 export class SystemsManagerServiceError extends AWSError {
-    operation: string
+    operation: SystemsManagerOperation
 
     /**
      * Constructs a SystemsManagerServiceError
      *
      * @param  {string} message - human readable error message
      * @param  {string} code - A unique short code representing the error that was emitted
-     * @param  {string} operation - Name of the failed Operation
+     * @param  {SystemsManagerOperation} operation - Name of the failed Operation
      */
-    constructor(message: string, code: string, operation: string) {
+    constructor(message: string, code: string, operation: SystemsManagerOperation) {
         super(message, code)
         this.name = 'SystemsManagerServiceError'
         this.operation = operation

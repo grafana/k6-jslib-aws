@@ -15,8 +15,8 @@ export default function () {
     // Currently, the keys need to be created before hand
 
     // First let's list the keys we have available
-    const keys = KMS.listKeys();
-    if (!keys.length == 0) {
+    const keys = KMS.listKeys()
+    if (keys.length == 0) {
         exec.test.abort('test keys not found')
     }
 
@@ -25,6 +25,9 @@ export default function () {
         exec.test.abort('target test key not found')
     }
 
-    //Run GenerateDataKey call on the key, with the default 32 byte size
-    KMS.generateDataKey(KeyId)
+    //Run generateDataKey call on the key, with the default 32 byte size
+    const dataKey = KMS.generateDataKey(key.keyId)
+    if (dataKey.ciphertextBlobText == undefined) {
+        exec.test.abort('data key not generated')
+    }
 }

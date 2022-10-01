@@ -8,6 +8,11 @@ import {
     SecretsManagerServiceError,
 } from './internal/secrets-manager'
 import { KMSClient, KMSDataKey, KMSServiceError } from './internal/kms'
+import {
+    SystemsManagerClient,
+    SystemsManagerParameter,
+    SystemsManagerServiceError,
+} from './internal/ssm'
 
 // Re-Export public symbols
 export {
@@ -33,6 +38,6 @@ export {
     KMSServiceError,
     // SystemsManager
     SystemsManagerClient,
-    Parameter,
+    SystemsManagerParameter,
     SystemsManagerServiceError,
 }

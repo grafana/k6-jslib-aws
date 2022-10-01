@@ -9,27 +9,28 @@ export function ssmTestSuite(data) {
 
     describe('get parameter', () => {
         // Act
-        const parameter = systemsManagerClient.getParameter(data.systemsManager.testParameter.name)
+        // getParameter returns an parameter object: e.g. {parameter: {name: string, value: string...}}
+        const parameterObject = systemsManagerClient.getParameter(data.systemsManager.testParameter.name)
         const nonExistingParameterFn = () =>
             systemsManagerClient.getParameter('non-existing-parameter')
 
         // Assert
-        expect(parameter).to.be.an('object')
-        expect(parameter.value).to.be.an('string')
-        expect(parameter.value).to.equal(data.systemsManager.testParameter.value)
+        expect(parameterObject).to.be.an('object')
+        expect(parameterObject.parameter.value).to.be.an('string')
+        expect(parameterObject.parameter.value).to.equal(data.systemsManager.testParameter.value)
         expect(nonExistingParameterFn).to.throw(SystemsManagerServiceError)
     })
 
     describe('get secret parameter', () => {
         // Act
-        const parameter = systemsManagerClient.getParameter(data.systemsManager.testParameterSecret.name, true)
+        // destructure the object to get the values you want directly
+        const { parameter: { value: parameterValue } } = systemsManagerClient.getParameter(data.systemsManager.testParameterSecret.name, true)
         const nonExistingParameterFn = () =>
             systemsManagerClient.getParameter('non-existing-parameter', true)
 
         // Assert
-        expect(parameter).to.be.an('object')
-        expect(parameter.value).to.be.an('string')
-        expect(parameter.value).to.equal(data.systemsManager.testParameterSecret.value)
+        expect(parameterValue).to.be.an('string')
+        expect(parameterValue).to.equal(data.systemsManager.testParameterSecret.value)
         expect(nonExistingParameterFn).to.throw(SystemsManagerServiceError)
     })
 }
