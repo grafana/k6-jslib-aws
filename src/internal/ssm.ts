@@ -205,13 +205,6 @@ class SystemsManagerParameterItem {
     }
 }
 
-/**
- *  SystemsManagerOperation defines all currently implemented Systems Manager operations.
- */
-enum SystemsManagerOperation {
-    GetParameter = 'GetParameter',
-}
-
 export class SystemsManagerServiceError extends AWSError {
     operation: SystemsManagerOperation
 
@@ -227,4 +220,11 @@ export class SystemsManagerServiceError extends AWSError {
         this.name = 'SystemsManagerServiceError'
         this.operation = operation
     }
+}
+
+/**
+ *  SystemsManagerOperation defines all currently implemented Systems Manager operations.
+ */
+enum SystemsManagerOperation {
+    GetParameter = 'GetParameter',
 }

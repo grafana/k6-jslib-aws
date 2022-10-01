@@ -67,7 +67,7 @@ export class SecretsManagerClient extends AWSClient {
         const res = http.request(this.method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error('ListSecrets', res)
+        this._handle_error(SecretsManagerOperation.ListSecrets, res)
         const json: JSONArray = res.json('SecretList') as JSONArray
 
         return json.map((s) => Secret.fromJSON(s as JSONObject))
@@ -101,7 +101,7 @@ export class SecretsManagerClient extends AWSClient {
         const res = http.request(this.method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error('GetSecretValue', res)
+        this._handle_error(SecretsManagerOperation.GetSecretValue, res)
 
         return Secret.fromJSON(res.json() as JSONObject)
     }
@@ -160,7 +160,7 @@ export class SecretsManagerClient extends AWSClient {
         const res = http.request(this.method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error('CreateSecret', res)
+        this._handle_error(SecretsManagerOperation.CreateSecret, res)
 
         return Secret.fromJSON(res.json() as JSONObject)
     }
@@ -202,7 +202,7 @@ export class SecretsManagerClient extends AWSClient {
         const res = http.request(this.method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error('PutSecretValue', res)
+        this._handle_error(SecretsManagerOperation.PutSecretValue, res)
 
         return Secret.fromJSON(res.json() as JSONObject)
     }
@@ -253,11 +253,10 @@ export class SecretsManagerClient extends AWSClient {
         const res = http.request(this.method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error('DeleteSecret', res)
+        this._handle_error(SecretsManagerOperation.DeleteSecret, res)
     }
 
-    // TODO: operation should be an enum
-    _handle_error(operation: string, response: RefinedResponse<ResponseType | undefined>) {
+    _handle_error(operation: SecretsManagerOperation, response: RefinedResponse<ResponseType | undefined>) {
         const errorCode = response.error_code
         if (errorCode === 0) {
             return
@@ -354,7 +353,7 @@ export class Secret {
 }
 
 export class SecretsManagerServiceError extends AWSError {
-    operation: string
+    operation: SecretsManagerOperation
 
     /**
      * Constructs a SecretsManagerServiceError
@@ -363,9 +362,20 @@ export class SecretsManagerServiceError extends AWSError {
      * @param  {string} code - A unique short code representing the error that was emitted
      * @param  {string} operation - Name of the failed Operation
      */
-    constructor(message: string, code: string, operation: string) {
+    constructor(message: string, code: string, operation: SecretsManagerOperation) {
         super(message, code)
         this.name = 'SecretsManagerServiceError'
         this.operation = operation
     }
+}
+
+/**
+ *  SecretsManagerOperation defines all currently implemented Secrets Manager Service operations.
+ */
+enum SecretsManagerOperation {
+    ListSecrets = 'ListSecrets',
+    GetSecretValue = 'GetSecretValue',
+    CreateSecret = 'CreateSecret',
+    PutSecretValue = 'PutSecretValue',
+    DeleteSecret = 'DeleteSecret'
 }
