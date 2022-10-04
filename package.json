@@ -1,7 +1,7 @@
 {
     "name": "k6-jslib-aws",
     "repository": "https://github.com/grafana/k6-jslib-aws",
-    "version": "0.1.0",
+    "version": "0.6.0",
     "description": "Create a distribution file for the aws jslib",
     "main": "src/index.js",
     "devDependencies": {
