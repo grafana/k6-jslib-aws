@@ -50,7 +50,7 @@ export class KMSClient extends AWSClient {
         const res = http.request(this.method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error('ListKeys', res)
+        this._handle_error(KMSOperation.ListKeys, res)
 
         const json: JSONArray = res.json('Keys') as JSONArray
         return json.map((k) => KMSKey.fromJSON(k as JSONObject))
@@ -89,13 +89,12 @@ export class KMSClient extends AWSClient {
         const res = http.request(this.method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error('GenerateDataKey', res)
+        this._handle_error(KMSOperation.GenerateDataKey, res)
 
         return KMSDataKey.fromJSON(res.json() as JSONObject)
     }
 
-    // TODO: operation should be an enum
-    _handle_error(operation: string, response: RefinedResponse<ResponseType | undefined>) {
+    _handle_error(operation: KMSOperation, response: RefinedResponse<ResponseType | undefined>) {
         const errorCode = response.error_code
         if (errorCode === 0) {
             return
@@ -187,7 +186,7 @@ export class KMSDataKey {
 }
 
 export class KMSServiceError extends AWSError {
-    operation: string
+    operation: KMSOperation
 
     /**
      * Constructs a KMSServiceError
@@ -196,11 +195,19 @@ export class KMSServiceError extends AWSError {
      * @param  {string} code - A unique short code representing the error that was emitted
      * @param  {string} operation - Name of the failed Operation
      */
-    constructor(message: string, code: string, operation: string) {
+    constructor(message: string, code: string, operation: KMSOperation) {
         super(message, code)
         this.name = 'KMSServiceError'
         this.operation = operation
     }
+}
+
+/**
+ *  KMSOperation defines all currently implemented KMS Service operations.
+ */
+enum KMSOperation {
+    GenerateDataKey = 'GenerateDataKey',
+    ListKeys = 'ListKeys'
 }
 
 /**
