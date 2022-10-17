@@ -196,7 +196,7 @@ export default function () {
 
     // Let's get its value
     // getParameter returns an parameter object: e.g. {parameter: {name: string, value: string...}}
-    const parameter = systemsManager.getParameter(testParameterName).parameter // directly assign the parameter contents
+    const parameter = systemsManager.getParameter(testParameterName)
     if (parameter.value !== testParameterValue) {
         exec.test.abort('test parameter not found')
     }

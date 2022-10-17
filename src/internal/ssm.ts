@@ -63,7 +63,7 @@ export class SystemsManagerClient extends AWSClient {
         const res = http.request(this.method, signedRequest.url, body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(SystemsManagerOperation.GetParameter, res);
+        this._handle_error(SystemsManagerOperation.GetParameter, res)
 
         return SystemsManagerParameter.fromJSON(res.json() as JSONObject)
     }
@@ -107,46 +107,56 @@ export class SystemsManagerClient extends AWSClient {
  * Class representing a Systems Manager's Parameter
  */
 export class SystemsManagerParameter {
-    parameter: SystemsManagerParameterItem
-
     /**
-     * Constructs a Systems Manager's Parameter
-     *
-     * @param  {JSONObject} parameter - The response object content for the AWS System Manager.
+     * The Amazon Resource Name (ARN) of the parameter.
      */
-    constructor(parameter: JSONObject) {
-        this.parameter = SystemsManagerParameterItem.fromJSON(parameter)
-    }
-
-    /**
-     * Parses and constructs a Systems Manager's Parameter from the content
-     * of a JSON response returned by the AWS service
-     *
-     * @param  {Object} json - JSON object as returned and parsed from
-     *     the AWS service's API call.
-     * @returns {SystemsManagerParameter}
-     */
-    static fromJSON(json: JSONObject): SystemsManagerParameter {
-        return new SystemsManagerParameter(json.Parameter as JSONObject)
-    }
-}
-
-/**
- * Class representing a Systems Manager's Parameter Object content
- */
-class SystemsManagerParameterItem {
     arn: string
+
+    /**
+     * The data type of the parameter, such as text or aws:ec2:image.
+     * The default is text.
+     */
     dataType: string
+
+    /**
+     * Date the parameter was last changed or updated and the parameter version was created.
+     */
     lastModifiedDate: number
+
+    /**
+     * The friendly name of the parameter.
+     */
     name: string
+
+    /**
+     * Either the version number or the label used to retrieve the parameter value. Specify selectors by using one of the following formats:
+     *  parameter_name:version
+     *  parameter_name:label
+     */
     selector: string
+
+    /**
+     * plies to parameters that reference information in other AWS services. SourceResult is the raw result or response from the source.
+     */
     sourceResult: string
+
+    /**
+     * The type of parameter. Valid values include the following: String, StringList, and SecureString.
+     */
     type: string
+
+    /**
+     * The parameter value.
+     */
     value: string
+
+    /**
+     * The parameter version.
+     */
     version: number
 
     /**
-     * Constructs a Systems Manager's Parameter object contents
+     * Constructs a Systems Manager's Parameter
      *
      * @param  {string} arn - The Amazon Resource Name (ARN) of the parameter.
      * @param  {string} dataType - The data type of the parameter, such as text or aws:ec2:image. The default is text.
@@ -183,24 +193,26 @@ class SystemsManagerParameterItem {
     }
 
     /**
-     * Parses and constructs a Systems Manager's Parameter object from the content
+     * Parses and constructs a Systems Manager's Parameter from the content
      * of a JSON response returned by the AWS service
      *
      * @param  {Object} json - JSON object as returned and parsed from
      *     the AWS service's API call.
-     * @returns {SystemsManagerParameterItem}
+     * @returns {SystemsManagerParameter}
      */
-    static fromJSON(json: JSONObject): SystemsManagerParameterItem {
-        return new SystemsManagerParameterItem(
-            json.ARN as string,
-            json.DataType as string,
-            json.LastModifiedDate as number,
-            json.Name as string,
-            json.Selector as string,
-            json.SourceResult as string,
-            json.Type as string,
-            json.Value as string,
-            json.Version as number
+    static fromJSON(json: JSONObject): SystemsManagerParameter {
+        const parameter = json.Parameter as JSONObject
+
+        return new SystemsManagerParameter(
+            parameter.ARN as string,
+            parameter.DataType as string,
+            parameter.LastModifiedDate as number,
+            parameter.Name as string,
+            parameter.Selector as string,
+            parameter.SourceResult as string,
+            parameter.Type as string,
+            parameter.Value as string,
+            parameter.Version as number
         )
     }
 }

@@ -207,7 +207,7 @@ export class KMSServiceError extends AWSError {
  */
 enum KMSOperation {
     GenerateDataKey = 'GenerateDataKey',
-    ListKeys = 'ListKeys'
+    ListKeys = 'ListKeys',
 }
 
 /**
