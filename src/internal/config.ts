@@ -14,7 +14,7 @@ export class AWSConfig {
      *
      * @type {string}
      */
-    accessKeyID: string
+    accessKeyId: string
 
     /**
      * Your user's AWS secret access key credential.
@@ -82,7 +82,7 @@ export class AWSConfig {
         }
 
         this.region = options.region
-        this.accessKeyID = options.accessKeyId
+        this.accessKeyId = options.accessKeyId
         this.secretAccessKey = options.secretAccessKey
 
         if (options.sessionToken !== undefined) {

@@ -68,7 +68,7 @@ export function signHeaders(
     const credentialScope = createCredentialScope(requestTimestamp, awsConfig.region, service)
     const signedHeaders = createSignedHeaders(headers)
     const signature = calculateSignature(derivedSigningKey, stringToSign)
-    const authorizationHeader = `${HashingAlgorithm} Credential=${awsConfig.accessKeyID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
+    const authorizationHeader = `${HashingAlgorithm} Credential=${awsConfig.accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
 
     headers['Authorization'] = authorizationHeader
 
