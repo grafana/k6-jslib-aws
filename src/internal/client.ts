@@ -85,7 +85,11 @@ export class AWSClient {
      * the specific AWS service the child class implements the functionalities of.
      */
     get host() {
-        return `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
+        if (this.awsConfig.rgw) {
+            return `${this.awsConfig.endpoint}`
+        } else {
+            return `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
+        }
     }
 }
 

@@ -45,6 +45,13 @@ export class AWSConfig {
     endpoint: string = 'amazonaws.com'
 
     /**
+     * RGW compatible.
+     *
+     * @type {boolean}
+     */
+    rgw: boolean = false
+
+    /**
      * Create an AWSConfig.
      *
      * @param {AWSConfigOptions} options - configuration attributes to use when interacting with AWS' APIs
@@ -96,6 +103,10 @@ export class AWSConfig {
         if (options.endpoint !== undefined) {
             this.endpoint = options.endpoint
         }
+
+        if (options.rgw !== undefined) {
+            this.rgw = options.rgw
+        }
     }
 }
 
@@ -144,6 +155,13 @@ export interface AWSConfigOptions {
      * @type {string}
      */
     endpoint?: string
+
+    /**
+     * RGW compatible.
+     *
+     * @type {boolean}
+     */
+    rgw?: booleaan
 }
 
 /** Class representing an invalid AWS configuration */
