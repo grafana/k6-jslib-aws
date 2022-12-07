@@ -12,7 +12,7 @@ module.exports = {
         'secrets-manager': path.resolve(__dirname, './src/secrets-manager.ts'),
         ssm: path.resolve(__dirname, 'src/ssm.ts'),
         kms: path.resolve(__dirname, 'src/kms.ts'),
-        _signature: path.resolve(__dirname, 'src/signature.ts'),
+        signature: path.resolve(__dirname, 'src/signature.ts'),
     },
     output: {
         path: path.resolve(__dirname, 'build'),

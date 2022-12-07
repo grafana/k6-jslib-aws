@@ -37,6 +37,8 @@ export class AWSConfig {
      */
     scheme: HTTPScheme = 'https'
 
+    // FIXME: Should really be called "host" instead. When used
+    // with localstack we pass a complete host (hostname:port) here.
     /**
      * The AWS hostname to connect to.
      *
