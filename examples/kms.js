@@ -20,14 +20,14 @@ export default function () {
         exec.test.abort('test keys not found')
     }
 
-    const key = keys.filter((s) => s.keyId === KeyId)
+    const key = keys.find((s) => s.keyId === KeyId)
     if (!key) {
         exec.test.abort('target test key not found')
     }
 
     //Run generateDataKey call on the key, with the default 32 byte size
     const dataKey = KMS.generateDataKey(key.keyId)
-    if (dataKey.ciphertextBlobText == undefined) {
+    if (dataKey.ciphertextBlob == undefined) {
         exec.test.abort('data key not generated')
     }
 }

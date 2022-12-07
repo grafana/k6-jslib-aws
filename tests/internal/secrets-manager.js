@@ -7,6 +7,9 @@ import {
 } from '../../build/secrets-manager.min.js'
 
 export function secretsManagerTestSuite(data) {
+    // FIXME: due to what is probably a bug in LocalStack, the `localhost`
+    // region is invalid for the secrets manager service. Thus we set it up
+    // to a real one.
     const secretsManagerClient = new SecretsManagerClient(data.awsConfig)
 
     describe('list secrets', () => {

@@ -3,11 +3,11 @@ import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js'
 
 import { AWSConfig } from '../build/aws.min.js'
 
-import { signatureTestSuite } from './internal/signature.js'
 import { s3TestSuite } from './internal/s3.js'
 import { secretsManagerTestSuite } from './internal/secrets-manager.js'
 import { kmsTestSuite } from './internal/kms.js'
 import { ssmTestSuite } from './internal/ssm.js'
+import { signatureV4TestSuite } from './internal/new_signature.js'
 
 chai.config.aggregateChecks = false
 chai.config.logFailures = true
@@ -91,9 +91,9 @@ export function setup() {
 }
 
 export default function testSuite(data) {
-    signatureTestSuite(data)
     s3TestSuite(data)
     secretsManagerTestSuite(data)
     kmsTestSuite(data)
     ssmTestSuite(data)
+    signatureV4TestSuite(data)
 }
