@@ -9,15 +9,18 @@ import { parseHTML } from 'k6/html'
  *   * https://github.com/aws/aws-sdk-js/blob/master/lib/error.d.ts
  */
 export class AWSError extends Error {
-    code: string
+    /**
+     * Error code issued by the service (if any)
+     */
+    code?: string
 
     /**
      * Create an AWSError
      *
      * @param {string} message - A longer human readable error message.
-     * @param {string} code - A unique short code representing the error that was emitted
+     * @param {string?} code - A unique short code representing the error that was emitted
      */
-    constructor(message: string, code: string) {
+    constructor(message: string, code?: string) {
         super(message)
         this.name = 'AWSError'
         this.code = code
