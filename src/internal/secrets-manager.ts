@@ -1,12 +1,13 @@
 import { JSONArray, JSONObject } from 'k6'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
-import { AWSClient, AWSRequest } from './client'
-import { AWSError } from './error'
-import { AWSConfig } from './config'
-import { InvalidSignatureError, URIEncodingConfig } from './signature'
 import { v4 as uuidv4 } from 'uuid'
-import { HTTPMethod, HTTPHeaders } from './http'
+import { AWSClient } from './client'
+import { AWSConfig } from './config'
+import { AMZ_TARGET_HEADER } from './constants'
+import { AWSError } from './error'
+import { HTTPHeaders, HTTPMethod } from './http'
+import { InvalidSignatureError, SignatureV4 } from './signature'
 
 /**
  * Class allowing to interact with Amazon AWS's SecretsManager service
@@ -22,19 +23,30 @@ export class SecretsManagerClient extends AWSClient {
      */
     commonHeaders: HTTPHeaders
 
+    signature: SignatureV4
+
     /**
      * Create a SecretsManagerClient
      * @param  {AWSConfig} awsConfig - configuration attributes to use when interacting with AWS' APIs
      */
     constructor(awsConfig: AWSConfig) {
-        const URIencodingConfig = new URIEncodingConfig(true, false)
-        super(awsConfig, 'secretsmanager', URIencodingConfig)
+        super(awsConfig, 'secretsmanager')
+
+        this.signature = new SignatureV4({
+            service: this.serviceName,
+            region: awsConfig.region,
+            credentials: {
+                accessKeyId: awsConfig.accessKeyID,
+                secretAccessKey: awsConfig.secretAccessKey,
+            },
+            uriEscapePath: false,
+            applyChecksum: false,
+        })
 
         // All interactions with the Secrets Manager service
         // are made via the GET or POST method.
         this.method = 'POST'
         this.commonHeaders = {
-            'Accept-Encoding': 'identity',
             'Content-Type': 'application/x-amz-json-1.1',
         }
     }
@@ -48,23 +60,22 @@ export class SecretsManagerClient extends AWSClient {
      * @throws  {InvalidSignatureError}
      */
     listSecrets(): Array<Secret> {
-        const body = JSON.stringify({})
-
-        // Ensure to include the desired 'Action' in the X-Amz-Target
-        // header field, as documented by the AWS API docs.
-        const signedRequest: AWSRequest = super.buildRequest(
-            this.method,
-            this.host,
-            '/',
-            '',
-            body,
+        const signedRequest = this.signature.sign(
             {
-                ...this.commonHeaders,
-                'X-Amz-Target': `${this.serviceName}.ListSecrets`,
-            }
+                method: this.method,
+                protocol: this.awsConfig.scheme,
+                hostname: this.host,
+                path: '/',
+                headers: {
+                    ...this.commonHeaders,
+                    [AMZ_TARGET_HEADER]: `${this.serviceName}.ListSecrets`,
+                },
+                body: JSON.stringify({}),
+            },
+            {}
         )
 
-        const res = http.request(this.method, signedRequest.url, body, {
+        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(SecretsManagerOperation.ListSecrets, res)
@@ -82,25 +93,25 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {InvalidSignatureError}
      */
     getSecret(id: string): Secret | undefined {
-        const body = JSON.stringify({ SecretId: id })
-
-        // Ensure to include the desired 'Action' in the X-Amz-Target
-        // header field, as documented by the AWS API docs.
-        const signedRequest: AWSRequest = super.buildRequest(
-            this.method,
-            this.host,
-            '/',
-            '',
-            body,
+        const signedRequest = this.signature.sign(
             {
-                ...this.commonHeaders,
-                'X-Amz-Target': `${this.serviceName}.GetSecretValue`,
-            }
+                method: this.method,
+                protocol: this.awsConfig.scheme,
+                hostname: this.host,
+                path: '/',
+                headers: {
+                    ...this.commonHeaders,
+                    [AMZ_TARGET_HEADER]: `${this.serviceName}.GetSecretValue`,
+                },
+                body: JSON.stringify({ SecretId: id }),
+            },
+            {}
         )
 
-        const res = http.request(this.method, signedRequest.url, body, {
+        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
+
         this._handle_error(SecretsManagerOperation.GetSecretValue, res)
 
         return Secret.fromJSON(res.json() as JSONObject)
@@ -133,31 +144,32 @@ export class SecretsManagerClient extends AWSClient {
     ): Secret {
         versionID = versionID || uuidv4()
 
-        const body = JSON.stringify({
-            Name: name,
-            Description: description,
-            SecretString: secret,
-            ClientRequestToken: versionID,
-            Tags: tags,
-        })
-
-        const signedRequest: AWSRequest = super.buildRequest(
-            this.method,
-            this.host,
-            '/',
-            '',
-            body,
+        const signedRequest = this.signature.sign(
             {
-                ...this.commonHeaders,
-                'X-Amz-Target': `${this.serviceName}.CreateSecret`,
-            }
+                method: this.method,
+                protocol: this.awsConfig.scheme,
+                hostname: this.host,
+                path: '/',
+                headers: {
+                    ...this.commonHeaders,
+                    [AMZ_TARGET_HEADER]: `${this.serviceName}.CreateSecret`,
+                },
+                body: JSON.stringify({
+                    Name: name,
+                    Description: description,
+                    SecretString: secret,
+                    ClientRequestToken: versionID,
+                    Tags: tags,
+                }),
+            },
+            {}
         )
 
         // Ensure to include the desired 'Action' in the X-Amz-Target
         // header field, as documented by the AWS API docs.
         // headers['X-Amz-Target'] = `${this.serviceName}.CreateSecret`
 
-        const res = http.request(this.method, signedRequest.url, body, {
+        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(SecretsManagerOperation.CreateSecret, res)
@@ -179,27 +191,26 @@ export class SecretsManagerClient extends AWSClient {
     putSecretValue(id: string, secret: string, versionID?: string): Secret {
         versionID = versionID || uuidv4()
 
-        const body = JSON.stringify({
-            SecretId: id,
-            SecretString: secret,
-            ClientRequestToken: versionID,
-        })
-
-        // Ensure to include the desired 'Action' in the X-Amz-Target
-        // header field, as documented by the AWS API docs.
-        const signedRequest: AWSRequest = super.buildRequest(
-            this.method,
-            this.host,
-            '/',
-            '',
-            body,
+        const signedRequest = this.signature.sign(
             {
-                ...this.commonHeaders,
-                'X-Amz-Target': `${this.serviceName}.PutSecretValue`,
-            }
+                method: this.method,
+                protocol: this.awsConfig.scheme,
+                hostname: this.host,
+                path: '/',
+                headers: {
+                    ...this.commonHeaders,
+                    [AMZ_TARGET_HEADER]: `${this.serviceName}.PutSecretValue`,
+                },
+                body: JSON.stringify({
+                    SecretId: id,
+                    SecretString: secret,
+                    ClientRequestToken: versionID,
+                }),
+            },
+            {}
         )
 
-        const res = http.request(this.method, signedRequest.url, body, {
+        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(SecretsManagerOperation.PutSecretValue, res)
@@ -234,29 +245,31 @@ export class SecretsManagerClient extends AWSClient {
             payload['RecoveryWindowInDays'] = recoveryWindow
         }
 
-        const body = JSON.stringify(payload)
-
-        // Ensure to include the desired 'Action' in the X-Amz-Target
-        // header field, as documented by the AWS API docs.
-        const signedRequest: AWSRequest = super.buildRequest(
-            this.method,
-            this.host,
-            '/',
-            '',
-            body,
+        const signedRequest = this.signature.sign(
             {
-                ...this.commonHeaders,
-                'X-Amz-Target': `${this.serviceName}.DeleteSecret`,
-            }
+                method: this.method,
+                protocol: this.awsConfig.scheme,
+                hostname: this.host,
+                path: '/',
+                headers: {
+                    ...this.commonHeaders,
+                    [AMZ_TARGET_HEADER]: `${this.serviceName}.DeleteSecret`,
+                },
+                body: JSON.stringify(payload),
+            },
+            {}
         )
 
-        const res = http.request(this.method, signedRequest.url, body, {
+        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(SecretsManagerOperation.DeleteSecret, res)
     }
 
-    _handle_error(operation: SecretsManagerOperation, response: RefinedResponse<ResponseType | undefined>) {
+    _handle_error(
+        operation: SecretsManagerOperation,
+        response: RefinedResponse<ResponseType | undefined>
+    ) {
         const errorCode = response.error_code
         if (errorCode === 0) {
             return
@@ -377,5 +390,5 @@ enum SecretsManagerOperation {
     GetSecretValue = 'GetSecretValue',
     CreateSecret = 'CreateSecret',
     PutSecretValue = 'PutSecretValue',
-    DeleteSecret = 'DeleteSecret'
+    DeleteSecret = 'DeleteSecret',
 }

@@ -14,7 +14,7 @@ export class AWSConfig {
      *
      * @type {string}
      */
-    accessKeyID: string
+    accessKeyId: string
 
     /**
      * Your user's AWS secret access key credential.
@@ -37,6 +37,8 @@ export class AWSConfig {
      */
     scheme: HTTPScheme = 'https'
 
+    // FIXME: Should really be called "host" instead. When used
+    // with localstack we pass a complete host (hostname:port) here.
     /**
      * The AWS hostname to connect to.
      *
@@ -89,7 +91,7 @@ export class AWSConfig {
         }
 
         this.region = options.region
-        this.accessKeyID = options.accessKeyId
+        this.accessKeyId = options.accessKeyId
         this.secretAccessKey = options.secretAccessKey
 
         if (options.sessionToken !== undefined) {

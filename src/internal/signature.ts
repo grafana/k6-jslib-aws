@@ -1,78 +1,633 @@
-import crypto, { hmac, sha256 } from 'k6/crypto'
-import { HTTPMethod, HTTPHeaders } from './http'
-import { AWSConfig } from './config'
+import crypto from 'k6/crypto'
+
+import * as constants from './constants'
 import { AWSError } from './error'
+import { hasHeader, HTTPHeaderBag, HTTPRequest, QueryParameterBag, SignedHTTPRequest } from './http'
+import { isArrayBuffer } from './utils'
 
 /**
- * Includes AWS v4 signing information to the provided HTTP headers object.
+ * SignatureV4 can be used to sign HTTP requests and presign URLs using the AWS Signature
+ * Version 4 signing process.
  *
- * This function will compute the `Authorization` header signature for the
- * provided request components, and add it to `header`. It will do so by following
- * the procedure detailled AWS' API docs: https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
+ * It offers two signing methods:
+ * - sign: signs the request headers and payload
+ * - presign: returns a presigned (authorization information contained in the query string) URL
  *
- * The resulting `Authorization` header value is computed for the provided
- * headers object. Thus, any modification of the headers past a call to `signHeaders`
- * would effectively invalidate their signature, and the function should be
- * called again to recompute it.
- *
- * @param  {object} headers - HTTP headers request to sign.
- * @param  {number} requestTimestamp - Timestamp of the request
- * @param  {string} method - HTTP method used
- * @param  {string} path - HTTP request URL's path
- * @param  {string} queryString - HTTP request URL's querystring
- * @param  {string | ArrayBuffer} body - HTTP request's payload
- * @param  {AWSConfig} - AWS configuration
- * @param  {string} service - AWS service name
- * @param  {URIEncodingConfig} - URI encoding configuration
+ * @see https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html
  */
-export function signHeaders(
-    headers: HTTPHeaders,
-    requestTimestamp: number,
-    method: HTTPMethod,
-    path: string,
-    queryString: string,
-    body: string | ArrayBuffer,
-    awsConfig: AWSConfig,
-    service: string,
-    URIencodingConfig: URIEncodingConfig
-): HTTPHeaders {
-    // If the config contains a session token, we should add it to the headers
-    // as a `X-Amz-Security-Token` header, cf: https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
-    if (awsConfig.sessionToken) {
-        headers['X-Amz-Security-Token'] = awsConfig.sessionToken
+export class SignatureV4 {
+    /**
+     * The name of the service to sign for.
+     */
+    private readonly service: string
+
+    /**
+     * The name of the region to sign for.
+     */
+    private readonly region: string
+
+    /**
+     * The credentials with which the request should be signed.
+     */
+    private readonly credentials: Credentials
+
+    /**
+     * Whether to uri-escape the request URI path as part of computing the
+     * canonical request string. This is required for every AWS service, except
+     * Amazon S3, as of late 2017.
+     *
+     * @default [true]
+     */
+    private readonly uriEscapePath: boolean
+
+    /**
+     * Whether to calculate a checksum of the request body and include it as
+     * either a request header (when signing) or as a query string parameter
+     * (when presigning). This is required for AWS Glacier and Amazon S3 and optional for
+     * every other AWS service as of late 2017.
+     *
+     * @default [true]
+     */
+    private readonly applyChecksum: boolean
+
+    // TODO: uriEscapePath and applyChecksum should not be present in the constructor
+    constructor({
+        service,
+        region,
+        credentials,
+        uriEscapePath,
+        applyChecksum,
+    }: SignatureV4Options) {
+        this.service = service
+        this.region = region
+        this.credentials = credentials
+        this.uriEscapePath = typeof uriEscapePath === 'boolean' ? uriEscapePath : true
+        this.applyChecksum = typeof applyChecksum === 'boolean' ? applyChecksum : true
     }
 
-    const derivedSigningKey = deriveSigningKey(
-        awsConfig.secretAccessKey,
-        requestTimestamp,
-        awsConfig.region,
-        service
-    )
+    /**
+     * Includes AWS v4 signing information to the provided HTTP request.
+     *
+     * This method adds an Authorization header to the request, containing
+     * the signature and other signing information. It also returns a preformatted
+     * URL that can be used to make the k6 http request.
+     *
+     * This method mutates the request object.
+     *
+     * @param request {HTTPRequest} The request to sign.
+     * @param param1 {SignOptions} Options for signing the request.
+     * @returns {SignedHTTPRequest} The signed request.
+     */
+    sign(
+        request: HTTPRequest,
+        {
+            signingDate = new Date(),
+            signingService,
+            signingRegion,
+            unsignableHeaders = new Set<string>(),
+            signableHeaders = new Set<string>(),
+        }: RequestSigningOptions
+    ): SignedHTTPRequest {
+        const { longDate, shortDate }: DateInfo = formatDate(signingDate)
+        const service = signingService || this.service
+        const region = signingRegion || this.region
+        const scope = `${shortDate}/${region}/${service}/${constants.KEY_TYPE_IDENTIFIER}`
 
-    const canonicalRequest = createCanonicalRequest(
-        method,
-        path,
-        queryString,
-        headers,
-        body,
-        URIencodingConfig
-    )
+        // FIXME: test wants us to leave host alone, but I'm unsure at this point
+        // Required by the specification:
+        //   "For HTTP/1.1 requests, you must include the host header at a minimum.
+        //   Standard headers like content-type are optional.
+        //   For HTTP/2 requests, you must include the :authority header instead of
+        //   the host header. Different services might require other headers."
+        // request.headers[constants.HOST_HEADER] = request.hostname
 
-    const stringToSign = createStringToSign(
-        requestTimestamp,
-        awsConfig.region,
-        service,
-        sha256(canonicalRequest, 'hex')
-    )
+        // Filter out headers that will be generated and managed by the signing process.
+        // If the user provide any of those as part of the HTTPRequest's headers, they
+        // will be ignored.
+        for (const headerName of Object.keys(request.headers)) {
+            if (constants.GENERATED_HEADERS.indexOf(headerName.toLowerCase()) > -1) {
+                delete request.headers[headerName]
+            }
+        }
 
-    const credentialScope = createCredentialScope(requestTimestamp, awsConfig.region, service)
-    const signedHeaders = createSignedHeaders(headers)
-    const signature = calculateSignature(derivedSigningKey, stringToSign)
-    const authorizationHeader = `${HashingAlgorithm} Credential=${awsConfig.accessKeyID}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`
+        request.headers[constants.AMZ_DATE_HEADER] = longDate
+        if (this.credentials.sessionToken) {
+            request.headers[constants.AMZ_TOKEN_HEADER] = this.credentials.sessionToken
+        }
 
-    headers['Authorization'] = authorizationHeader
+        // If the request body is a typed array, we need to convert it to a buffer
+        // so that we can calculate the checksum.
+        if (ArrayBuffer.isView(request.body)) {
+            request.body = request.body.buffer
+        }
 
-    return headers
+        // Ensure we avoid passing undefined to the crypto hash function.
+        if (!request.body) {
+            request.body = ''
+        }
+
+        let payloadHash = constants.EMPTY_SHA256
+        if (this.applyChecksum) {
+            if (!hasHeader(constants.AMZ_CONTENT_SHA256_HEADER, request.headers)) {
+                payloadHash = crypto.sha256(request.body, 'hex').toLowerCase()
+                request.headers[constants.AMZ_CONTENT_SHA256_HEADER] = payloadHash
+            } else if (
+                request.headers[constants.AMZ_CONTENT_SHA256_HEADER] === constants.UNSIGNED_PAYLOAD
+            ) {
+                payloadHash = constants.UNSIGNED_PAYLOAD
+            }
+        }
+
+        const canonicalHeaders = this.computeCanonicalHeaders(
+            request,
+            unsignableHeaders,
+            signableHeaders
+        )
+        const canonicalRequest = this.createCanonicalRequest(request, canonicalHeaders, payloadHash)
+        const signingKey = this.deriveSigningKey(this.credentials, service, region, shortDate)
+        const signature = this.calculateSignature(longDate, scope, signingKey, canonicalRequest)
+
+        /**
+         * Step 4 of the signing process: add the signature to the HTTP request's headers.
+         *
+         * @see https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
+         */
+        request.headers[constants.AUTHORIZATION_HEADER] =
+            `${constants.SIGNING_ALGORITHM_IDENTIFIER} ` +
+            `Credential=${this.credentials.accessKeyId}/${scope}, ` +
+            `SignedHeaders=${Object.keys(canonicalHeaders).sort().join(';')}, ` +
+            `Signature=${signature}`
+
+        // If a request path was provided, add it to the URL
+        let url = `${request.protocol}://${request.hostname}`
+        if (request.path) {
+            url += request.path
+        }
+
+        // If a request query string was provided, add it to the URL
+        if (request.query) {
+            // We exclude the signature from the query string
+            url += `?${this.serializeQueryParameters(request.query)}`
+        }
+
+        return {
+            url: url,
+            ...request,
+        }
+    }
+
+    /**
+     * Produces a presigned URL with AWS v4 signature information for the provided HTTP request.
+     *
+     * A presigned URL is a URL that contains the authorization information
+     * (signature and other signing information) in the query string. This method
+     * returns a preformatted URL that can be used to make the k6 http request.
+     *
+     * @param originalRequest - The original request to presign.
+     * @param options - Options controlling the signing of the request.
+     * @returns A signed request, including the presigned URL.
+     */
+    presign(originalRequest: HTTPRequest, options: PresignOptions = {}): SignedHTTPRequest {
+        const {
+            signingDate = new Date(),
+            expiresIn = 3600,
+            unsignableHeaders,
+            unhoistableHeaders,
+            signableHeaders,
+            signingRegion,
+            signingService,
+        } = options
+        const { longDate, shortDate }: DateInfo = formatDate(signingDate)
+        const region = signingRegion || this.region
+        const service = signingService || this.service
+
+        if (expiresIn > constants.MAX_PRESIGNED_TTL) {
+            throw new InvalidSignatureError(
+                "Signature version 4 presigned URLs can't be valid for more than 7 days"
+            )
+        }
+
+        const scope = `${shortDate}/${region}/${service}/${constants.KEY_TYPE_IDENTIFIER}`
+        const request = this.moveHeadersToQuery(originalRequest, { unhoistableHeaders })
+
+        // Required by the specification:
+        //   "For HTTP/1.1 requests, you must include the host header at a minimum.
+        //   Standard headers like content-type are optional.
+        //   For HTTP/2 requests, you must include the :authority header instead of
+        //   the host header. Different services might require other headers."
+        request.headers[constants.HOST_HEADER] = originalRequest.hostname
+
+        // If the user provided a session token, include it in the signed url query string.
+        if (this.credentials.sessionToken) {
+            request.query[constants.AMZ_TOKEN_QUERY_PARAM] = this.credentials.sessionToken
+        }
+
+        // Add base signing query parameters to the request, as described in the documentation
+        // @see https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
+        request.query[constants.AMZ_ALGORITHM_QUERY_PARAM] = constants.SIGNING_ALGORITHM_IDENTIFIER
+        request.query[
+            constants.AMZ_CREDENTIAL_QUERY_PARAM
+        ] = `${this.credentials.accessKeyId}/${scope}`
+        request.query[constants.AMZ_DATE_QUERY_PARAM] = longDate
+        request.query[constants.AMZ_EXPIRES_QUERY_PARAM] = expiresIn.toString(10)
+
+        const canonicalHeaders = this.computeCanonicalHeaders(
+            request,
+            unsignableHeaders,
+            signableHeaders
+        )
+        request.query[constants.AMZ_SIGNED_HEADERS_QUERY_PARAM] = Object.keys(canonicalHeaders)
+            .sort()
+            .join(';')
+
+        const signingKey = this.deriveSigningKey(this.credentials, service, region, shortDate)
+
+        // Computing the payload from the original request. This is required
+        // in the event the user attempts to produce a presigned URL for s3,
+        // which requires the payload hash to be 'UNSIGNED-PAYLOAD'.
+        //
+        // To that effect, users need to set the 'x-amz-content-sha256' header,
+        // and mark it as unhoistable and unsignable. When setup this way,
+        // the computePayloadHash method will then return the string 'UNSIGNED-PAYLOAD'.
+        const payloadHash = this.computePayloadHash(originalRequest)
+        const canonicalRequest = this.createCanonicalRequest(request, canonicalHeaders, payloadHash)
+
+        request.query[constants.AMZ_SIGNATURE_QUERY_PARAM] = this.calculateSignature(
+            longDate,
+            scope,
+            signingKey,
+            canonicalRequest
+        )
+
+        // If a request path was provided, add it to the URL
+        let url = `${request.protocol}://${request.hostname}`
+        if (request.path) {
+            url += request.path
+        }
+
+        // If a request query string was provided, add it to the URL
+        if (request.query) {
+            url += `?${this.serializeQueryParameters(request.query)}`
+        }
+
+        return { url: url, ...request }
+    }
+
+    /**
+     * Create a string including information from your request
+     * in a AWS signature v4 standardized (canonical) format.
+     *
+     * Step 1 of the signing process: create the canonical request string.
+     * @see https://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
+     *
+     * @param request {HTTPRequest} The request to sign.
+     * @param canonicalHeaders {HTTPHeaderBag} The request's canonical headers.
+     * @param payloadHash {string} The hexadecimally encoded request's payload hash .
+     * @returns {string} The canonical request string.
+     */
+    private createCanonicalRequest(
+        request: HTTPRequest,
+        canonicalHeaders: HTTPHeaderBag,
+        payloadHash: string
+    ): string {
+        const sortedHeaders = Object.keys(canonicalHeaders).sort()
+        const sortedCanonicalHeaders = sortedHeaders
+            .map((name) => `${name}:${canonicalHeaders[name]}`)
+            .join('\n')
+        const signedHeaders = sortedHeaders.join(';')
+
+        return (
+            `${request.method}\n` +
+            `${this.computeCanonicalURI(request)}\n` +
+            `${this.computeCanonicalQuerystring(request)}\n` +
+            `${sortedCanonicalHeaders}\n\n` +
+            `${signedHeaders}\n` +
+            `${payloadHash}`
+        )
+    }
+
+    /**
+     * Create the "string to sign" part of the signature Version 4 protocol.
+     *
+     * The "string to sign" includes meta information about your request and
+     * about the canonical request that you created with `createCanonicalRequest`.
+     * It is used hand in hand with the signing key to create the request signature.
+     * Step 2 of the signing process: create the string to sign.
+     * @see https://docs.aws.amazon.com/general/latest/gr/sigv4-create-string-to-sign.html
+     *
+     * @param longDate {string} The request's date in iso 8601 format.
+     * @param credentialScope {string} The request's credential scope.
+     * @param canonicalRequest {string} The request's canonical request.
+     * @returns {string} The "string to sign".
+     */
+    private createStringToSign(
+        longDate: string,
+        credentialScope: string,
+        canonicalRequest: string
+    ): string {
+        const hashedCanonicalRequest = crypto.sha256(canonicalRequest, 'hex')
+
+        return (
+            `${constants.SIGNING_ALGORITHM_IDENTIFIER}\n` +
+            `${longDate}\n` +
+            `${credentialScope}\n` +
+            `${hashedCanonicalRequest}`
+        )
+    }
+
+    /**
+     * Calculte the signature for AWS signature version 4.
+     *
+     * Step 3 of the signing process: create the signature.
+     * @see https://docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html
+     *
+     * @param longDate {string} The request's date in iso 8601 format.
+     * @param credentialScope {string} The request's credential scope.
+     * @param signingKey {string} the signing key as computed by the deriveSigningKey method.
+     * @param canonicalRequest {string} The request's canonical request.
+     * @returns {string} The signature.
+     */
+    private calculateSignature(
+        longDate: string,
+        credentialScope: string,
+        signingKey: Uint8Array,
+        canonicalRequest: string
+    ): string {
+        const stringToSign = this.createStringToSign(longDate, credentialScope, canonicalRequest)
+        return crypto.hmac('sha256', signingKey, stringToSign, 'hex')
+    }
+
+    /**
+     * Derives the signing key for authenticating requests signed with
+     * the Signature version 4 authentication protocol.
+     *
+     * deriveSigningKey produces a signing key by creating a series of
+     * hash-based message authentication codes (HMACs) represented in
+     * a binary format.
+     *
+     * The derived signing key is specific to the date it's made at, as well as
+     * the service and region it targets.
+     *
+     * @param credentials {AWSCredentials} The credentials to use for signing.
+     * @param service {string} The service the request is targeted at.
+     * @param region {string} The region the request is targeted at.
+     * @param shortDate {string} The request's date in YYYYMMDD format.
+     * @returns {Uint8Array} The derived signing key.
+     */
+    private deriveSigningKey(
+        credentials: Credentials,
+        service: string,
+        region: string,
+        shortDate: string
+    ): Uint8Array {
+        const kSecret = credentials.secretAccessKey
+        const kDate: any = crypto.hmac('sha256', 'AWS4' + kSecret, shortDate, 'binary')
+        const kRegion: any = crypto.hmac('sha256', kDate, region, 'binary')
+        const kService: any = crypto.hmac('sha256', kRegion, service, 'binary')
+        const kSigning: any = crypto.hmac('sha256', kService, 'aws4_request', 'binary')
+
+        return kSigning
+    }
+
+    /**
+     * Create a string that includes information from your request
+     * in a AWS signature v4 standardized (canonical) format.
+     *
+     * @param param0 {HTTPRequest} The request to sign.
+     * @returns {string} The canonical URI.
+     */
+    private computeCanonicalURI({ path }: HTTPRequest): string {
+        if (!this.uriEscapePath) {
+            // If the path is not uri-escaped, as in S3, then there's no need to
+            // double encode it nor normalize it.
+            return path
+        }
+
+        const normalizedURISegments = []
+
+        for (const URISegment of path.split('/')) {
+            if (URISegment?.length == 0) {
+                continue
+            }
+
+            if (URISegment === '.') {
+                continue
+            }
+
+            if (URISegment === '..') {
+                normalizedURISegments.pop()
+            } else {
+                normalizedURISegments.push(URISegment)
+            }
+        }
+
+        // Normalize and double encode the URI
+        const leading = path?.startsWith('/') ? '/' : ''
+        const URI = normalizedURISegments.join('/')
+        const trailing = normalizedURISegments.length > 0 && path?.endsWith('/') ? '/' : ''
+        const normalizedURI = `${leading}${URI}${trailing}`
+
+        const doubleEncoded = encodeURIComponent(normalizedURI)
+
+        return doubleEncoded.replace(/%2F/g, '/')
+    }
+
+    /**
+     * Serializes the request's query parameters into their canonical
+     * string version. If the request does not include a query parameters,
+     * returns an empty string.
+     *
+     * @param param0 {HTTPRequest} The request containing the query parameters.
+     * @returns {string} The canonical query string.
+     */
+    private computeCanonicalQuerystring({ query = {} }: HTTPRequest): string {
+        const keys: Array<string> = []
+        const serialized: Record<string, string> = {}
+
+        for (const key of Object.keys(query).sort()) {
+            if (key.toLowerCase() === constants.AMZ_SIGNATURE_HEADER) {
+                continue
+            }
+
+            keys.push(key)
+            const value = query[key]
+
+            if (typeof value === 'string') {
+                serialized[key] = `${escapeURI(key)}=${escapeURI(value)}`
+            } else if (Array.isArray(value)) {
+                serialized[key] = value
+                    .slice(0)
+                    .sort()
+                    .reduce(
+                        (encoded: Array<string>, value: string) =>
+                            encoded.concat([`${escapeURI(key)}=${escapeURI(value)}`]),
+                        []
+                    )
+                    .join('&')
+            }
+        }
+
+        return keys
+            .map((key) => serialized[key])
+            .filter((serialized) => serialized)
+            .join('&')
+    }
+
+    /**
+     * Create the canonical form of the request's headers.
+     * Canonical headers consist of all the HTTP headers you
+     * are including with the signed request.
+     *
+     * @param param0 {HTTPRequest} The request to compute the canonical headers of.
+     * @param unsignableHeaders {Set<string>} The headers that should not be signed.
+     * @param signableHeaders {Set<string>} The headers that should be signed.
+     * @returns {string} The canonical headers.
+     */
+    private computeCanonicalHeaders(
+        { headers }: HTTPRequest,
+        unsignableHeaders?: Set<string>,
+        signableHeaders?: Set<string>
+    ): HTTPHeaderBag {
+        const canonicalHeaders: HTTPHeaderBag = {}
+
+        for (const headerName of Object.keys(headers).sort()) {
+            if (headers[headerName] == undefined) {
+                continue
+            }
+
+            const canonicalHeaderName = headerName.toLowerCase()
+            if (
+                canonicalHeaderName in constants.ALWAYS_UNSIGNABLE_HEADERS ||
+                unsignableHeaders?.has(canonicalHeaderName)
+            ) {
+                if (
+                    !signableHeaders ||
+                    (signableHeaders && !signableHeaders.has(canonicalHeaderName))
+                ) {
+                    continue
+                }
+            }
+
+            canonicalHeaders[canonicalHeaderName] = headers[headerName].trim().replace(/\s+/g, ' ')
+        }
+
+        return canonicalHeaders
+    }
+
+    /**
+     * Computes the SHA256 cryptographic hash of the request's body.
+     *
+     * If the headers contain the 'X-Amz-Content-Sha256' header, then
+     * the value of that header is returned instead. This proves useful
+     * when, for example, presiging a URL for S3, as the payload hash
+     * must always be equal to 'UNSIGNED-PAYLOAD'.
+     *
+     * @param param0 {HTTPRequest} The request to compute the payload hash of.
+     * @returns {string} The hex encoded SHA256 payload hash, or the value of the 'X-Amz-Content-Sha256' header.
+     */
+    private computePayloadHash({ headers, body }: HTTPRequest): string {
+        for (const headerName of Object.keys(headers)) {
+            // If the header is present, return its value.
+            // So that we let the 'UNSIGNED-PAYLOAD' value pass through.
+            if (headerName.toLowerCase() === constants.AMZ_CONTENT_SHA256_HEADER) {
+                return headers[headerName]
+            }
+        }
+
+        if (body == undefined) {
+            return constants.EMPTY_SHA256
+        }
+
+        if (typeof body === 'string' || isArrayBuffer(body)) {
+            return crypto.sha256(body, 'hex').toLowerCase()
+        }
+
+        if (ArrayBuffer.isView(body)) {
+            // If the request body is a typed array, we need to convert it to a buffer
+            // so that we can calculate the checksum.
+            return crypto.sha256((body as DataView).buffer, 'hex').toLowerCase()
+        }
+
+        return constants.UNSIGNED_PAYLOAD
+    }
+
+    /**
+     * Moves a request's headers to its query parameters.
+     *
+     * The operation will ignore any amazon standard headers, prefixed
+     * with 'X-Amz-'. It will also ignore any headers specified as unhoistable
+     * by the options.
+     *
+     * The operation will delete the headers from the request.
+     *
+     * @param request {HTTPRequest} The request to move the headers from.
+     * @param options
+     * @returns {HTTPRequest} The request with the headers moved to the query parameters.
+     */
+    private moveHeadersToQuery(
+        request: HTTPRequest,
+        options: { unhoistableHeaders?: Set<string> } = {}
+    ): HTTPRequest & { query: QueryParameterBag } {
+        const requestCopy = JSON.parse(JSON.stringify(request))
+        const { headers, query = {} as QueryParameterBag } = requestCopy
+
+        for (const name of Object.keys(headers)) {
+            const lowerCaseName = name.toLowerCase()
+            if (
+                lowerCaseName.slice(0, 6) === 'x-amz-' &&
+                !options.unhoistableHeaders?.has(lowerCaseName)
+            ) {
+                query[name] = headers[name]
+                delete headers[name]
+            }
+        }
+
+        return {
+            ...requestCopy,
+            headers,
+            query,
+        }
+    }
+
+    /**
+     * Serializes a HTTPRequest's query parameter bag into a string.
+     *
+     * @param query {QueryParameterBag} The query parameters to serialize.
+     * @param ignoreKeys {Set<string>} The keys to ignore.
+     * @returns {string} The serialized, and ready to use in a URL, query parameters.
+     */
+    private serializeQueryParameters(query: QueryParameterBag, ignoreKeys?: string[]): string {
+        const keys: Array<string> = []
+        const serialized: Record<string, string> = {}
+
+        for (const key of Object.keys(query).sort()) {
+            if (ignoreKeys?.includes(key.toLowerCase())) {
+                continue
+            }
+
+            keys.push(key)
+            const value = query[key]
+
+            if (typeof value === 'string') {
+                serialized[key] = `${escapeURI(key)}=${escapeURI(value)}`
+            } else if (Array.isArray(value)) {
+                serialized[key] = value
+                    .slice(0)
+                    .sort()
+                    .reduce(
+                        (encoded: Array<string>, value: string) =>
+                            encoded.concat([`${escapeURI(key)}=${escapeURI(value)}`]),
+                        []
+                    )
+                    .join('&')
+            }
+        }
+
+        return keys
+            .map((key) => serialized[key])
+            .filter((serialized) => serialized)
+            .join('&')
+    }
 }
 
 /**
@@ -89,515 +644,198 @@ export class InvalidSignatureError extends AWSError {
      *
      * @param  {string} message - human readable error message
      */
-    constructor(message: string, code: string) {
+    constructor(message: string, code?: string) {
         super(message, code)
         this.name = 'InvalidSignatureError'
     }
 }
 
-/**
- * Calculte the signature for AWS signature version 4
- *
- * @param  {string} derivedSigningKey - dervied signing key as computed by `deriveSigningKey`
- * @param  {string} stringToSign - String to sign as computed by `createStringToSign`
- * @return {string}
- */
-export function calculateSignature(derivedSigningKey: ArrayBuffer, stringToSign: string): string {
-    return hmac('sha256', derivedSigningKey, stringToSign, 'hex')
-}
-/**
- * Derives the signing key for authenticating requests signed with
- * the Signature version 4 authentication protocol.
- *
- * deriveSigningKey produces a signing key by creating a series of
- * hash-based message authentication codes (HMACs) represented in
- * a binary format.
- *
- * The derived signing key is specific to the date it's made at, as well as
- * the service and region it targets.
- *
- * @param  {string} secretAccessKey - the AWS secret access key to derive the signing key for
- * @param  {number} time - timestamp of the request
- * @param  {string} region - targeted AWS region. MUST be UTF-8 encoded.
- * @param  {string} service - targeted AWS service. MUST be UTF-8 encoded.
- * @return {string}
- */
-export function deriveSigningKey(
-    secretAccessKey: string,
-    time: number,
-    region: string,
+export interface SignatureV4Options {
+    /**
+     * The name of the service to sign for.
+     */
     service: string
-): ArrayBuffer {
-    const kSecret = secretAccessKey
-    const date = toDate(time)
-
-    // FIXME: hmac takes ArrayBuffer as input, but returns bytes (number[]).
-    // How does one convert from one to the other?
-    const kDate: any = hmac('sha256', 'AWS4' + kSecret, date, 'binary')
-    const kRegion: any = hmac('sha256', kDate, region, 'binary')
-    const kService: any = hmac('sha256', kRegion, service, 'binary')
-    const kSigning: any = hmac('sha256', kService, 'aws4_request', 'binary')
-
-    return kSigning
-}
-
-// Hashing Algorithm to use in the signature process
-export const HashingAlgorithm = 'AWS4-HMAC-SHA256'
-
-/**
- * Certain services, such as S3, allow for unsigned payloads. If
- *  producing a signed canonical request for such service, pass
- *  the `UnsignedPayload` constant value as the payload parameter.
- */
-export const UnsignedPayload = 'UNSIGNED-PAYLOAD'
-
-/**
- * Create the "string to sign" part of the signature Version 4 protocol.
- *
- * The "string to sign" includes meta information about your request and
- * about the canonical request that you created with `createCanonicalRequest`.
- * It is used hand in hand with the signing key to create the request signature.
- *
- * @param  {number} requestTimestamp - timestamp of the request
- * @param  {string} region - targeted AWS region. MUST be UTF-8 encoded.
- * @param  {string} service - targeted AWS service name. MUST be UTF-8 encoded.
- * @param  {string} hashedCanonicalRequest - canonical request as produced by calling the createCanonicalRequest function,
- *     hashed using the SHA256 algorithm (encoded in hexadecimal format).
- * @return {string}
- */
-export function createStringToSign(
-    requestTimestamp: number,
-    region: string,
-    service: string,
-    hashedCanonicalRequest: string
-): string {
-    // the request date specified in ISO8601 format: YYYYMMDD'T'HHMMSS'Z'
-    const requestDateTime = toTime(requestTimestamp)
-
-    // The credential scope value, consisting of the date in YYYYMMDD format,
-    // the targeted region, the targeted service, and a termination string.
-    // Note that the region and service MUST be UTF-8 encoded.
-    const credentialScope = createCredentialScope(requestTimestamp, region, service)
-
-    const stringToSign = [
-        // Algorithm
-        HashingAlgorithm,
-
-        // RequestDateTime
-        requestDateTime,
-
-        // CredentialScope
-        credentialScope,
-
-        // HashedCanonicalRequest
-        hashedCanonicalRequest,
-    ].join('\n')
-
-    return stringToSign
-}
-
-/**
- *
- * Helper function creating a credential scope string to use in the signature
- * version 4 process. A credential scope consists of the date of the request
- * in YYYYMMDD format, the targeted region, the targeted service, and a
- * termination string.
- *
- * Note that the region and service MUST be UTF-8 encoded.
- *
- * @param  {number} requestTimestamp - timestamp of the request
- * @param  {string} region - targeted AWS region. MUST be UTF-8 encoded.
- * @param  {string} service - targeted AWS service name. MUST be UTF-8 encoded.
- * @return {string}
- */
-export function createCredentialScope(
-    requestTimestamp: number,
-    region: string,
-    service: string
-): string {
-    return [toDate(requestTimestamp), region, service, 'aws4_request'].join('/')
-}
-
-/**
- *  Create a string that includes information from your request
- * in a AWS signature v4 standardized (canonical) format.
- *
- * @param  {string} method - the HTTP request method
- * @param  {string} uri - URI-encoded version of the absolute path component of the URI
- * @param  {string} query - request's query string
- * @param  {Object} headers - all the HTTP headers that you wish to include with the signed request
- * @param  {string | ArrayBuffer} payload -  payload to include as the body of the request
- * @param  {URIEncodingConfig} URIencodingConfig- URI encoding configuration
- * @return {string}
- */
-export function createCanonicalRequest(
-    method: HTTPMethod,
-    uri: string,
-    query: string,
-    headers: HTTPHeaders,
-    payload: string | ArrayBuffer,
-    URIencodingConfig: URIEncodingConfig
-): string {
-    const httpRequestMethod = method.toUpperCase()
-    const canonicalURI = createCanonicalURI(uri, URIencodingConfig)
-    const canonicalQueryString = createCanonicalQueryString(query)
-    const canonicalHeaders = createCanonicalHeaders(headers)
-    const signedHeaders = createSignedHeaders(headers)
-    const requestPayload = createCanonicalPayload(payload)
-
-    const canonicalRequest = [
-        httpRequestMethod,
-        canonicalURI,
-        canonicalQueryString,
-        canonicalHeaders,
-        signedHeaders,
-        requestPayload,
-    ].join('\n')
-
-    return canonicalRequest
-}
-
-/**
- *  Creates the (canonical) URI-encoded version of the
- *  absolute path component of the URI: everything in the URI
- *  from the HTTP host to the question mark character ("?")
- *  that begins the query string parameters (if any).
- *
- * @param  {string} uri - URI to canonize
- * @param  {URIEncodingConfig} - URI encoding configuration
- * @return {string} - canonical URL
- */
-export function createCanonicalURI(uri: string, URIencodingConfig: URIEncodingConfig): string {
-    if (uri == '/') {
-        return uri
-    }
-
-    let canonicalURI = uri
-    if (uri[uri.length - 1] == '/' && canonicalURI[canonicalURI.length - 1] != '/') {
-        canonicalURI += '/'
-    }
-
-    canonicalURI = URIEncode(canonicalURI, URIencodingConfig.path)
-
-    return URIencodingConfig.double ? URIEncode(canonicalURI, URIencodingConfig.path) : canonicalURI
-}
-
-/**
- * Creates the canonical form of the request's query
- * string. If the request does not include a query string,
- * provide an empty string.
- *
- * @param  {String | Object} qs - query string to canonize
- * @return {string}
- */
-export function createCanonicalQueryString(qs: string): string {
-    if (qs === '') {
-        return ''
-    }
-
-    // const intermediary: { [key: string]: string } = parseQueryString(qs)
-
-    // return Object.keys(intermediary)
-    //     .sort()
-    //     .map((key: string) => {
-    //         // const values: string[] = Array.isArray(intermediary[key])
-    //         //     ? intermediary[key]
-    //         //     : [intermediary[key]]
-    //         const values = intermediary[key]
-
-    //         return values
-    //             .sort()
-    //             .map((val: string) => encodeURIComponent(key) + '=' + encodeURIComponent(val))
-    //             .join('&')
-    //     })
-    //     .join('&')
-
-    return parseQueryString(qs)
-        .map(([key, value]: [string, string]): string => {
-            let uriComponent = encodeURIComponent(key) + '='
-            if (value !== 'undefined') {
-                uriComponent += encodeURIComponent(value)
-            }
-
-            return uriComponent
-        })
-        .join('&')
-}
-
-/**
- * Create the canonical form of the request's headers.
- * Canonical headers consist of all the HTTP headers you
- * are including with the signed request.
- *
- * Note that:
- *   * for HTTP/1.1 requests, the headers should at least
- * contain the `host` header.
- *   * for HTTP/2, the `:authority` header must be used instead
- * of `host`.
- *
- * @param  {Object} headers
- * @return {string}
- */
-export function createCanonicalHeaders(headers: HTTPHeaders) {
-    if (headers.constructor !== Object || Object.entries(headers).length === 0) {
-        return ''
-    }
-
-    const canonicalHeaders = Object.entries(headers)
-        .map(([name, values]) => {
-            const canonicalName = name.toLowerCase().trim()
-            const normalizedValues = Array.isArray(values) ? values : [values]
-
-            // Note that we do not need to sort values
-            const canonicalValues = normalizedValues
-                .map((v) => {
-                    // convert sequential spaces to a single space
-                    return v.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '')
-                })
-                .join(',') // standard for multiple values in a HTTP header
-
-            return canonicalName + ':' + canonicalValues + '\n'
-        })
-        .sort()
-        .join('')
-
-    return canonicalHeaders
-}
-
-/**
- * Create the canonical request's signed headers.
- *
- * The signed headers part of the request contains the
- * list of headers included in the request's signing process.
- *
- * Note that:
- *   * for HTTP/1.1 requests, the `host` header must be included.
- *   * for HTTP/2 requests, the `:authority` header must be included instead
- *   of host.
- *   * if used, the `x-amz-date` header must be included.
- *
- * @param  {Object} headers
- * @return {string}
- * @throws {TypeError} - on headers not being an Object, or being empty.
- */
-export function createSignedHeaders(headers: { [key: string]: string }) {
-    if (headers.constructor !== Object) {
-        throw new TypeError('headers should be an object')
-    }
-
-    if (Object.entries(headers).length === 0) {
-        throw 'headers should at least contain either the Host (HTTP 1.1) or :authority (HTTP 2) parameter'
-    }
-
-    // To create the signed headers list, convert
-    // all header names to lowercase, sort them by
-    // character code, and use a semicolon to separate
-    // the header names.
-    const result = Object.keys(headers)
-        .map((name) => name.toLowerCase().trim())
-        .sort()
-        .join(';')
-
-    return result
-}
-
-/**
- * Create the canonical form of the request's payload.
- *
- * The canonical payload consists in a lowercased, hex encoded,
- * SHA256 hash of the requests body/payload.
- *
- * Certain services, such as S3, allow for unsigned payload. If
- * producing a signed canonical request for such service, pass
- * the `UnsignedPayload` constant value as the payload parameter.
- *
- * @param  {String | ArrayBuffer} payload
- * @return {string}
- */
-export function createCanonicalPayload(payload: string | ArrayBuffer) {
-    if (payload === UnsignedPayload) {
-        return payload
-    }
-
-    // Note that if the paylaod is null, we convert it
-    // to an empty string.
-    // TODO: Should switching to empty string if null impact headers?
-    return crypto.sha256(payload || '', 'hex').toLowerCase()
-}
-
-/**
- * URIEncodes encodes every bytes of a URI to be URL-safe.
- *
- * This implementation is specific to AWS; who intended to make it as
- * close as possible to the underlying RFC 3946. It:
- *   * URI encode every byte except the unreserved characters: 'A'-'Z', 'a'-'z', '0'-'9',
- *     '-', '.', '_', and '~'.
- *   * considers the space character as a reserved character and must URI encodes
- *     encodes it as "%20" (and not as "+").
- *   * URI encodes every byte by prefixing with '%' the two-digit hexadecimal value of the byte.
- *   * If the `path` argument is set, forward slashes are not encoded, to fit with
- *     S3 requirements.
- *
- * N.B: this implementation differs with ES6' mainly in that it does
- * encode the "'" character.
- *
- * Based on AWS implementation: https://github.com/aws/aws-sdk-java/blob/master/aws-java-sdk-core/src/main/java/com/amazonaws/util/SdkHttpUtils.java#L66
- * Encoding specs: https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-header-based-auth.html
- *
- * @param {string} uri - uri to encode
- * @param {boolean} path - slash characters should be encoded everywhere,
- *     but in paths, set to false when encoding a path
- * @return {string} the URI encoded result
- */
-export function URIEncode(uri: string, path: boolean): string {
-    if (uri == '') {
-        return uri
-    }
-
-    return uri
-        .split('') // to be able to map over a string, because... javascript...
-        .map((letter: string) => {
-            if (isAlpha(letter) || isNumeric(letter) || '-._~'.includes(letter)) {
-                return letter
-            }
-
-            // Space should be explicitly encoded to as %20.
-            if (letter == ' ') {
-                return '%20'
-            }
-
-            // If the URI is a path, the forward slash shouldn't
-            // be encoded.
-            if (letter == '/' && path) {
-                return '/'
-            }
-
-            return '%' + letter.charCodeAt(0).toString(16).toUpperCase()
-        })
-        .join('')
-}
-
-/**
- * Class holding URI encoding configuration
- */
-export class URIEncodingConfig {
-    double: boolean
-    path: boolean
 
     /**
-     *
-     * @param {boolean} double - should the URI be double encoded?
-     * @param {boolean} path - is the URI a path? If so, its forward
-     *     slashes won't be URIencoded.
+     * The name of the region to sign for.
      */
-    constructor(double: boolean, path: boolean) {
-        this.double = double
-        this.path = path
+    region: string
+
+    /**
+     * The credentials with which the request should be signed.
+     */
+    credentials: Credentials
+
+    /**
+     * Whether to uri-escape the request URI path as part of computing the
+     * canonical request string. This is required for every AWS service, except
+     * Amazon S3, as of late 2017.
+     *
+     * @default [true]
+     */
+    uriEscapePath?: boolean
+
+    /**
+     * Whether to calculate a checksum of the request body and include it as
+     * either a request header (when signing) or as a query string parameter
+     * (when presigning). This is required for AWS Glacier and Amazon S3 and optional for
+     * every other AWS service as of late 2017.
+     *
+     * @default [true]
+     */
+    applyChecksum?: boolean
+}
+
+export interface SignOptions {
+    /**
+     * The date and time to be used as signature metadata. This value should be
+     * a Date object, a unix (epoch) timestamp, or a string that can be
+     * understood by the JavaScript `Date` constructor.If not supplied, the
+     * value returned by `new Date()` will be used.
+     */
+    signingDate?: Date
+
+    /**
+     * The service signing name. It will override the service name of the signer
+     * in current invocation
+     */
+    signingService?: string
+
+    /**
+     * The region name to sign the request. It will override the signing region of the
+     * signer in current invocation
+     */
+    signingRegion?: string
+}
+
+export interface RequestSigningOptions extends SignOptions {
+    /**
+     * A set of strings whose members represents headers that cannot be signed.
+     * All headers in the provided request will have their names converted to
+     * lower case and then checked for existence in the unsignableHeaders set.
+     */
+    unsignableHeaders?: Set<string>
+
+    /**
+     * A set of strings whose members represents headers that should be signed.
+     * Any values passed here will override those provided via unsignableHeaders,
+     * allowing them to be signed.
+     *
+     * All headers in the provided request will have their names converted to
+     * lower case before signing.
+     */
+    signableHeaders?: Set<string>
+}
+
+export interface PresignOptions extends RequestSigningOptions {
+    /**
+     * The number of seconds before the presigned URL expires
+     */
+    expiresIn?: number
+
+    /**
+     * A set of strings whose representing headers that should not be hoisted
+     * to presigned request's query string. If not supplied, the presigner
+     * moves all the AWS-specific headers (starting with `x-amz-`) to the request
+     * query string. If supplied, these headers remain in the presigned request's
+     * header.
+     * All headers in the provided request will have their names converted to
+     * lower case and then checked for existence in the unhoistableHeaders set.
+     */
+    unhoistableHeaders?: Set<string>
+}
+
+export interface Credentials {
+    /**
+     * AWS access key ID
+     */
+    readonly accessKeyId: string
+
+    /**
+     * AWS secret access key
+     */
+    readonly secretAccessKey: string
+
+    /**
+     * A security or session token to use with these credentials. Usually
+     * present for temporary credentials.
+     */
+    readonly sessionToken?: string
+}
+
+export interface DateInfo {
+    /**
+     * ISO8601 formatted date string
+     */
+    longDate: string
+
+    /**
+     * String in the format YYYYMMDD
+     */
+    shortDate: string
+}
+
+/**
+ * Escapes a URI following the AWS signature v4 escaping rules.
+ *
+ * @param URI {string} The URI to escape.
+ * @returns {string} The escaped URI.
+ */
+function escapeURI(URI: string): string {
+    const hexEncode = (c: string): string => {
+        return `%${c.charCodeAt(0).toString(16).toUpperCase()}`
+    }
+
+    return encodeURIComponent(URI).replace(/[!'()*]/g, hexEncode)
+}
+
+/**
+ * formatDate formats a Date object into a ISO8601 formatted date string
+ * and a string in the format YYYYMMDD.
+ *
+ * @param date {Date} The date to format.
+ * @returns {DateInfo} The formatted date.
+ */
+function formatDate(date: Date): DateInfo {
+    const longDate = iso8601(date).replace(/[\-:]/g, '')
+    return {
+        longDate,
+        shortDate: longDate.slice(0, 8),
     }
 }
 
 /**
- * Compute the request time value as specified by the ISO8601
- * format: YYYYMMDD'T'HHMMSS'Z'
+ * Formats a time into an ISO 8601 string.
  *
- * @param  {number} timestamp
- * @return {string}
- */
-export function toTime(timestamp: number): string {
-    return new Date(timestamp).toISOString().replace(/[:\-]|\.\d{3}/g, '')
-}
-/**
- * Computethe request date value in the format: YYYMMDD
+ * @see https://en.wikipedia.org/wiki/ISO_8601
  *
- * @param  {number} timestamp
- * @return {string}
+ * @param time {number | string | Date} The time to format.
+ * @returns {string} The ISO 8601 formatted time.
  */
-export function toDate(timestamp: number): string {
-    return toTime(timestamp).substring(0, 8)
+function iso8601(time: number | string | Date): string {
+    return toDate(time)
+        .toISOString()
+        .replace(/\.\d{3}Z$/, 'Z')
 }
 
 /**
- * Parse a HTTP request URL's querystring into an object
- * containing its `key=value` pairs.
+ * Converts a time value into a Date object.
  *
- * @param  {string} qs
- * @return {object}
+ * @param time {number | string | Date} The time to convert.
+ * @returns {Date} The resulting Date object.
  */
-export function parseQueryString(qs: string): Array<[string, string]> {
-    if (qs.length === 0) {
-        return []
+function toDate(time: number | string | Date): Date {
+    if (typeof time === 'number') {
+        return new Date(time * 1000)
     }
 
-    return qs
-        .split('&')
-        .filter((e) => e)
-        .map((v: string): [string, string] => {
-            const parts = v.split('=', 2) as [string, string]
-            const key = decodeURIComponent(parts[0])
-            let value = decodeURIComponent(parts[1])
-            if (value === 'undefined') {
-                value = ''
-            }
-            return [key, value]
-        })
-        .sort((a: [string, string], b: [string, string]) => {
-            return a[0].localeCompare(b[0])
-        })
-}
+    if (typeof time === 'string') {
+        if (Number(time)) {
+            return new Date(Number(time) * 1000)
+        }
 
-function isAlpha(c: string): boolean {
-    return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')
-}
+        return new Date(time)
+    }
 
-function isNumeric(c: string): boolean {
-    return c >= '0' && c <= '9'
+    return time
 }
-
-// FIXME: finish implementation when needed
-// See the following for more details:
-//   * https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
-//   * https://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-query-string-auth.html
-// export function signQueryString(
-// queryString,
-// requestTimestamp,
-// accessKeyID,
-// secretAccessKey,
-// region,
-// service,
-// ttl, // in seconds
-// headers,
-// doubleURIEncoding = true
-// ) {
-// const credential = [accessKeyID, toDate(requestTimestamp), region, service].join('/')
-//
-// const canonicalRequest = createCanonicalRequest(
-// method,
-// path,
-// queryString,
-// headers,
-// body,
-// doubleURIEncoding
-// )
-//
-// const derivedSigningKey = deriveSigningKey(secretAccessKey, requestTimestamp, region, service)
-//
-// const stringToSign = createStringToSign(
-// requestTimestamp,
-// region,
-// service,
-// sha256(canonicalRequest, 'hex')
-// )
-//
-// const signedHeaders = createSignedHeaders(headers)
-// const signature = calculateSignature(derivedSigningKey, stringToSign)
-//
-// return [
-// `X-Amz-Algorithm=${HashingAlgorithm}`,
-// `X-Amz-Credential=${crediental}`,
-// `X-Amz-Date=${toTime(requestTimestamp)}`,
-// `X-Amz-Expires=${ttl}`,
-// `X-Amz-SignedHeaders=${signedHeaders}`,
-// `X-Amz-Signature=${signature}`,
-//`X-Amz-Security-Token=`,  // TODO: optional
-// ].join('&')
-// }

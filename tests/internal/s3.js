@@ -3,6 +3,7 @@ import { AWSConfig, S3Client, S3ServiceError } from '../../build/s3.min.js'
 
 export function s3TestSuite(data) {
     const s3Client = new S3Client(data.awsConfig)
+    s3Client.host = `s3.${data.awsConfig.endpoint}`
 
     describe('list buckets', () => {
         // Act

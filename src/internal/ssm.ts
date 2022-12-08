@@ -1,11 +1,12 @@
 import { JSONObject } from 'k6'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
-import { AWSClient, AWSRequest } from './client'
-import { AWSError } from './error'
+import { AWSClient } from './client'
 import { AWSConfig } from './config'
-import { InvalidSignatureError, URIEncodingConfig } from './signature'
-import { HTTPMethod, HTTPHeaders } from './http'
+import { AMZ_TARGET_HEADER } from './constants'
+import { AWSError } from './error'
+import { HTTPHeaders, HTTPMethod } from './http'
+import { InvalidSignatureError, SignatureV4 } from './signature'
 
 /**
  * Class allowing to interact with Amazon AWS's Systems Manager service
@@ -13,22 +14,32 @@ import { HTTPMethod, HTTPHeaders } from './http'
 export class SystemsManagerClient extends AWSClient {
     method: HTTPMethod
     commonHeaders: HTTPHeaders
+    signature: SignatureV4
 
     /**
      * Create a SystemsManagerClient
      * @param  {AWSConfig} awsConfig - configuration attributes to use when interacting with AWS' APIs
      */
     constructor(awsConfig: AWSConfig) {
-        const URIencodingConfig = new URIEncodingConfig(true, false)
-        super(awsConfig, 'ssm', URIencodingConfig)
+        super(awsConfig, 'ssm')
 
         // All interactions with the Systems Manager service
         // are made via the POST method.
         this.method = 'POST'
         this.commonHeaders = {
-            'Accept-Encoding': 'identity',
             'Content-Type': 'application/x-amz-json-1.1',
         }
+
+        this.signature = new SignatureV4({
+            service: this.serviceName,
+            region: awsConfig.region,
+            credentials: {
+                accessKeyId: awsConfig.accessKeyID,
+                secretAccessKey: awsConfig.secretAccessKey,
+            },
+            uriEscapePath: false,
+            applyChecksum: false,
+        })
     }
 
     /**
@@ -44,23 +55,22 @@ export class SystemsManagerClient extends AWSClient {
         name: string,
         withDecryption: boolean = false
     ): SystemsManagerParameter | undefined {
-        const body = JSON.stringify({ Name: name, WithDecryption: withDecryption })
-
-        // Ensure to include the desired 'Action' in the X-Amz-Target
-        // header field, as documented by the AWS API docs.
-        const signedRequest: AWSRequest = super.buildRequest(
-            this.method,
-            this.host,
-            '/',
-            '',
-            body,
+        const signedRequest = this.signature.sign(
             {
-                ...this.commonHeaders,
-                'X-Amz-Target': `AmazonSSM.GetParameter`,
-            }
+                method: this.method,
+                protocol: this.awsConfig.scheme,
+                hostname: this.host,
+                path: '/',
+                headers: {
+                    ...this.commonHeaders,
+                    [AMZ_TARGET_HEADER]: `AmazonSSM.GetParameter`,
+                },
+                body: JSON.stringify({ Name: name, WithDecryption: withDecryption }),
+            },
+            {}
         )
 
-        const res = http.request(this.method, signedRequest.url, body, {
+        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(SystemsManagerOperation.GetParameter, res)

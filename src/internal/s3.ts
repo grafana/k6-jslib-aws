@@ -1,23 +1,36 @@
 import { bytes } from 'k6'
-import http, { RefinedResponse, ResponseType } from 'k6/http'
 import { parseHTML } from 'k6/html'
-import { sha256 } from 'k6/crypto'
+import http, { RefinedResponse, ResponseType } from 'k6/http'
 
-import { InvalidSignatureError, URIEncodingConfig } from './signature'
-import { AWSClient, AWSRequest } from './client'
-import { AWSError } from './error'
+import { AWSClient } from './client'
 import { AWSConfig } from './config'
+import { AWSError } from './error'
+import { SignedHTTPRequest } from './http'
+import { InvalidSignatureError, SignatureV4 } from './signature'
 
 /** Class allowing to interact with Amazon AWS's S3 service */
 export class S3Client extends AWSClient {
+    signature: SignatureV4
+
     /**
      * Create a S3Client
      *
      * @param {AWSConfig} awsConfig - configuration attributes to use when interacting with AWS' APIs
      */
     constructor(awsConfig: AWSConfig) {
-        const URIencodingConfig = new URIEncodingConfig(false, true)
-        super(awsConfig, 's3', URIencodingConfig)
+        super(awsConfig, 's3')
+
+        this.signature = new SignatureV4({
+            service: this.serviceName,
+            region: this.awsConfig.region,
+            credentials: {
+                accessKeyId: this.awsConfig.accessKeyID,
+                secretAccessKey: this.awsConfig.secretAccessKey,
+                sessionToken: this.awsConfig.sessionToken,
+            },
+            uriEscapePath: false,
+            applyChecksum: true,
+        })
     }
 
     /**
@@ -30,14 +43,20 @@ export class S3Client extends AWSClient {
      * @throws  {InvalidSignatureError}
      */
     listBuckets(): Array<S3Bucket> {
-        // Prepare request
         const method = 'GET'
-        const body = ''
-        const signedRequest: AWSRequest = super.buildRequest(method, this.host, '/', '', body, {
-            'X-Amz-Content-SHA256': sha256(body, 'hex'),
-        })
 
-        const res = http.request(method, signedRequest.url, body, {
+        const signedRequest: SignedHTTPRequest = this.signature.sign(
+            {
+                method: 'GET',
+                protocol: 'https',
+                hostname: this.host,
+                path: '/',
+                headers: {},
+            },
+            {}
+        )
+
+        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
         this._handle_error('ListBuckets', res)
@@ -82,20 +101,24 @@ export class S3Client extends AWSClient {
     listObjects(bucketName: string, prefix?: string): Array<S3Object> {
         // Prepare request
         const method = 'GET'
-        let host
-        if (this.awsConfig.rgw) {
-             host = `${this.host}`
-        } else {
-             host = `${bucketName}.${this.host}`
-        }
-        const body = ''
-        const querystring = `list-type=2&prefix=${prefix || ''}`
-        const signedRequest: AWSRequest = super.buildRequest(method, host, '/', querystring, body, {
-            'X-Amz-Content-SHA256': sha256(body, 'hex'),
-            Prefix: prefix ?? '',
-        })
+        const host = `${bucketName}.${this.host}`
 
-        const res = http.request(method, signedRequest.url, body, {
+        const signedRequest: SignedHTTPRequest = this.signature.sign(
+            {
+                method: 'GET',
+                protocol: 'https',
+                hostname: host,
+                path: '/',
+                query: {
+                    'list-type': '2',
+                    prefix: prefix || '',
+                },
+                headers: {},
+            },
+            {}
+        )
+
+        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
         this._handle_error('ListObjectsV2', res)
@@ -147,21 +170,20 @@ export class S3Client extends AWSClient {
     getObject(bucketName: string, objectKey: string): S3Object {
         // Prepare request
         const method = 'GET'
-        let host
-        let path
-        if (this.awsConfig.rgw) {
-             host = `${this.host}`
-             path = `/${bucketName}/${objectKey}`
-        } else {
-             host = `${bucketName}.${this.host}`
-             path = `/${objectKey}`
-        }
-        const body = ''
-        const signedRequest: AWSRequest = super.buildRequest(method, host, path, '', body, {
-            'X-Amz-Content-SHA256': sha256(body, 'hex'),
-        })
+        const host = `${bucketName}.${this.host}`
 
-        const res = http.request(method, signedRequest.url, body, {
+        const signedRequest = this.signature.sign(
+            {
+                method: 'GET',
+                protocol: 'https',
+                hostname: host,
+                path: `/${objectKey}`,
+                headers: {},
+            },
+            {}
+        )
+
+        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
         this._handle_error('GetObject', res)
@@ -193,29 +215,21 @@ export class S3Client extends AWSClient {
     putObject(bucketName: string, objectKey: string, data: string | ArrayBuffer) {
         // Prepare request
         const method = 'PUT'
-        let host
-        let path
-        if (this.awsConfig.rgw) {
-             host = `${this.host}`
-             path = `/${bucketName}/${objectKey}`
-        } else {
-             host = `${bucketName}.${this.host}`
-             path = `/${objectKey}`
-        }
-        const queryString = ''
-        const body = data
-        const signedRequest: AWSRequest = super.buildRequest(
-            method,
-            host,
-            path,
-            queryString,
-            body,
+        const host = `${bucketName}.${this.host}`
+
+        const signedRequest = this.signature.sign(
             {
-                'X-Amz-Content-SHA256': sha256(body, 'hex'),
-            }
+                method: method,
+                protocol: 'https',
+                hostname: host,
+                path: `/${objectKey}`,
+                headers: {},
+                body: data,
+            },
+            {}
         )
 
-        const res = http.request(method, signedRequest.url, body, {
+        const res = http.request(method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error('PutObject', res)
@@ -233,29 +247,20 @@ export class S3Client extends AWSClient {
     deleteObject(bucketName: string, objectKey: string): void {
         // Prepare request
         const method = 'DELETE'
-        let host
-        let path
-        if (this.awsConfig.rgw) {
-             host = `${this.host}`
-             path = `/${bucketName}/${objectKey}`
-        } else {
-             host = `${bucketName}.${this.host}`
-             path = `/${objectKey}`
-        }
-        const queryString = ''
-        const body = ''
-        const signedRequest: AWSRequest = super.buildRequest(
-            method,
-            host,
-            path,
-            queryString,
-            body,
+        const host = `${bucketName}.${this.host}`
+
+        const signedRequest = this.signature.sign(
             {
-                'X-Amz-Content-SHA256': sha256(body, 'hex'),
-            }
+                method: method,
+                protocol: 'https',
+                hostname: host,
+                path: `/${objectKey}`,
+                headers: {},
+            },
+            {}
         )
 
-        const res = http.request(method, signedRequest.url, body, {
+        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
         this._handle_error('DeleteObject', res)
@@ -281,7 +286,7 @@ export class S3Client extends AWSClient {
             case 'AuthorizationHeaderMalformed':
                 throw new InvalidSignatureError(awsError.message, awsError.code)
             default:
-                throw new S3ServiceError(awsError.message, awsError.code, operation)
+                throw new S3ServiceError(awsError.message, awsError.code || 'unknown', operation)
         }
     }
 }

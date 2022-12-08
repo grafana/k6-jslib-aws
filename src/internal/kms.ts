@@ -1,11 +1,12 @@
 import { JSONArray, JSONObject } from 'k6'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
-import { AWSClient, AWSRequest } from './client'
-import { AWSError } from './error'
+import { AWSClient } from './client'
 import { AWSConfig } from './config'
-import { InvalidSignatureError, URIEncodingConfig } from './signature'
-import { HTTPMethod, HTTPHeaders } from './http'
+import { AMZ_TARGET_HEADER } from './constants'
+import { AWSError } from './error'
+import { HTTPHeaders, HTTPMethod } from './http'
+import { InvalidSignatureError, SignatureV4 } from './signature'
 
 /**
  * Class allowing to interact with Amazon AWS's KMS service
@@ -14,22 +15,31 @@ export class KMSClient extends AWSClient {
     method: HTTPMethod
     commonHeaders: HTTPHeaders
 
+    signature: SignatureV4
+
     /**
      * Create a KMSClient
      * @param  {AWSConfig} awsConfig - configuration attributes to use when interacting with AWS' APIs
      */
     constructor(awsConfig: AWSConfig) {
-        const URIencodingConfig = new URIEncodingConfig(true, false)
-        super(awsConfig, 'kms', URIencodingConfig)
+        super(awsConfig, 'kms')
 
-        // this.serviceName = 'kms'
+        this.signature = new SignatureV4({
+            service: this.serviceName,
+            region: awsConfig.region,
+            credentials: {
+                accessKeyId: awsConfig.accessKeyID,
+                secretAccessKey: awsConfig.secretAccessKey,
+            },
+            uriEscapePath: false,
+            applyChecksum: false,
+        })
 
         // All interactions with the KMS service
         // are made via the GET or POST method.
         this.method = 'POST'
 
         this.commonHeaders = {
-            'Accept-Encoding': 'identity',
             'Content-Type': 'application/x-amz-json-1.1',
         }
     }
@@ -41,13 +51,23 @@ export class KMSClient extends AWSClient {
      * @returns an array of all the available keys
      */
     listKeys(): Array<KMSKey> {
-        const body = ''
-        const signedRequest: AWSRequest = super.buildRequest(this.method, this.host, '/', '', '', {
-            ...this.commonHeaders,
-            'X-Amz-Target': `TrentService.ListKeys`,
-        })
+        const signedRequest = this.signature.sign(
+            {
+                method: this.method,
+                protocol: this.awsConfig.scheme,
+                hostname: this.host,
+                path: '/',
+                headers: {
+                    ...this.commonHeaders,
+                    // For some reason, the base target is not kms...
+                    [AMZ_TARGET_HEADER]: `TrentService.ListKeys`,
+                },
+                body: JSON.stringify({}),
+            },
+            {}
+        )
 
-        const res = http.request(this.method, signedRequest.url, body, {
+        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(KMSOperation.ListKeys, res)
@@ -74,19 +94,23 @@ export class KMSClient extends AWSClient {
      * @returns {KMSDataKey} - The generated data key.
      */
     generateDataKey(id: string, size: KMSKeySize = KMSKeySize.Size256): KMSDataKey | undefined {
-        const body = JSON.stringify({ KeyId: id, NumberOfBytes: size })
-        const signedRequest: AWSRequest = super.buildRequest(
-            this.method,
-            this.host,
-            '/',
-            '',
-            body,
+        const signedRequest = this.signature.sign(
             {
-                ...this.commonHeaders,
-                'X-Amz-Target': `TrentService.GenerateDataKey`,
-            }
+                method: this.method,
+                protocol: this.awsConfig.scheme,
+                hostname: this.host,
+                path: '/',
+                headers: {
+                    ...this.commonHeaders,
+                    // For some reason, the base target is not kms...
+                    [AMZ_TARGET_HEADER]: `TrentService.GenerateDataKey`,
+                },
+                body: JSON.stringify({ KeyId: id, NumberOfBytes: size }),
+            },
+            {}
         )
-        const res = http.request(this.method, signedRequest.url, body, {
+
+        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(KMSOperation.GenerateDataKey, res)
