@@ -47,11 +47,11 @@ export class AWSConfig {
     endpoint: string = 'amazonaws.com'
 
     /**
-     * RGW compatible.
+     * Path-style bucket.
      *
      * @type {boolean}
      */
-    rgw: boolean = false
+    forcePathStyle: boolean = false
 
     /**
      * Create an AWSConfig.
@@ -106,8 +106,8 @@ export class AWSConfig {
             this.endpoint = options.endpoint
         }
 
-        if (options.rgw !== undefined) {
-            this.rgw = options.rgw
+        if (options.forcePathStyle !== undefined) {
+            this.forcePathStyle = options.forcePathStyle
         }
     }
 }
@@ -159,11 +159,11 @@ export interface AWSConfigOptions {
     endpoint?: string
 
     /**
-     * RGW compatible.
+     * Path-Style bucket.
      *
      * @type {boolean}
      */
-    rgw?: booleaan
+    forcePathStyle?: boolean
 }
 
 /** Class representing an invalid AWS configuration */

@@ -24,7 +24,7 @@ export class S3Client extends AWSClient {
             service: this.serviceName,
             region: this.awsConfig.region,
             credentials: {
-                accessKeyId: this.awsConfig.accessKeyID,
+                accessKeyId: this.awsConfig.accessKeyId,
                 secretAccessKey: this.awsConfig.secretAccessKey,
                 sessionToken: this.awsConfig.sessionToken,
             },
@@ -47,8 +47,8 @@ export class S3Client extends AWSClient {
 
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
-                method: 'GET',
-                protocol: 'https',
+                method: method,
+                protocol: this.awsConfig.scheme,
                 hostname: this.host,
                 path: '/',
                 headers: {},
@@ -101,14 +101,22 @@ export class S3Client extends AWSClient {
     listObjects(bucketName: string, prefix?: string): Array<S3Object> {
         // Prepare request
         const method = 'GET'
-        const host = `${bucketName}.${this.host}`
+        let host
+        let path
+        if (this.awsConfig.forcePathStyle) {
+            host = `${this.host}`
+            path = `/${bucketName}/`
+        } else {
+            host = `${bucketName}.${this.host}`
+            path = `/`
+        }
 
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'GET',
-                protocol: 'https',
+                protocol: this.awsConfig.scheme,
                 hostname: host,
-                path: '/',
+                path: path,
                 query: {
                     'list-type': '2',
                     prefix: prefix || '',
@@ -170,14 +178,22 @@ export class S3Client extends AWSClient {
     getObject(bucketName: string, objectKey: string): S3Object {
         // Prepare request
         const method = 'GET'
-        const host = `${bucketName}.${this.host}`
+        let host
+        let path
+        if (this.awsConfig.forcePathStyle) {
+            host = `${this.host}`
+            path = `/${bucketName}/${objectKey}`
+        } else {
+            host = `${bucketName}.${this.host}`
+            path = `/${objectKey}`
+        }
 
         const signedRequest = this.signature.sign(
             {
                 method: 'GET',
-                protocol: 'https',
+                protocol: this.awsConfig.scheme,
                 hostname: host,
-                path: `/${objectKey}`,
+                path: path,
                 headers: {},
             },
             {}
@@ -215,14 +231,22 @@ export class S3Client extends AWSClient {
     putObject(bucketName: string, objectKey: string, data: string | ArrayBuffer) {
         // Prepare request
         const method = 'PUT'
-        const host = `${bucketName}.${this.host}`
+        let host
+        let path
+        if (this.awsConfig.forcePathStyle) {
+            host = `${this.host}`
+            path = `/${bucketName}/${objectKey}`
+        } else {
+            host = `${bucketName}.${this.host}`
+            path = `/${objectKey}`
+        }
 
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: 'https',
+                protocol: this.awsConfig.scheme,
                 hostname: host,
-                path: `/${objectKey}`,
+                path: path,
                 headers: {},
                 body: data,
             },
@@ -247,14 +271,22 @@ export class S3Client extends AWSClient {
     deleteObject(bucketName: string, objectKey: string): void {
         // Prepare request
         const method = 'DELETE'
-        const host = `${bucketName}.${this.host}`
+        let host
+        let path
+        if (this.awsConfig.forcePathStyle) {
+            host = `${this.host}`
+            path = `/${bucketName}/${objectKey}`
+        } else {
+            host = `${bucketName}.${this.host}`
+            path = `/${objectKey}`
+        }
 
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: 'https',
+                protocol: this.awsConfig.scheme,
                 hostname: host,
-                path: `/${objectKey}`,
+                path: path,
                 headers: {},
             },
             {}

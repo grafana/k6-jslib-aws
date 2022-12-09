@@ -29,7 +29,9 @@ export class AWSClient {
      * the specific AWS service the child class implements the functionalities of.
      */
     public get host() {
-        if (this._host == undefined) {
+        if (this.awsConfig.forcePathStyle) {
+            return this.awsConfig.endpoint
+        } else if (this._host == undefined) {
             return `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
         }
         return this._host
