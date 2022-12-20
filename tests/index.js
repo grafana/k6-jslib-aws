@@ -8,6 +8,7 @@ import { secretsManagerTestSuite } from './internal/secrets-manager.js'
 import { kmsTestSuite } from './internal/kms.js'
 import { ssmTestSuite } from './internal/ssm.js'
 import { signatureV4TestSuite } from './internal/signature.js'
+import { sqsTestSuite } from './internal/sqs.js'
 
 chai.config.aggregateChecks = false
 chai.config.logFailures = true
@@ -94,6 +95,7 @@ export default function testSuite(data) {
     s3TestSuite(data)
     secretsManagerTestSuite(data)
     kmsTestSuite(data)
+    sqsTestSuite(data)
     ssmTestSuite(data)
     signatureV4TestSuite(data)
 }
