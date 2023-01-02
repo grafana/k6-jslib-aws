@@ -80,6 +80,10 @@ export function signatureV4TestSuite() {
             describe('#sign should sign requests without host header', () => {
                 const request = JSON.parse(JSON.stringify(minimalRequest))
                 delete request.headers[HOST_HEADER]
+                delete request.hostname
+                for (const [key, value] of Object.entries(request.headers)) {
+                    console.log(`${key}: ${value}`);
+                }
 
                 const { headers } = signer.sign(request, {
                     signingDate: new Date('2000-01-01T00:00:00Z'),

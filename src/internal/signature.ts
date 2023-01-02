@@ -93,13 +93,12 @@ export class SignatureV4 {
         const region = signingRegion || this.region
         const scope = `${shortDate}/${region}/${service}/${constants.KEY_TYPE_IDENTIFIER}`
 
-        // FIXME: test wants us to leave host alone, but I'm unsure at this point
         // Required by the specification:
         //   "For HTTP/1.1 requests, you must include the host header at a minimum.
         //   Standard headers like content-type are optional.
         //   For HTTP/2 requests, you must include the :authority header instead of
         //   the host header. Different services might require other headers."
-        // request.headers[constants.HOST_HEADER] = request.hostname
+        request.headers[constants.HOST_HEADER] = request.hostname
 
         // Filter out headers that will be generated and managed by the signing process.
         // If the user provide any of those as part of the HTTPRequest's headers, they
