@@ -10,6 +10,7 @@ At the moment, this library provides the following:
 
 * `S3Client`: allows to list buckets and bucket's objects, as well as uploading, downloading, and deletion of objects.
 * `SecretsManager`: allows to list, get, create, update and delete secrets from the AWS secrets manager service.
+* `SQS`: allows to list queues and send messages from AWS SQS.
 * `KMS`: allows to list KMS keys and generate a unique symmetric data key for use outside of AWS KMS
 * `SSM`: allows to retrieve a parameter from AWS Systems Manager
 * `V4 signature`: allows to sign requests to amazon AWS services
@@ -129,6 +130,45 @@ export default function () {
 
     // Finally, let's delete our test secret and verify it worked
     secretsManager.deleteSecret(updatedSecret.name, { noRecovery: true })
+}
+```
+
+### SQS
+
+Consult the `SQSClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/sqsclient) for more details on its methods and how to use it.
+
+
+```javascript
+import { check } from 'k6';
+import exec from 'k6/execution';
+import http from 'k6/http';
+
+import { AWSConfig, SQSClient } from 'https://jslib.k6.io/aws/0.7.0/sqs.js';
+
+const awsConfig = new AWSConfig({
+    region: __ENV.AWS_REGION,
+    accessKeyId: __ENV.AWS_ACCESS_KEY_ID,
+    secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
+    sessionToken: __ENV.AWS_SESSION_TOKEN,
+});
+
+const sqs = new SQSClient(awsConfig);
+const testQueue = 'https://sqs.us-east-1.amazonaws.com/000000000/test-queue';
+
+export default function() {
+  // If our test queue does not exist, abort the execution.
+  const queuesReponse = sqs.listQueues();
+  if (queuesReponse.queueUrls.filter((q) => q === testQueue).length == 0) {
+    exec.test.abort();
+  }
+
+  // Send message to test queue
+  sqs.sendMessage({
+      queueUrl: testQueue,
+      messageBody: JSON.stringify({
+          value: '123'
+      })
+  });
 }
 ```
 
