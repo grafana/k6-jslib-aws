@@ -80,14 +80,19 @@ export function signatureV4TestSuite() {
             describe('#sign should sign requests without host header', () => {
                 const request = JSON.parse(JSON.stringify(minimalRequest))
                 delete request.headers[HOST_HEADER]
-
+                
                 const { headers } = signer.sign(request, {
                     signingDate: new Date('2000-01-01T00:00:00Z'),
                 })
 
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
-                    'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=x-amz-content-sha256;x-amz-date, Signature=36cfca5cdb2c8d094f100663925d408a9608908ffc10b83133e5b25829ef7f5f'
+                    'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=1e3b24fcfd7655c0c245d99ba7b6b5ca6174eab903ebfbda09ce457af062ad30'
                 )
+                
+                expect(headers).to.have.property(HOST_HEADER)
+                expect(headers[HOST_HEADER]).to.not.be.undefined
+                expect(headers[HOST_HEADER]).to.not.be.null
+                expect(headers[HOST_HEADER]).to.not.be.empty
             })
 
             describe('#sign should sign requests with string bodies', () => {

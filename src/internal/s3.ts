@@ -24,7 +24,7 @@ export class S3Client extends AWSClient {
             service: this.serviceName,
             region: this.awsConfig.region,
             credentials: {
-                accessKeyId: this.awsConfig.accessKeyID,
+                accessKeyId: this.awsConfig.accessKeyId,
                 secretAccessKey: this.awsConfig.secretAccessKey,
                 sessionToken: this.awsConfig.sessionToken,
             },

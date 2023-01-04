@@ -7,7 +7,7 @@ import { s3TestSuite } from './internal/s3.js'
 import { secretsManagerTestSuite } from './internal/secrets-manager.js'
 import { kmsTestSuite } from './internal/kms.js'
 import { ssmTestSuite } from './internal/ssm.js'
-import { signatureV4TestSuite } from './internal/new_signature.js'
+import { signatureV4TestSuite } from './internal/signature.js'
 
 chai.config.aggregateChecks = false
 chai.config.logFailures = true
