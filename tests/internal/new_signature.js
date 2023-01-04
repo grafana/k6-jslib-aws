@@ -89,6 +89,7 @@ export function signatureV4TestSuite() {
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=x-amz-content-sha256;x-amz-date, Signature=36cfca5cdb2c8d094f100663925d408a9608908ffc10b83133e5b25829ef7f5f'
                 )
+                expect(headers[HOST_HEADER]).to.be.undefined
             })
 
             describe('#sign should sign requests with string bodies', () => {
