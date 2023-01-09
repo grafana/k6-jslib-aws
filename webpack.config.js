@@ -7,17 +7,24 @@ const TerserPlugin = require('terser-webpack-plugin')
 module.exports = {
     mode: 'production',
     entry: {
+        // Bundle builds: contain the whole set of library clients and features
         aws: path.resolve(__dirname, './src/index.ts'),
+        // jslib.k6.io expects us to expose an `index.js` file
+        index: path.resolve(__dirname, './src/index.ts'),
+
+        // Service clients
         s3: path.resolve(__dirname, './src/s3.ts'),
         'secrets-manager': path.resolve(__dirname, './src/secrets-manager.ts'),
         ssm: path.resolve(__dirname, 'src/ssm.ts'),
         kms: path.resolve(__dirname, 'src/kms.ts'),
+
+        // AWS signature v4
         signature: path.resolve(__dirname, 'src/signature.ts'),
     },
     output: {
         path: path.resolve(__dirname, 'build'),
         libraryTarget: 'commonjs',
-        filename: '[name].min.js',
+        filename: '[name].js',
     },
     resolve: {
         extensions: ['.ts', '.js'],
