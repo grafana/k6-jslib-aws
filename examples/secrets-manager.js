@@ -1,6 +1,6 @@
 import exec from 'k6/execution'
 
-import { AWSConfig, SecretsManagerClient } from '../build/secrets-manager.min.js'
+import { AWSConfig, SecretsManagerClient } from '../build/secrets-manager.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,

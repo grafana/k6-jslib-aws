@@ -6,7 +6,7 @@ import {
     SignatureV4,
     AMZ_CONTENT_SHA256_HEADER,
     UNSIGNED_PAYLOAD,
-} from '../build/aws.min.js'
+} from '../build/aws.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,

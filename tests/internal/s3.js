@@ -1,5 +1,5 @@
 import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.1/index.js'
-import { AWSConfig, S3Client, S3ServiceError } from '../../build/s3.min.js'
+import { AWSConfig, S3Client, S3ServiceError } from '../../build/s3.js'
 
 export function s3TestSuite(data) {
     const s3Client = new S3Client(data.awsConfig)

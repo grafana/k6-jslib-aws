@@ -4,7 +4,7 @@ import {
     AWSConfig,
     SecretsManagerClient,
     SecretsManagerServiceError,
-} from '../../build/secrets-manager.min.js'
+} from '../../build/secrets-manager.js'
 
 export function secretsManagerTestSuite(data) {
     // FIXME: due to what is probably a bug in LocalStack, the `localhost`

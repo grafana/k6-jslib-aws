@@ -1,7 +1,7 @@
 import { chai } from 'https://jslib.k6.io/k6chaijs/4.3.4.0/index.js'
 import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js'
 
-import { AWSConfig } from '../build/aws.min.js'
+import { AWSConfig } from '../build/aws.js'
 
 import { s3TestSuite } from './internal/s3.js'
 import { secretsManagerTestSuite } from './internal/secrets-manager.js'
