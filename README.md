@@ -135,7 +135,7 @@ Consult the `KMS` [dedicated k6 documentation page](https://k6.io/docs/javascrip
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, KMSClient } from '../build/kms.min.js'
+import { AWSConfig, KMSClient } from '../build/kms.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -175,7 +175,7 @@ Consult the `SystemsManagerClient` [dedicated k6 documentation page](https://k6.
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SystemsManagerClient } from '../build/ssm.min.js'
+import { AWSConfig, SystemsManagerClient } from '../build/ssm.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -234,7 +234,7 @@ npm test
 ### Deploying new versions
 
 1. Build.
-2. Use the `./build/aws.min.js` to make a PR to [jslib.k6.io](https://github.com/grafana/jslib.k6.io).
+2. Use the `./build/aws.js` to make a PR to [jslib.k6.io](https://github.com/grafana/jslib.k6.io).
 
 ## Maintainers
 

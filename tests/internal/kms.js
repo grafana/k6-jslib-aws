@@ -1,6 +1,6 @@
 import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.1/index.js'
 import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js'
-import { AWSConfig, KMSClient, KMSServiceError } from '../../build/kms.min.js'
+import { AWSConfig, KMSClient, KMSServiceError } from '../../build/kms.js'
 
 export function kmsTestSuite(data) {
     const kmsClient = new KMSClient(data.awsConfig)

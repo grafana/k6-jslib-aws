@@ -1,6 +1,6 @@
 import exec from 'k6/execution'
 
-import { AWSConfig, SystemsManagerClient } from '../build/ssm.min.js'
+import { AWSConfig, SystemsManagerClient } from '../build/ssm.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,

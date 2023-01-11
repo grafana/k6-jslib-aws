@@ -1,5 +1,5 @@
 import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.1/index.js'
-import { SystemsManagerClient, SystemsManagerServiceError } from '../../build/ssm.min.js'
+import { SystemsManagerClient, SystemsManagerServiceError } from '../../build/ssm.js'
 
 export function ssmTestSuite(data) {
     const systemsManagerClient = new SystemsManagerClient(data.awsConfig)
