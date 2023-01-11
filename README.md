@@ -14,6 +14,10 @@ At the moment, this library provides the following:
 * `SSM`: allows to retrieve a parameter from AWS Systems Manager
 * `V4 signature`: allows to sign requests to amazon AWS services
 
+## Want to contribute?
+
+We welcome contributions from the community! Please read our [contributing guide](CONTRIBUTING.md) and [code of conduct](CODE_OF_CONDUCT.md) before getting started.
+
 ## Demo
 
 ### S3
