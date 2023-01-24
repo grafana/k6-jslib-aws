@@ -1,7 +1,6 @@
 const path = require('path')
 const { CleanWebpackPlugin } = require('clean-webpack-plugin')
 const CopyPlugin = require('copy-webpack-plugin')
-const GlobEntries = require('webpack-glob-entries')
 const TerserPlugin = require('terser-webpack-plugin')
 
 module.exports = {
@@ -15,6 +14,7 @@ module.exports = {
         // Service clients
         s3: path.resolve(__dirname, './src/s3.ts'),
         'secrets-manager': path.resolve(__dirname, './src/secrets-manager.ts'),
+        sqs: path.resolve(__dirname, 'src/sqs.ts'),
         ssm: path.resolve(__dirname, 'src/ssm.ts'),
         kms: path.resolve(__dirname, 'src/kms.ts'),
 
