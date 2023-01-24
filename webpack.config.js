@@ -17,6 +17,7 @@ module.exports = {
         sqs: path.resolve(__dirname, 'src/sqs.ts'),
         ssm: path.resolve(__dirname, 'src/ssm.ts'),
         kms: path.resolve(__dirname, 'src/kms.ts'),
+        kinesis: path.resolve(__dirname, 'src/kinesis.ts'),
 
         // AWS signature v4
         signature: path.resolve(__dirname, 'src/signature.ts'),

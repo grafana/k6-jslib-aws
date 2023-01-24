@@ -14,6 +14,8 @@ At the moment, this library provides the following:
 * `KMS`: allows to list KMS keys and generate a unique symmetric data key for use outside of AWS KMS
 * `SSM`: allows to retrieve a parameter from AWS Systems Manager
 * `V4 signature`: allows to sign requests to amazon AWS services
+* `KinesisClient`: allows all APIs for Kinesis available by AWS.
+
 
 ## Want to contribute?
 
@@ -255,6 +257,52 @@ export default function () {
     }
 }
 ```
+
+
+### Kinesis
+
+Utilize `Kinesis API` [Aws Reference page](https://docs.aws.amazon.com/kinesis/latest/APIReference/API_Operations.html) for more details on its methods, follow [example page](./examples/kinesis.js) on how to use.
+
+```javascript
+import exec from 'k6/execution'
+
+import { AWSConfig, KinesisClient } from 'https://jslib.k6.io/aws/0.7.0/kinesis.js'
+import encoding from 'k6/encoding';
+import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.2/index.js';
+import { fail } from 'k6';
+
+const awsConfig = new AWSConfig({
+    region: __ENV.AWS_REGION,
+    accessKeyId: __ENV.AWS_ACCESS_KEY_ID,
+    secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
+    sessionToken: __ENV.AWS_SESSION_TOKEN,
+})
+const kinesis = new KinesisClient(awsConfig)
+
+export default function () {
+    describe('01. List Kinesis streams', () => {
+        try {
+            const res = kinesis.ListStreams()
+            expect(res.json('StreamNames').length,"number of streams").to.equal(6);
+        } catch(err) {
+            fail(err)
+        }
+
+    })
+
+    describe('02. List kinesis stream with arguments', () => {
+        try {
+            const res = kinesis.ListStreams({Limit: 1})
+            expect(res.json('StreamNames').length,"number of streams").to.equal(1);
+        } catch(err) {
+            fail(err)
+        }
+    })
+}
+
+```
+
+
 
 ## Development
 

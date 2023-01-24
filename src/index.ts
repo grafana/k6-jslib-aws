@@ -17,6 +17,7 @@ import {
     SystemsManagerParameter,
     SystemsManagerServiceError,
 } from './internal/ssm'
+import { KinesisClient } from './internal/kinesis'
 
 // Re-Export public symbols
 export {
@@ -45,4 +46,6 @@ export {
     SystemsManagerClient,
     SystemsManagerParameter,
     SystemsManagerServiceError,
+    // Kinesis
+    KinesisClient
 }
