@@ -261,7 +261,7 @@ export default function () {
 
 ### Kinesis
 
-Utilize `Kinesis API` [Aws Reference page](https://docs.aws.amazon.com/kinesis/latest/APIReference/API_Operations.html) for more details on its methods, follow [example page](./examples/kinesis.js) on how to use.
+Consult the `KinesisClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/kinesisclient) for more details on its methods and how to use it.
 
 ```javascript
 import exec from 'k6/execution'
@@ -282,8 +282,8 @@ const kinesis = new KinesisClient(awsConfig)
 export default function () {
     describe('01. List Kinesis streams', () => {
         try {
-            const res = kinesis.ListStreams()
-            expect(res.json('StreamNames').length,"number of streams").to.equal(6);
+            const res = kinesis.listStreams()
+            expect(res.StreamNames.length,"number of streams").to.equal(6);
         } catch(err) {
             fail(err)
         }
@@ -292,8 +292,8 @@ export default function () {
 
     describe('02. List kinesis stream with arguments', () => {
         try {
-            const res = kinesis.ListStreams({Limit: 1})
-            expect(res.json('StreamNames').length,"number of streams").to.equal(1);
+            const res = kinesis.listStreams({Limit: 1})
+            expect(res.StreamNames.length,"number of streams").to.equal(1);
         } catch(err) {
             fail(err)
         }
