@@ -17,6 +17,7 @@ import {
     SystemsManagerParameter,
     SystemsManagerServiceError,
 } from './internal/ssm'
+import { SQSClient } from './sqs'
 
 // Re-Export public symbols
 export {
@@ -41,7 +42,8 @@ export {
     KMSClient,
     KMSDataKey,
     KMSServiceError,
-    // SystemsManager
+    // SystemsManager,
+    SQSClient,
     SystemsManagerClient,
     SystemsManagerParameter,
     SystemsManagerServiceError,

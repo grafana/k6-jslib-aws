@@ -43,12 +43,12 @@ export class SQSClient extends AWSClient {
                 headers: {
                     ...this.commonHeaders
                 },
-                body: toFormUrlEncoded({
+                body: toFormUrlEncoded(this._buildBody({
                     Action: 'SendMessage',
                     Version: API_VERSION,
                     QueueUrl: request.queueUrl,
-                    MessageBody: request.messageBody
-                })
+                    MessageBody: request.messageBody,
+                }, request))
             },
             {}
         )
@@ -110,6 +110,21 @@ export class SQSClient extends AWSClient {
 
         throw AWSError.parseXML(response.body as string)
     }
+
+    private _buildBody(form: any, request: SendMessageRequestParameters) {
+        if (request.messageDeduplicationId) {
+            form = { ...form,
+                MessageDeduplicationId: request.messageDeduplicationId
+            }
+        }
+        if (request.messageGroupId) {
+            form = { ...form,
+                MessageGroupId: request.messageGroupId
+            }
+        }
+
+        return form
+    }
 }
 
 export interface SendMessageRequestParameters {
@@ -122,6 +137,14 @@ export interface SendMessageRequestParameters {
      * The message to send. The minimum size is one character. The maximum size is 256 KB.
      */
     messageBody: string
+    /**
+     * The message deduplication id.
+     */
+    messageDeduplicationId?: string
+    /**
+     * The message group ID for FIFO queues
+     */
+    messageGroupId?: string
 }
 
 export interface SendMessageResponse {
