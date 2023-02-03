@@ -34,6 +34,23 @@ export class SQSClient extends AWSClient {
 
     sendMessage(request: SendMessageRequestParameters): SendMessageResponse {
         const method = 'POST'
+        let formBody: any = {
+            Action: 'SendMessage',
+            Version: API_VERSION,
+            QueueUrl: request.queueUrl,
+            MessageBody: request.messageBody,
+        }
+        if (request.messageDeduplicationId) {
+            formBody = { ...formBody,
+                MessageDeduplicationId: request.messageDeduplicationId
+            }
+        }
+        if (request.messageGroupId) {
+            formBody = { ...formBody,
+                MessageGroupId: request.messageGroupId
+            }
+        }
+
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'POST',
@@ -43,12 +60,7 @@ export class SQSClient extends AWSClient {
                 headers: {
                     ...this.commonHeaders
                 },
-                body: toFormUrlEncoded(this._buildBody({
-                    Action: 'SendMessage',
-                    Version: API_VERSION,
-                    QueueUrl: request.queueUrl,
-                    MessageBody: request.messageBody,
-                }, request))
+                body: toFormUrlEncoded(formBody)
             },
             {}
         )
@@ -109,21 +121,6 @@ export class SQSClient extends AWSClient {
         }
 
         throw AWSError.parseXML(response.body as string)
-    }
-
-    private _buildBody(form: any, request: SendMessageRequestParameters) {
-        if (request.messageDeduplicationId) {
-            form = { ...form,
-                MessageDeduplicationId: request.messageDeduplicationId
-            }
-        }
-        if (request.messageGroupId) {
-            form = { ...form,
-                MessageGroupId: request.messageGroupId
-            }
-        }
-
-        return form
     }
 }
 
