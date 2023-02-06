@@ -26,4 +26,16 @@ export function sqsTestSuite(data) {
         // Assert
         expect(response.messageId).to.be.a('string');
     })
+
+    describe('send FIFO message', () => {
+        // Act
+        const response = sqsClient.sendMessage({
+            queueUrl, messageBody: 'test',
+            messageGroupId: 'testGroupId',
+            messageDeduplicationId: 'testDeduplicationId'
+        });
+
+        // Assert
+        expect(response.messageId).to.be.a('string');
+    })
 }

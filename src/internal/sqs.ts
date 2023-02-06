@@ -34,6 +34,23 @@ export class SQSClient extends AWSClient {
 
     sendMessage(request: SendMessageRequestParameters): SendMessageResponse {
         const method = 'POST'
+        let formBody: any = {
+            Action: 'SendMessage',
+            Version: API_VERSION,
+            QueueUrl: request.queueUrl,
+            MessageBody: request.messageBody,
+        }
+        if (request.messageDeduplicationId) {
+            formBody = { ...formBody,
+                MessageDeduplicationId: request.messageDeduplicationId
+            }
+        }
+        if (request.messageGroupId) {
+            formBody = { ...formBody,
+                MessageGroupId: request.messageGroupId
+            }
+        }
+
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'POST',
@@ -43,12 +60,7 @@ export class SQSClient extends AWSClient {
                 headers: {
                     ...this.commonHeaders
                 },
-                body: toFormUrlEncoded({
-                    Action: 'SendMessage',
-                    Version: API_VERSION,
-                    QueueUrl: request.queueUrl,
-                    MessageBody: request.messageBody
-                })
+                body: toFormUrlEncoded(formBody)
             },
             {}
         )
@@ -122,6 +134,14 @@ export interface SendMessageRequestParameters {
      * The message to send. The minimum size is one character. The maximum size is 256 KB.
      */
     messageBody: string
+    /**
+     * The message deduplication id.
+     */
+    messageDeduplicationId?: string
+    /**
+     * The message group ID for FIFO queues
+     */
+    messageGroupId?: string
 }
 
 export interface SendMessageResponse {
