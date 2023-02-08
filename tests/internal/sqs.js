@@ -5,37 +5,57 @@ export function sqsTestSuite(data) {
     const sqsClient = new SQSClient(data.awsConfig)
     sqsClient.host = data.awsConfig.endpoint
 
-    let queueUrl;
+    // As initialized in the setup script
+    const queueUrl = 'test1';
+    const fifoQueueUrl = 'test-queue.fifo';
 
     describe('list queues', () => {
         // Act
-        const response = sqsClient.listQueues();
+        const queues = sqsClient.listQueues();
 
         // Assert
-        expect(response.queueUrls).to.have.lengthOf(2);
-        queueUrl = response.queueUrls[0];
-        expect(queueUrl).to.be.a('string');
+        expect(queues.urls).to.have.lengthOf(2);
+
+        const gotFirstQueueName = queues.urls[0].split("/").pop();
+        expect(gotFirstQueueName).to.be.a('string');
+        expect(gotFirstQueueName).to.equal('standard-test-queue'); // as set in init script
+
+        const gotSecondQueueName = queues.urls[1].split("/").pop();
+        expect(gotSecondQueueName).to.be.a('string');
+        expect(gotSecondQueueName).to.equal('fifo-test-queue.fifo');  // as set in init script
     })
 
     describe('send message', () => {
+        // Arrange
+        const queues = sqsClient.listQueues()
+        const standardQueueUrl = queues.urls[0]
+
         // Act
-        const response = sqsClient.sendMessage({
-            queueUrl, messageBody: 'test'
-        });
+        const message = sqsClient.sendMessage(standardQueueUrl, 'test');
 
         // Assert
-        expect(response.messageId).to.be.a('string');
+        expect(message.id).to.be.a('string');
+        expect(message.bodyMD5).to.be.a('string');
+        expect(message.bodyMD5).to.equal('098f6bcd4621d373cade4e832627b4f6');
     })
 
     describe('send FIFO message', () => {
+        // Arrange
+        const queues = sqsClient.listQueues()
+        // This assumes the test fifo queue is created last by our initialization script
+        const fifoQueueUrl = queues.urls[queues.urls.length - 1]
+        
         // Act
-        const response = sqsClient.sendMessage({
-            queueUrl, messageBody: 'test',
-            messageGroupId: 'testGroupId',
-            messageDeduplicationId: 'testDeduplicationId'
-        });
+        const message = sqsClient.sendMessage(
+            fifoQueueUrl, 
+            'test',
+            {
+                messageDeduplicationId: 'abc123',
+                messageGroupId: 'easyasDoReMi',
+            },
+        );
 
         // Assert
-        expect(response.messageId).to.be.a('string');
+        expect(message.id).to.be.a('string');
     })
 }

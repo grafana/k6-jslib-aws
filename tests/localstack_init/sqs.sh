@@ -1,4 +1,4 @@
 #!/bin/bash
 
-awslocal sqs create-queue --queue-name test1
-awslocal sqs create-queue --queue-name test2
+awslocal sqs create-queue --queue-name standard-test-queue
+awslocal sqs create-queue --queue-name fifo-test-queue.fifo --attributes FifoQueue=true
