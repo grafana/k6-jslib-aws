@@ -32,22 +32,35 @@ export class SQSClient extends AWSClient {
         }
     }
 
-    sendMessage(request: SendMessageRequestParameters): SendMessageResponse {
+    /**
+     * Delivers a message to the specified queue.
+     * 
+     * @param {string} queueUrl - The URL of the Amazon SQS queue to which a message is sent. Queue URLs and names are case-sensitive.
+     * @param {string} messageBody - The message to send. The minimum size is one character. The maximum size is 256 KB.
+     * @param {Object} options - Options for the request
+     * @param {string} [options.messageDeduplicationId] - The message deduplication id.
+     * @param {string} [options.messageGroupId] - The message group ID for FIFO queues
+     * @returns {Message} - The message that was sent.
+     */
+    sendMessage(queueUrl: string, messageBody: string, options: { messageDeduplicationId?: string; messageGroupId?: string} = {}): Message {
         const method = 'POST'
-        let formBody: any = {
+
+        let body: any = {
             Action: 'SendMessage',
             Version: API_VERSION,
-            QueueUrl: request.queueUrl,
-            MessageBody: request.messageBody,
+            QueueUrl: queueUrl,
+            MessageBody: messageBody,
         }
-        if (request.messageDeduplicationId) {
-            formBody = { ...formBody,
-                MessageDeduplicationId: request.messageDeduplicationId
+
+        if (typeof(options.messageDeduplicationId) !== 'undefined') {
+            body = { ...body,
+                MessageDeduplicationId: options.messageDeduplicationId
             }
         }
-        if (request.messageGroupId) {
-            formBody = { ...formBody,
-                MessageGroupId: request.messageGroupId
+
+        if (typeof(options.messageGroupId) !== 'undefined') {
+            body = { ...body,
+                MessageGroupId: options.messageGroupId
             }
         }
 
@@ -60,7 +73,7 @@ export class SQSClient extends AWSClient {
                 headers: {
                     ...this.commonHeaders
                 },
-                body: toFormUrlEncoded(formBody)
+                body: toFormUrlEncoded(body)
             },
             {}
         )
@@ -71,14 +84,49 @@ export class SQSClient extends AWSClient {
         this._handleError(res)
 
         const parsed = res.html('SendMessageResponse > SendMessageResult')
-        return {
-            messageId: parsed.find('MessageId').text(),
-            md5OfMessageBody: parsed.find('MD5OfMessageBody').text()
-        }
+        return new Message(   
+            parsed.find('MessageId').text(),
+            parsed.find('MD5OfMessageBody').text()
+        )
     }
 
-    listQueues(request: ListQueuesRequestParameters = {}): ListQueuesResponse {
+    /**
+     * Returns a list of your queues in the current region.
+     * 
+     * @param {ListQueuesRequestParameters} [parameters={}] request parameters
+     * @param {number} [ListQueuesRequestParameters.maxResults] Maximum number of results to include in the response. Value range is 1 to 1000. You must set maxResults to receive a value for nextToken in the response.
+     * @param {string} [ListQueuesRequestParameters.nextToken] Pagination token to request the next set of results.
+     * @param {string} [ListQueuesRequestParameters.queueNamePrefix] A string to use for filtering the list results. Only those queues whose name begins with the specified string are returned.
+     * @returns {Object}
+     * @returns {string[]} Object.queueUrls - A list of queue URLs, up to 1000 entries.
+     * @returns {string} [Object.nextToken] - In the future, you can use NextToken to request the next set of results.
+     */
+    listQueues(parameters: ListQueuesRequestParameters = {}): ListQueuesResponse {
         const method = 'POST'
+        
+        let body: any = {
+            Action: 'ListQueues',
+            Version: API_VERSION,
+        }
+
+        if (typeof(parameters?.maxResults) !== 'undefined') {
+            body = { ...body,
+                MaxResults: parameters.maxResults
+            }
+        }
+
+        if (typeof(parameters?.nextToken) !== 'undefined') {
+            body = { ...body,
+                NextToken: parameters.nextToken
+            }
+        }
+
+        if (typeof(parameters?.queueNamePrefix) !== 'undefined') {
+            body = { ...body,
+                QueueNamePrefix: parameters.queueNamePrefix
+            }
+        }
+
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'POST',
@@ -89,13 +137,7 @@ export class SQSClient extends AWSClient {
                     ...this.commonHeaders,
                     'Host': this.host
                 },
-                body: toFormUrlEncoded({
-                    Action: 'ListQueues',
-                    Version: API_VERSION,
-                    MaxResults: request.maxResults,
-                    NextToken: request.nextToken,
-                    QueueNamePrefix: request.queueNamePrefix
-                })
+                body: toFormUrlEncoded(body)
             },
             {}
         )
@@ -107,7 +149,7 @@ export class SQSClient extends AWSClient {
 
         let parsed = res.html()
         return {
-            queueUrls: parsed.find('QueueUrl').toArray().map(e => e.text()),
+            urls: parsed.find('QueueUrl').toArray().map(e => e.text()),
             nextToken: parsed.find('NextToken').text() || undefined
         }
     }
@@ -124,35 +166,43 @@ export class SQSClient extends AWSClient {
     }
 }
 
-export interface SendMessageRequestParameters {
+/**
+ * An Amazon SQS message.
+ */
+export class Message {
     /**
-     * The URL of the Amazon SQS queue to which a message is sent.
-     * Queue URLs and names are case-sensitive.
+     * A unique identifier for the message.
+     * A MessageIdis considered unique across all AWS accounts for an extended period of time.
      */
-    queueUrl: string
+    id: string
+    
     /**
-     * The message to send. The minimum size is one character. The maximum size is 256 KB.
+     * An MD5 digest of the non-URL-encoded message body string.
      */
-    messageBody: string
+    bodyMD5: string
+
     /**
-     * The message deduplication id.
+     * Instantiates a new Message object.
+     * 
+     * @param id
+     * @param md5Ofbody 
      */
+    constructor(id: string, bodyMD5: string) {
+        this.id = id
+        this.bodyMD5 = bodyMD5
+    }
+}
+
+export interface SendMessageOptions {
+    /*
+     * The message deduplication ID for FIFO queues
+    */
     messageDeduplicationId?: string
-    /**
+    
+    /*
      * The message group ID for FIFO queues
      */
     messageGroupId?: string
-}
-
-export interface SendMessageResponse {
-    /**
-     * An attribute containing the MessageId of the message sent to the queue.
-     */
-    messageId: string
-    /**
-     * An MD5 digest of the non-URL-encoded message body string. You can use this attribute to verify that Amazon SQS received the message correctly. Amazon SQS URL-decodes the message before creating the MD5 digest.
-     */
-    md5OfMessageBody: string
 }
 
 export interface ListQueuesRequestParameters {
@@ -175,7 +225,7 @@ export interface ListQueuesResponse {
     /**
      * A list of queue URLs, up to 1,000 entries, or the value of MaxResults you sent in the request.
      */
-    queueUrls: string[]
+    urls: string[]
     /**
      * Pagination token to include in the next request.
      */
