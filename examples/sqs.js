@@ -20,10 +20,5 @@ export default function () {
     }
 
     // Send message to test queue
-    sqs.sendMessage({
-        queueUrl: testQueue,
-        messageBody: JSON.stringify({
-            value: '123',
-        }),
-    })
+    sqs.sendMessage(testQueue, JSON.stringify({value: '123'}));
 }

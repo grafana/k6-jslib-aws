@@ -155,20 +155,15 @@ const awsConfig = new AWSConfig({
 const sqs = new SQSClient(awsConfig);
 const testQueue = 'https://sqs.us-east-1.amazonaws.com/000000000/test-queue';
 
-export default function() {
-  // If our test queue does not exist, abort the execution.
-  const queuesReponse = sqs.listQueues();
-  if (queuesReponse.queueUrls.filter((q) => q === testQueue).length == 0) {
-    exec.test.abort();
-  }
+export default function () {
+    // If our test queue does not exist, abort the execution.
+    const queuesResponse = sqs.listQueues()
+    if (queuesResponse.queueUrls.filter((q) => q === testQueue).length == 0) {
+        exec.test.abort()
+    }
 
-  // Send message to test queue
-  sqs.sendMessage({
-      queueUrl: testQueue,
-      messageBody: JSON.stringify({
-          value: '123'
-      })
-  });
+    // Send message to test queue
+    sqs.sendMessage(testQueue, JSON.stringify({value: '123'}));
 }
 ```
 
