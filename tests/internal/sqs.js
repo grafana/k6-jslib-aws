@@ -1,5 +1,5 @@
 import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.1/index.js'
-import { SQSClient } from '../../build/sqs.js'
+import { SQSClient, SQSServiceError } from '../../build/sqs.js'
 
 export function sqsTestSuite(data) {
     const sqsClient = new SQSClient(data.awsConfig)
@@ -57,5 +57,13 @@ export function sqsTestSuite(data) {
 
         // Assert
         expect(message.id).to.be.a('string');
+    })
+
+    describe('send message to non-existent queue', () => {
+        // Arrange
+        const sendMessageToNonExistentQueue = () => sqsClient.sendMessage('non-existent', 'value');
+        
+        // Assert
+        expect(sendMessageToNonExistentQueue).to.throw(SQSServiceError);
     })
 }

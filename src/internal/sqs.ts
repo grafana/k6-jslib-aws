@@ -1,6 +1,6 @@
 import { AWSClient } from './client'
 import { AWSConfig } from './config'
-import { SignatureV4 } from './signature'
+import { SignatureV4, InvalidSignatureError } from './signature'
 import { HTTPHeaders, SignedHTTPRequest } from './http'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 import { toFormUrlEncoded } from './utils'
@@ -81,7 +81,7 @@ export class SQSClient extends AWSClient {
         const res = http.request(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers
         })
-        this._handleError(res)
+        this._handleError('SendMessage', res)
 
         const parsed = res.html('SendMessageResponse > SendMessageResult')
         return new Message(   
@@ -145,7 +145,7 @@ export class SQSClient extends AWSClient {
         const res = http.request(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers
         })
-        this._handleError(res)
+        this._handleError('ListQueues', res)
 
         let parsed = res.html()
         return {
@@ -154,7 +154,7 @@ export class SQSClient extends AWSClient {
         }
     }
 
-    private _handleError(response: RefinedResponse<ResponseType | undefined>) {
+    private _handleError(operation: SQSOperation, response: RefinedResponse<ResponseType | undefined>) {
         const errorCode: number = response.error_code
         const errorMessage: string = response.error
 
@@ -162,7 +162,13 @@ export class SQSClient extends AWSClient {
             return
         }
 
-        throw AWSError.parseXML(response.body as string)
+        const awsError = AWSError.parseXML(response.body as string)
+        switch (awsError.code) {
+            case 'AuthorizationHeaderMalformed':
+                throw new InvalidSignatureError(awsError.message, awsError.code)
+            default:
+                throw new SQSServiceError(awsError.message, awsError.code || 'unknown', operation)
+        }
     }
 }
 
@@ -192,6 +198,24 @@ export class Message {
         this.bodyMD5 = bodyMD5
     }
 }
+
+/**
+ * SQSServiceError indicates an error occurred while interacting with the SQS API.
+ */
+export class SQSServiceError extends AWSError {
+    operation: SQSOperation;
+
+    constructor(message: string, code: string, operation: SQSOperation) {
+        super(message, code)
+        this.name = 'SQSServiceError'
+        this.operation = operation
+    }
+}
+
+/**
+ * SQSOperation describes possible SQS operations.
+ */
+type SQSOperation = 'ListQueues' | 'SendMessage'
 
 export interface SendMessageOptions {
     /*
