@@ -76,7 +76,7 @@ export class KinesisClient extends AWSClient {
      * @returns A RefinedResponse<ResponseType | undefined>
      */
     RequestOperation(target: string,
-        options: JSONObject | CreateStreamRequest | PutRecordsRequest | DeleteStreamRequest | Partial<ListStreamRequest> = {}): RefinedResponse<ResponseType | undefined> {
+        options: JSONObject | CreateStreamRequest | PutRecordsRequest | DeleteStreamRequest | Partial<ListStreamRequest> = {}): RefinedResponse<ResponseType | undefined> | undefined {
 
         // handling additional operations as lib standard
         target = target[0].toUpperCase() + target.slice(1)
@@ -95,11 +95,19 @@ export class KinesisClient extends AWSClient {
             },
             {}
         )
-        const res = http.request('POST', signedRequest.url, signedRequest.body, {
-            headers: signedRequest.headers,
-        })
 
-        this._handle_error(target, res)
+        let res = undefined;
+        try {
+            res = http.request('POST', signedRequest.url, signedRequest.body, {
+                headers: signedRequest.headers,
+            })
+
+            this._handle_error(target, res)
+        }
+        catch (err) {
+            console.log("Error with current request from k6-jslib-aws-extension")
+            console.log(err)
+        }
 
         return res
     }
@@ -119,7 +127,7 @@ export class KinesisClient extends AWSClient {
             return
         }
 
-        console.log("Error with current request from k6-jslib-aws-extension")
+        console.log("Error with current response from k6-jslib-aws-extension")
         console.log(response)
 
         const error = response.json() as JSONObject

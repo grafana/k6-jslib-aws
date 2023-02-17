@@ -13,6 +13,7 @@ const awsConfig = new AWSConfig({
     secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
     sessionToken: __ENV.AWS_SESSION_TOKEN,
 })
+
 const kinesis = new KinesisClient(awsConfig)
 
 const getShardIds = () => {
