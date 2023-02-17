@@ -119,6 +119,9 @@ export class KinesisClient extends AWSClient {
             return
         }
 
+        console.log("Error with current request from k6-jslib-aws-extension")
+        console.log(response)
+
         const error = response.json() as JSONObject
         if (errorCode >= 1400 && errorCode <= 1499) {
             // In the event of certain errors, the message is not set.
