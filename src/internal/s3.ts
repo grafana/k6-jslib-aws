@@ -223,7 +223,9 @@ export class S3Client extends AWSClient {
                 protocol: 'https',
                 hostname: host,
                 path: `/${objectKey}`,
-                headers: {},
+                headers: {
+                    'Host': host,
+                },
                 body: data,
             },
             {}
@@ -267,17 +269,23 @@ export class S3Client extends AWSClient {
     }
 
     _handle_error(operation: S3Operation, response: RefinedResponse<ResponseType | undefined>) {
+        const status: number = response.status
         const errorCode: number = response.error_code
         const errorMessage: string = response.error
 
-        if (errorMessage == '' && errorCode === 0) {
+        // We consider codes 200-299 as success
+        if ((status >= 200 && status < 300) && errorMessage == '' && errorCode === 0) {
             return
         }
 
-        // FIXME: should be errorCode === 1301 instead
+
+        // A 301 response is returned when the bucket is not found.
+        // Generally meaning that either the bucket name is wrong or the
+        // region is wrong.
+        //
         // See: https://github.com/grafana/k6/issues/2474
         // See: https://github.com/golang/go/issues/49281
-        if (errorMessage && errorMessage.startsWith('301')) {
+        if (status == 301 || errorMessage && errorMessage.startsWith('301')) {
             throw new S3ServiceError('Resource not found', 'ResourceNotFound', operation)
         }
 
