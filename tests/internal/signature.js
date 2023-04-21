@@ -80,7 +80,7 @@ export function signatureV4TestSuite() {
             describe('#sign should sign requests without host header', () => {
                 const request = JSON.parse(JSON.stringify(minimalRequest))
                 delete request.headers[HOST_HEADER]
-                
+
                 const { headers } = signer.sign(request, {
                     signingDate: new Date('2000-01-01T00:00:00Z'),
                 })
@@ -88,7 +88,7 @@ export function signatureV4TestSuite() {
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=1e3b24fcfd7655c0c245d99ba7b6b5ca6174eab903ebfbda09ce457af062ad30'
                 )
-                
+
                 expect(headers).to.have.property(HOST_HEADER)
                 expect(headers[HOST_HEADER]).to.not.be.undefined
                 expect(headers[HOST_HEADER]).to.not.be.null
@@ -202,6 +202,76 @@ export function signatureV4TestSuite() {
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=foo;host;user-agent;x-amz-content-sha256;x-amz-date, Signature=7ab8a270e30046c718408d1a0c015f5ed822fca59c446cd579fc7461257b7333'
                 )
             })
+
+            describe("URI encoding paths", () => {
+                const minimalRequest = {
+                  method: "POST",
+                  protocol: "https:",
+                  path: "/foo%3Dbar",
+                  headers: {
+                    host: "foo.us-bar-1.amazonaws.com",
+                  },
+                  hostname: "foo.us-bar-1.amazonaws.com",
+                };
+
+                const signingOptions = {
+                  signingDate: new Date("2000-01-01T00:00:00.000Z"),
+                };
+
+                describe("should URI-encode the path by default", () => {
+                  const { headers } = signer.sign(minimalRequest, signingOptions);
+                  expect(headers[AUTHORIZATION_HEADER]).to.equal(
+                    "AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=fb4948cab44a9c47ce3b1a2489d01ec939fea9e79eccdb4593c11a94f207e075"
+                  );
+                });
+
+                describe("should normalize relative path by default", () => {
+                  const request = JSON.parse(JSON.stringify(minimalRequest))
+                  request.path = "/abc/../foo%3Dbar"
+
+                  const { headers } = signer.sign(request, signingOptions);
+
+                  expect(headers[AUTHORIZATION_HEADER]).to.contain("Signature=fb4948cab44a9c47ce3b1a2489d01ec939fea9e79eccdb4593c11a94f207e075");
+                });
+
+                describe("should normalize path with consecutive slashes by default", () => {
+                  const request = JSON.parse(JSON.stringify(minimalRequest))
+                  request.path = "//foo%3Dbar"
+
+                  const { headers } = signer.sign(request, signingOptions);
+
+                  expect(headers[AUTHORIZATION_HEADER]).to.contain("Signature=fb4948cab44a9c47ce3b1a2489d01ec939fea9e79eccdb4593c11a94f207e075");
+                });
+
+                describe("should not URI-encode the path if URI path escaping was disabled on the signer", () => {
+                  // Setting `uriEscapePath` to `false` creates an
+                  // S3-compatible signer. The expected authorization header
+                  // included below was calculated using the
+                  // `Aws\Signature\S3SignatureV4` class from the AWS SDK for
+                  // PHP
+                  const signer = new SignatureV4({
+                    service: "foo",
+                    region: "us-bar-1",
+                    credentials: {
+                      accessKeyId: "foo",
+                      secretAccessKey: "bar",
+                    },
+                    uriEscapePath: false,
+                  });
+
+                  const request = JSON.parse(JSON.stringify(minimalRequest))
+                  request.headers["X-Amz-Content-Sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+                  const { headers } = signer.sign(request, {
+                      signingDate: new Date("2000-01-01T00:00:00.000Z"),
+                    }
+                  );
+
+                  expect(headers[AUTHORIZATION_HEADER]).to.equal(
+                    "AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=0d859e5a74374efc2c9f14ba9352df14c68e411a1f44bd639fdd024e5f7b7ef1"
+                  );
+                });
+            });
         })
 
         describe('#presign', () => {
