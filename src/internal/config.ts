@@ -47,6 +47,41 @@ export class AWSConfig {
     endpoint: string = 'amazonaws.com'
 
     /**
+     * fromEnvironment creates an AWSConfig from the environment variables.
+     *
+     * It expects to find the following compulsory environment variables:
+     *  * AWS_REGION
+     *  * AWS_ACCESS_KEY_ID
+     *  * AWS_SECRET_ACCESS_KEY
+     *
+     * If set, the following optional environment variables are also used:
+     *  * AWS_SESSION_TOKEN
+     *
+     * Finally, the options parameter allows to explicitly set the scheme and endpoint
+     * to use when connecting to AWS.
+     *
+     * @param options {AWSConnectionOptions}
+     * @returns
+     */
+    static fromEnvironment(options?: AWSConnectionOptions): AWSConfig {
+        const region = __ENV.AWS_REGION;
+        const accessKeyId = __ENV.AWS_ACCESS_KEY_ID;
+        const secretAccessKey = __ENV.AWS_SECRET_ACCESS_KEY;
+        const sessionToken: string | undefined = __ENV.AWS_SESSION_TOKEN;
+        const scheme: HTTPScheme | undefined = options?.scheme;
+        const endpoint: string | undefined = options?.endpoint;
+
+        return new AWSConfig({
+            region,
+            accessKeyId,
+            secretAccessKey,
+            sessionToken,
+            scheme: scheme,
+            endpoint: endpoint,
+        })
+    }
+
+    /**
      * Create an AWSConfig.
      *
      * @param {AWSConfigOptions} options - configuration attributes to use when interacting with AWS' APIs
