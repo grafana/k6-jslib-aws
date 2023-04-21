@@ -130,14 +130,13 @@ export class SignatureV4 {
             request.headers[constants.AMZ_CONTENT_SHA256_HEADER] = payloadHash
         }
 
-        const canonicalHeaders = this.computeCanonicalHeaders(
-            request,
-            unsignableHeaders,
-            signableHeaders
-        )
-        const canonicalRequest = this.createCanonicalRequest(request, canonicalHeaders, payloadHash)
-        const signingKey = this.deriveSigningKey(this.credentials, service, region, shortDate)
-        const signature = this.calculateSignature(longDate, scope, signingKey, canonicalRequest)
+        const canonicalHeaders = this.computeCanonicalHeaders(request, unsignableHeaders, signableHeaders);
+        const signature = this.calculateSignature(
+            longDate,
+            scope,
+            this.deriveSigningKey(this.credentials, service, region, shortDate),
+            this.createCanonicalRequest(request, canonicalHeaders, payloadHash),
+        );
 
         /**
          * Step 4 of the signing process: add the signature to the HTTP request's headers.
@@ -372,7 +371,7 @@ export class SignatureV4 {
         region: string,
         shortDate: string
     ): Uint8Array {
-        const kSecret = credentials.secretAccessKey
+        const kSecret: string = credentials.secretAccessKey
         const kDate: any = crypto.hmac('sha256', 'AWS4' + kSecret, shortDate, 'binary')
         const kRegion: any = crypto.hmac('sha256', kDate, region, 'binary')
         const kService: any = crypto.hmac('sha256', kRegion, service, 'binary')
@@ -389,39 +388,42 @@ export class SignatureV4 {
      * @returns {string} The canonical URI.
      */
     private computeCanonicalURI({ path }: HTTPRequest): string {
-        if (!this.uriEscapePath) {
-            // If the path is not uri-escaped, as in S3, then there's no need to
-            // double encode it nor normalize it.
-            return path
+        if (this.uriEscapePath) {
+            // Non-S3 services, we normalize the path and then double URI encode it.
+            // Ref: "Remove Dot Segments" https://datatracker.ietf.org/doc/html/rfc3986#section-5.2.4
+            const normalizedURISegments = []
+
+            for (const URISegment of path.split('/')) {
+                if (URISegment?.length === 0) {
+                    continue
+                }
+
+                if (URISegment === '.') {
+                    continue
+                }
+
+                if (URISegment === '..') {
+                    normalizedURISegments.pop()
+                } else {
+                    normalizedURISegments.push(URISegment)
+                }
+            }
+
+            // Normalize the URI
+            const leading = path?.startsWith('/') ? '/' : ''
+            const URI = normalizedURISegments.join('/')
+            const trailing = normalizedURISegments.length > 0 && path?.endsWith('/') ? '/' : ''
+            const normalizedURI = `${leading}${URI}${trailing}`
+
+            const doubleEncoded = encodeURIComponent(normalizedURI)
+
+            return doubleEncoded.replace(/%2F/g, '/')
         }
 
-        const normalizedURISegments = []
-
-        for (const URISegment of path.split('/')) {
-            if (URISegment?.length == 0) {
-                continue
-            }
-
-            if (URISegment === '.') {
-                continue
-            }
-
-            if (URISegment === '..') {
-                normalizedURISegments.pop()
-            } else {
-                normalizedURISegments.push(URISegment)
-            }
-        }
-
-        // Normalize and double encode the URI
-        const leading = path?.startsWith('/') ? '/' : ''
-        const URI = normalizedURISegments.join('/')
-        const trailing = normalizedURISegments.length > 0 && path?.endsWith('/') ? '/' : ''
-        const normalizedURI = `${leading}${URI}${trailing}`
-
-        const doubleEncoded = encodeURIComponent(normalizedURI)
-
-        return doubleEncoded.replace(/%2F/g, '/')
+        // For S3, we shouldn't normalize the path. For example, object name
+        // my-object//example//photo.user should not be normalized to
+        // my-object/example/photo.user
+        return path
     }
 
     /**
