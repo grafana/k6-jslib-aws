@@ -125,16 +125,9 @@ export class SignatureV4 {
             request.body = ''
         }
 
-        let payloadHash = constants.EMPTY_SHA256
-        if (this.applyChecksum) {
-            if (!hasHeader(constants.AMZ_CONTENT_SHA256_HEADER, request.headers)) {
-                payloadHash = crypto.sha256(request.body, 'hex').toLowerCase()
-                request.headers[constants.AMZ_CONTENT_SHA256_HEADER] = payloadHash
-            } else if (
-                request.headers[constants.AMZ_CONTENT_SHA256_HEADER] === constants.UNSIGNED_PAYLOAD
-            ) {
-                payloadHash = constants.UNSIGNED_PAYLOAD
-            }
+        let payloadHash = this.computePayloadHash(request)
+        if (!hasHeader(constants.AMZ_CONTENT_SHA256_HEADER, request.headers) && this.applyChecksum) {
+            request.headers[constants.AMZ_CONTENT_SHA256_HEADER] = payloadHash
         }
 
         const canonicalHeaders = this.computeCanonicalHeaders(
@@ -525,12 +518,16 @@ export class SignatureV4 {
      * @returns {string} The hex encoded SHA256 payload hash, or the value of the 'X-Amz-Content-Sha256' header.
      */
     private computePayloadHash({ headers, body }: HTTPRequest): string {
-        for (const headerName of Object.keys(headers)) {
-            // If the header is present, return its value.
-            // So that we let the 'UNSIGNED-PAYLOAD' value pass through.
-            if (headerName.toLowerCase() === constants.AMZ_CONTENT_SHA256_HEADER) {
-                return headers[headerName]
-            }
+        // for (const headerName of Object.keys(headers)) {
+        //     // If the header is present, return its value.
+        //     // So that we let the 'UNSIGNED-PAYLOAD' value pass through.
+        //     if (headerName.toLowerCase() === constants.AMZ_CONTENT_SHA256_HEADER) {
+        //         return headers[headerName]
+        //     }
+        // }
+
+        if (headers[constants.AMZ_CONTENT_SHA256_HEADER]) {
+            return headers[constants.AMZ_CONTENT_SHA256_HEADER]
         }
 
         if (body == undefined) {
