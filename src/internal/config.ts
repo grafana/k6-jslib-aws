@@ -53,15 +53,15 @@ export class AWSConfig {
      * @throws {InvalidArgumentException}
      */
     constructor(options: AWSConfigOptions) {
-        if (options.region === '') {
+        if (!options.region || options.region === '') {
             throw new InvalidAWSConfigError(
-                'invalid AWS region; reason: should be a non empty string'
+                `invalid AWS region; reason: expected a valid AWS region name (e.g. "us-east-1"), got \`${options.region}\``
             )
         }
 
-        if (options.accessKeyId === '') {
+        if (!options.accessKeyId || options.accessKeyId === '') {
             throw new InvalidAWSConfigError(
-                'invalid AWS access key ID; reason: should be a non empty string'
+                `invalid AWS access key ID; reason: expected a non empty string, got \`${options.accessKeyId}\``
             )
         }
 
@@ -71,9 +71,9 @@ export class AWSConfig {
             )
         }
 
-        if (options.secretAccessKey === '') {
+        if (!options.secretAccessKey || options.secretAccessKey === '') {
             throw new InvalidAWSConfigError(
-                'invalid AWS secret access key; reason: should be a non empty string'
+                `invalid AWS secret access key; reason: expected a non empty string, got \`${options.secretAccessKey}\``
             )
         }
 
@@ -104,7 +104,7 @@ export class AWSConfig {
 /**
  * Interface representing AWSConfig options
  */
-export interface AWSConfigOptions {
+export interface AWSConfigOptions extends AWSConnectionOptions {
     /**
      * The AWS region to connect to, as listed: https://docs.aws.amazon.com/general/latest/gr/rande.html
      *
@@ -132,7 +132,12 @@ export interface AWSConfigOptions {
      * @type {string}
      */
     sessionToken?: string
+}
 
+/**
+ * Interface representing AWS connection options
+ */
+export interface AWSConnectionOptions {
     /**
      * The HTTP scheme to use when connecting to AWS.
      *
