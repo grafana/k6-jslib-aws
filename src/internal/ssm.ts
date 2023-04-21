@@ -34,10 +34,10 @@ export class SystemsManagerClient extends AWSClient {
             service: this.serviceName,
             region: awsConfig.region,
             credentials: {
-                accessKeyId: awsConfig.accessKeyID,
+                accessKeyId: awsConfig.accessKeyId,
                 secretAccessKey: awsConfig.secretAccessKey,
             },
-            uriEscapePath: false,
+            uriEscapePath: true,
             applyChecksum: false,
         })
     }

@@ -34,12 +34,13 @@ export class SecretsManagerClient extends AWSClient {
 
         this.signature = new SignatureV4({
             service: this.serviceName,
-            region: awsConfig.region,
+            region: this.awsConfig.region,
             credentials: {
-                accessKeyId: awsConfig.accessKeyID,
-                secretAccessKey: awsConfig.secretAccessKey,
+                accessKeyId: this.awsConfig.accessKeyId,
+                secretAccessKey: this.awsConfig.secretAccessKey,
+                sessionToken: this.awsConfig.sessionToken,
             },
-            uriEscapePath: false,
+            uriEscapePath: true,
             applyChecksum: false,
         })
 

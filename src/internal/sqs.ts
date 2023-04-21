@@ -23,7 +23,7 @@ export class SQSClient extends AWSClient {
                 secretAccessKey: this.awsConfig.secretAccessKey,
                 sessionToken: this.awsConfig.sessionToken
             },
-            uriEscapePath: false,
+            uriEscapePath: true,
             applyChecksum: true
         })
 
@@ -34,7 +34,7 @@ export class SQSClient extends AWSClient {
 
     /**
      * Delivers a message to the specified queue.
-     * 
+     *
      * @param {string} queueUrl - The URL of the Amazon SQS queue to which a message is sent. Queue URLs and names are case-sensitive.
      * @param {string} messageBody - The message to send. The minimum size is one character. The maximum size is 256 KB.
      * @param {Object} options - Options for the request
@@ -84,7 +84,7 @@ export class SQSClient extends AWSClient {
         this._handleError('SendMessage', res)
 
         const parsed = res.html('SendMessageResponse > SendMessageResult')
-        return new Message(   
+        return new Message(
             parsed.find('MessageId').text(),
             parsed.find('MD5OfMessageBody').text()
         )
@@ -92,7 +92,7 @@ export class SQSClient extends AWSClient {
 
     /**
      * Returns a list of your queues in the current region.
-     * 
+     *
      * @param {ListQueuesRequestParameters} [parameters={}] request parameters
      * @param {number} [ListQueuesRequestParameters.maxResults] Maximum number of results to include in the response. Value range is 1 to 1000. You must set maxResults to receive a value for nextToken in the response.
      * @param {string} [ListQueuesRequestParameters.nextToken] Pagination token to request the next set of results.
@@ -103,7 +103,7 @@ export class SQSClient extends AWSClient {
      */
     listQueues(parameters: ListQueuesRequestParameters = {}): ListQueuesResponse {
         const method = 'POST'
-        
+
         let body: any = {
             Action: 'ListQueues',
             Version: API_VERSION,
@@ -181,7 +181,7 @@ export class Message {
      * A MessageIdis considered unique across all AWS accounts for an extended period of time.
      */
     id: string
-    
+
     /**
      * An MD5 digest of the non-URL-encoded message body string.
      */
@@ -189,9 +189,9 @@ export class Message {
 
     /**
      * Instantiates a new Message object.
-     * 
+     *
      * @param id
-     * @param md5Ofbody 
+     * @param md5Ofbody
      */
     constructor(id: string, bodyMD5: string) {
         this.id = id
@@ -222,7 +222,7 @@ export interface SendMessageOptions {
      * The message deduplication ID for FIFO queues
     */
     messageDeduplicationId?: string
-    
+
     /*
      * The message group ID for FIFO queues
      */
