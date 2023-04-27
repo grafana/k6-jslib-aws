@@ -8,6 +8,7 @@ import { AWSError } from './error'
 import { SignedHTTPRequest } from './http'
 import { InvalidSignatureError, SignatureV4 } from './signature'
 
+
 /** Class allowing to interact with Amazon AWS's S3 service */
 export class S3Client extends AWSClient {
     signature: SignatureV4
@@ -48,7 +49,7 @@ export class S3Client extends AWSClient {
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'GET',
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: this.host,
                 path: '/',
                 headers: {},
@@ -106,7 +107,7 @@ export class S3Client extends AWSClient {
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'GET',
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
                 path: '/',
                 query: {
@@ -175,7 +176,7 @@ export class S3Client extends AWSClient {
         const signedRequest = this.signature.sign(
             {
                 method: 'GET',
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
                 path: `/${objectKey}`,
                 headers: {},
@@ -220,7 +221,7 @@ export class S3Client extends AWSClient {
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
                 path: `/${objectKey}`,
                 headers: {
@@ -254,7 +255,7 @@ export class S3Client extends AWSClient {
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
                 path: `/${objectKey}`,
                 headers: {},

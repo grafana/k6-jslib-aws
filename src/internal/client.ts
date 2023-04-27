@@ -1,6 +1,6 @@
 import { AWSConfig } from './config'
 import { HTTPHeaders } from './http'
-
+import { HTTPScheme } from './http'
 /**
  * Class allowing to build requests targeting AWS APIs
  *
@@ -13,7 +13,7 @@ export class AWSClient {
     serviceName: string
 
     private _host?: string
-
+    private _scheme?: HTTPScheme
     /**
      * @param {AWSConfig} awsConfig - configuration attributes to use when interacting with AWS' APIs
      * @param  {string} serviceName - name of the service to target.
@@ -30,7 +30,7 @@ export class AWSClient {
      */
     public get host() {
         if (this._host == undefined) {
-            return `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
+          this._host = `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
         }
         return this._host
     }
@@ -38,6 +38,25 @@ export class AWSClient {
     public set host(host: string) {
         this._host = host
     }
+
+      /**
+     * Property computing the scheme to use http or https. Defaults to https as per AWSConfig Defaults
+     * the specific AWS service the child class implements the functionalities of.
+     */
+  
+    public get scheme() {
+
+      if (this._scheme == undefined) {
+        this._scheme = this.awsConfig.scheme;
+      }
+      return this._scheme
+    }
+  
+    // Validatiuon should be done by the type declaration 
+    public set scheme(scheme: HTTPScheme) {
+      this._scheme = scheme
+  }
+
 }
 
 /**
