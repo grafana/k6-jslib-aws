@@ -2,11 +2,9 @@
 
 BUCKET="test-jslib-aws"
 
-# The localstack container looks for scripts to execute in order
-# to ingest start up data in `/docker-entrypoint-initaws.d`. As
-# our script will live there, and we store test data in the same
-# directory, we store its path in a variable.
-testdata_folder="/docker-entrypoint-initaws.d/testdata/s3"
+# The localstack exposes its init script in the `/etc/localstack/init` folder.
+# For convinience we've setup a `testdata` folder in the same directory.
+testdata_folder="/etc/localstack/init/testdata/s3"
 testdata_files="bonjour.txt tschuss.txt delete.txt"
 
 # Create the test-jslib-aws bucket
