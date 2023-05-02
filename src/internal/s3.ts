@@ -224,7 +224,7 @@ export class S3Client extends AWSClient {
                 hostname: host,
                 path: `/${objectKey}`,
                 headers: {
-                    'Host': host,
+                    Host: host,
                 },
                 body: data,
             },
@@ -268,16 +268,172 @@ export class S3Client extends AWSClient {
         this._handle_error('DeleteObject', res)
     }
 
+    /**
+     * Creates a new multipart upload for a given objectKey.
+     * The uploadId returned can be used to upload parts to the object.
+     *
+     * @param  {string} bucketName - The bucket name containing the object.
+     * @param  {string} objectKey - Key of the object to delete.
+     * @return {S3MultipartUpload} - returns the uploadId of the newly created multipart upload.
+     * @throws  {S3ServiceError}
+     * @throws  {InvalidSignatureError}
+     */
+    createMultipartUpload(bucketName: string, objectKey: string): S3MultipartUpload {
+        // Prepare request
+        const method = 'POST'
+        const host = `${bucketName}.${this.host}`
+        const query = 'uploads'
+
+        const signedRequest = this.signature.sign(
+            {
+                method: method,
+                protocol: 'https',
+                hostname: host,
+                path: `/${objectKey}?${query}`,
+                headers: {},
+            },
+            {}
+        )
+
+        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+            headers: signedRequest.headers,
+        })
+        this._handle_error('CreateMultipartUpload', res)
+
+        return new S3MultipartUpload(
+            objectKey,
+            parseHTML(res.body as string)
+                .find('UploadId')
+                .text()
+        )
+    }
+
+    /**
+     * Uploads a part in a multipart upload.
+     * @param {string} bucketName - The bucket name containing the object.
+     * @param {string} objectKey - Key of the object to delete.
+     * @param {string} uploadId - The uploadId of the multipart upload.
+     * @param {number} partNumber - The part number of the part to upload.
+     * @param {string | ArrayBuffer} data - The content of the part to upload.
+     * @return {S3Part} - returns the ETag of the uploaded part.
+     * @throws  {S3ServiceError}
+     */
+    uploadPart(
+        bucketName: string,
+        objectKey: string,
+        uploadId: string,
+        partNumber: number,
+        data: string | ArrayBuffer
+    ): S3Part {
+        // Prepare request
+        const method = 'PUT'
+        const host = `${bucketName}.${this.host}`
+        const query = `partNumber=${partNumber}&uploadId=${uploadId}`
+        const signedRequest = this.signature.sign(
+            {
+                method: method,
+                protocol: 'https',
+                hostname: host,
+                path: `/${objectKey}?${query}`,
+                headers: {},
+                body: data,
+            },
+            {}
+        )
+
+        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+            headers: signedRequest.headers,
+        })
+        this._handle_error('UploadPart', res)
+
+        return new S3Part(partNumber, res.headers['Etag'])
+    }
+
+    /**
+     * Completes a multipart upload by assembling previously uploaded parts.
+     *
+     * @param  {string} bucketName - The bucket name containing the object.
+     * @param  {string} objectKey - Key of the object to delete.
+     * @param  {string} uploadId - The uploadId of the multipart upload to complete.
+     * @param  {S3Part[]} parts - The parts to assemble.
+     * @throws  {S3ServiceError}
+     * @throws  {InvalidSignatureError}
+     */
+    completeMultipartUpload(
+        bucketName: string,
+        objectKey: string,
+        uploadId: string,
+        parts: S3Part[]
+    ) {
+        // Prepare request
+        const method = 'POST'
+        const host = `${bucketName}.${this.host}`
+        const query = `uploadId=${uploadId}`
+        const body = `<CompleteMultipartUpload>${parts
+            .map(
+                (part) =>
+                    `<Part><PartNumber>${part.partNumber}</PartNumber><ETag>${part.eTag}</ETag></Part>`
+            )
+            .join('')}</CompleteMultipartUpload>`
+        const signedRequest = this.signature.sign(
+            {
+                method: method,
+                protocol: 'https',
+                hostname: host,
+                path: `/${objectKey}?${query}`,
+                headers: {},
+                body: body,
+            },
+            {}
+        )
+
+        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+            headers: signedRequest.headers,
+        })
+
+        this._handle_error('CompleteMultipartUpload', res)
+    }
+
+    /**
+     * Aborts a multipart upload.
+     *
+     * @param  {string} bucketName - The bucket name containing the object.
+     * @param  {string} objectKey - Key of the object to delete.
+     * @param  {string} uploadId - The uploadId of the multipart upload to abort.
+     * @throws  {S3ServiceError}
+     * @throws  {InvalidSignatureError}
+     */
+    abortMultipartUpload(bucketName: string, objectKey: string, uploadId: string) {
+        // Prepare request
+        const method = 'DELETE'
+        const host = `${bucketName}.${this.host}`
+        const query = `uploadId=${uploadId}`
+        const signedRequest = this.signature.sign(
+            {
+                method: method,
+                protocol: 'https',
+                hostname: host,
+                path: `/${objectKey}?${query}`,
+                headers: {},
+            },
+            {}
+        )
+
+        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+            headers: signedRequest.headers,
+        })
+        this._handle_error('AbortMultipartUpload', res)
+    }
+
     _handle_error(operation: S3Operation, response: RefinedResponse<ResponseType | undefined>) {
         const status: number = response.status
         const errorCode: number = response.error_code
         const errorMessage: string = response.error
 
         // We consider codes 200-299 as success
-        if ((status >= 200 && status < 300) && errorMessage == '' && errorCode === 0) {
+        if (status >= 200 && status < 300 && errorMessage == '' && errorCode === 0) {
             return
         }
-
 
         // A 301 response is returned when the bucket is not found.
         // Generally meaning that either the bucket name is wrong or the
@@ -285,7 +441,7 @@ export class S3Client extends AWSClient {
         //
         // See: https://github.com/grafana/k6/issues/2474
         // See: https://github.com/golang/go/issues/49281
-        if (status == 301 || errorMessage && errorMessage.startsWith('301')) {
+        if (status == 301 || (errorMessage && errorMessage.startsWith('301'))) {
             throw new S3ServiceError('Resource not found', 'ResourceNotFound', operation)
         }
 
@@ -352,6 +508,40 @@ export class S3Object {
     }
 }
 
+/** Class representing a S3 Multipart Upload */
+export class S3MultipartUpload {
+    key: string
+    uploadId: string
+
+    /**
+     * Create an S3 Multipart Upload
+     * @param  {string} key - S3 object's key
+     * @param  {string} uploadId - S3 multipart upload id
+     */
+
+    constructor(key: string, uploadId: string) {
+        this.key = key
+        this.uploadId = uploadId
+    }
+}
+
+/** Class representing a S3 Part */
+export class S3Part {
+    partNumber: number
+    eTag: string
+
+    /**
+     * Create an S3 Part
+     * @param  {number} partNumber - Part number
+     * @param  {string} eTag - Part's etag
+     */
+
+    constructor(partNumber: number, eTag: string) {
+        this.partNumber = partNumber
+        this.eTag = eTag
+    }
+}
+
 /**
  * Error indicating a S3 operation failed
  *
@@ -381,7 +571,16 @@ export class S3ServiceError extends AWSError {
  * S3Operation describes possible values for S3 API operations,
  * as defined by AWS APIs.
  */
-type S3Operation = 'ListBuckets' | 'ListObjectsV2' | 'GetObject' | 'PutObject' | 'DeleteObject'
+type S3Operation =
+    | 'ListBuckets'
+    | 'ListObjectsV2'
+    | 'GetObject'
+    | 'PutObject'
+    | 'DeleteObject'
+    | 'CreateMultipartUpload'
+    | 'CompleteMultipartUpload'
+    | 'UploadPart'
+    | 'AbortMultipartUpload'
 
 /**
  * Describes the class of storage used to store a S3 object.

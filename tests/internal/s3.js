@@ -84,6 +84,108 @@ export function s3TestSuite(data) {
         expect(deleteFromNonExistingBucketFn).to.throw(S3ServiceError)
     })
 
+    describe('create multipart upload', () => {
+        // Arrange
+        const createMultipartUploadFn = () =>
+            s3Client.createMultipartUpload(data.s3.testBucketName, 'created-by-test.txt')
+
+        // Assert
+        expect(createMultipartUploadFn).to.not.throw()
+    })
+
+    describe('upload part', () => {
+        // Arrange
+        const multipartUpload = s3Client.createMultipartUpload(
+            data.s3.testBucketName,
+            'created-by-test.txt'
+        )
+        const uploadPartFn = () =>
+            s3Client.uploadPart(
+                data.s3.testBucketName,
+                multipartUpload.key,
+                multipartUpload.uploadId,
+                1,
+                'This file was created by a test'
+            )
+        const uploadPartNonExistingMultipartUploadIdFn = () =>
+            s3Client.uploadPart(
+                data.s3.testBucketName,
+                multipartUpload.key,
+                'non-existent-upload-id',
+                1,
+                'This file was created by a test'
+            )
+
+        // Assert
+        expect(uploadPartFn).to.not.throw()
+        expect(uploadPartNonExistingMultipartUploadIdFn).to.throw(S3ServiceError)
+    })
+
+    describe('complete multipart upload', () => {
+        // Arrange
+        const multipartUpload = s3Client.createMultipartUpload(
+            data.s3.testBucketName,
+            'created-by-test.txt'
+        )
+        const uploadPart = s3Client.uploadPart(
+            data.s3.testBucketName,
+            multipartUpload.key,
+            multipartUpload.uploadId,
+            1,
+            'This file was created by a test'
+        )
+        const completeMultipartUploadFn = () =>
+            s3Client.completeMultipartUpload(
+                data.s3.testBucketName,
+                multipartUpload.key,
+                multipartUpload.uploadId,
+                [uploadPart]
+            )
+        const completeMultipartUploadNonExistingMultipartUploadIdFn = () =>
+            s3Client.completeMultipartUpload(
+                data.s3.testBucketName,
+                multipartUpload.key,
+                'non-existent-upload-id',
+                [uploadPart]
+            )
+        const completeMultipartUploadNonExistingPartFn = () =>
+            s3Client.completeMultipartUpload(
+                data.s3.testBucketName,
+                multipartUpload.key,
+                multipartUpload.uploadId,
+                [{ partNumber: 2, etag: 'non-existent-etag' }]
+            )
+
+        // Assert
+        expect(completeMultipartUploadFn).to.not.throw()
+        expect(completeMultipartUploadNonExistingMultipartUploadIdFn).to.throw(S3ServiceError)
+        expect(completeMultipartUploadNonExistingPartFn).to.throw(S3ServiceError)
+    })
+
+    describe('abort multipart upload', () => {
+        // Arrange
+        const multipartUpload = s3Client.createMultipartUpload(
+            data.s3.testBucketName,
+            'created-by-test.txt'
+        )
+        const abortMultipartUploadFn = () =>
+            s3Client.abortMultipartUpload(
+                data.s3.testBucketName,
+                multipartUpload.key,
+                multipartUpload.uploadId
+            )
+        const abortMultipartUploadNonExistingMultipartUploadIdFn = () =>
+            s3Client.abortMultipartUpload(
+                data.s3.testBucketName,
+                multipartUpload.key,
+                'non-existent-upload-id'
+            )
+
+        // Assert
+        expect(abortMultipartUploadFn).to.not.throw()
+        expect(abortMultipartUploadNonExistingMultipartUploadIdFn).to.throw(S3ServiceError)
+    })
+
     // Teardown
     // Ensure to cleanup the file create by the s3 tests.
     s3Client.deleteObject(data.s3.testBucketName, 'created-by-test.txt')
