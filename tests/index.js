@@ -7,6 +7,7 @@ import { s3TestSuite } from './internal/s3.js'
 import { secretsManagerTestSuite } from './internal/secrets-manager.js'
 import { kmsTestSuite } from './internal/kms.js'
 import { ssmTestSuite } from './internal/ssm.js'
+import { kinesisTestSuite } from './internal/kinesis.js'
 import { signatureV4TestSuite } from './internal/signature.js'
 import { sqsTestSuite } from './internal/sqs.js'
 
@@ -98,4 +99,5 @@ export default function testSuite(data) {
     sqsTestSuite(data)
     ssmTestSuite(data)
     signatureV4TestSuite(data)
+    kinesisTestSuite(data)
 }
