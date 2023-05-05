@@ -1,20 +1,8 @@
-// Import only symbols we wish to re-export publicly
-import { AWSConfig, InvalidAWSConfigError } from './internal/config'
-import { InvalidSignatureError } from './internal/signature'
-import {
+// Re-Export public symbols
+export { AWSConfig, InvalidAWSConfigError } from './internal/config'
+export { InvalidSignatureError } from './internal/signature'
+export {
     Secret,
     SecretsManagerClient,
     SecretsManagerServiceError,
 } from './internal/secrets-manager'
-
-// Re-Export public symbols
-export {
-    InvalidSignatureError,
-    // Aws Config
-    AWSConfig,
-    InvalidAWSConfigError,
-    // SecretsManager
-    SecretsManagerClient,
-    Secret,
-    SecretsManagerServiceError,
-}

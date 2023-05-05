@@ -1,5 +1,5 @@
-// Import internal signature symbols
-import {
+// Re-Export public symbols
+export {
     AMZ_ALGORITHM_QUERY_PARAM,
     AMZ_CONTENT_SHA256_HEADER,
     AMZ_CREDENTIAL_QUERY_PARAM,
@@ -14,22 +14,4 @@ import {
     SIGNING_ALGORITHM_IDENTIFIER,
     UNSIGNED_PAYLOAD,
 } from './internal/constants'
-import { SignatureV4 } from './internal/signature'
-
-// Re-Export public symbols
-export {
-    SignatureV4,
-    AUTHORIZATION_HEADER,
-    AMZ_ALGORITHM_QUERY_PARAM,
-    AMZ_CONTENT_SHA256_HEADER,
-    AMZ_CREDENTIAL_QUERY_PARAM,
-    AMZ_DATE_HEADER,
-    AMZ_DATE_QUERY_PARAM,
-    AMZ_EXPIRES_QUERY_PARAM,
-    AMZ_SIGNATURE_QUERY_PARAM,
-    AMZ_SIGNED_HEADERS_QUERY_PARAM,
-    AMZ_TOKEN_QUERY_PARAM,
-    UNSIGNED_PAYLOAD,
-    SIGNING_ALGORITHM_IDENTIFIER,
-    HOST_HEADER,
-}
+export { SignatureV4 } from './internal/signature'

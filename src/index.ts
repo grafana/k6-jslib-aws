@@ -1,50 +1,18 @@
-// Import only symbols we wish to re-export publicly
-// TODO: remove me
-import { InvalidSignatureError } from './internal/signature'
-
-import { AWSConfig, InvalidAWSConfigError } from './internal/config'
-import { AMZ_CONTENT_SHA256_HEADER, UNSIGNED_PAYLOAD } from './internal/constants'
-import { KMSClient, KMSDataKey, KMSServiceError } from './internal/kms'
-import { SignatureV4 } from './internal/signature'
-import { S3Bucket, S3Client, S3Object, S3ServiceError } from './internal/s3'
-import {
+// Re-Export public symbols
+export { InvalidSignatureError } from './internal/signature'
+export { AWSConfig, InvalidAWSConfigError } from './internal/config'
+export { AMZ_CONTENT_SHA256_HEADER, UNSIGNED_PAYLOAD } from './internal/constants'
+export { KMSClient, KMSDataKey, KMSServiceError } from './internal/kms'
+export { SignatureV4 } from './internal/signature'
+export { S3Bucket, S3Client, S3Object, S3ServiceError } from './internal/s3'
+export {
     Secret,
     SecretsManagerClient,
     SecretsManagerServiceError,
 } from './internal/secrets-manager'
-import {
+export {
     SystemsManagerClient,
     SystemsManagerParameter,
     SystemsManagerServiceError,
 } from './internal/ssm'
-import { SQSClient } from './sqs'
-
-// Re-Export public symbols
-export {
-    InvalidSignatureError,
-    // Aws Config
-    AWSConfig,
-    InvalidAWSConfigError,
-    // Signature
-    SignatureV4,
-    AMZ_CONTENT_SHA256_HEADER,
-    UNSIGNED_PAYLOAD,
-    // S3
-    S3Client,
-    S3Bucket,
-    S3Object,
-    S3ServiceError,
-    // SecretsManager
-    SecretsManagerClient,
-    Secret,
-    SecretsManagerServiceError,
-    // KMS
-    KMSClient,
-    KMSDataKey,
-    KMSServiceError,
-    // SystemsManager,
-    SQSClient,
-    SystemsManagerClient,
-    SystemsManagerParameter,
-    SystemsManagerServiceError,
-}
+export { SQSClient } from './sqs'
