@@ -8,6 +8,7 @@ import { AWSError } from './error'
 import { SignedHTTPRequest } from './http'
 import { InvalidSignatureError, SignatureV4 } from './signature'
 
+
 /** Class allowing to interact with Amazon AWS's S3 service */
 export class S3Client extends AWSClient {
     signature: SignatureV4
@@ -48,7 +49,7 @@ export class S3Client extends AWSClient {
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'GET',
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: this.host,
                 path: '/',
                 headers: {},
@@ -101,14 +102,14 @@ export class S3Client extends AWSClient {
     listObjects(bucketName: string, prefix?: string): Array<S3Object> {
         // Prepare request
         const method = 'GET'
-        const host = `${bucketName}.${this.host}`
+        const host = `${this.host}`
 
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'GET',
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
-                path: '/',
+                path: `/${bucketName}/`,
                 query: {
                     'list-type': '2',
                     prefix: prefix || '',
@@ -170,14 +171,14 @@ export class S3Client extends AWSClient {
     getObject(bucketName: string, objectKey: string): S3Object {
         // Prepare request
         const method = 'GET'
-        const host = `${bucketName}.${this.host}`
+        const host = `${this.host}`
 
         const signedRequest = this.signature.sign(
             {
                 method: 'GET',
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
-                path: `/${objectKey}`,
+                path: `/${bucketName}/${objectKey}`,
                 headers: {},
             },
             {}
@@ -215,14 +216,14 @@ export class S3Client extends AWSClient {
     putObject(bucketName: string, objectKey: string, data: string | ArrayBuffer) {
         // Prepare request
         const method = 'PUT'
-        const host = `${bucketName}.${this.host}`
-
+        const host = `${this.host}`
+  
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
-                path: `/${objectKey}`,
+                path: `/${bucketName}/${objectKey}`,
                 headers: {
                     Host: host,
                 },
@@ -249,14 +250,14 @@ export class S3Client extends AWSClient {
     deleteObject(bucketName: string, objectKey: string): void {
         // Prepare request
         const method = 'DELETE'
-        const host = `${bucketName}.${this.host}`
+        const host = `${this.host}`
 
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
-                path: `/${objectKey}`,
+                path: `/${bucketName}/${objectKey}`,
                 headers: {},
             },
             {}
