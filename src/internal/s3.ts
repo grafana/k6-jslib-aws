@@ -291,7 +291,7 @@ export class S3Client extends AWSClient {
                 hostname: host,
                 path: `/${objectKey}`,
                 headers: {},
-                query: { 'uploads': '' },
+                query: { uploads: '' },
             },
             {}
         )
