@@ -3,23 +3,17 @@ import exec from 'k6/execution'
 
 import { AWSConfig, S3Client } from '../build/s3.js'
 
-/*const awsConfig = new AWSConfig({
+const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
     accessKeyId: __ENV.AWS_ACCESS_KEY_ID,
     secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
     sessionToken: __ENV.AWS_SESSION_TOKEN,
-})*/
-const awsConfig = new AWSConfig({
-    region: "eu-west-3",
-    accessKeyId: "ASIAZYJUID53S35IO6NP",
-    secretAccessKey: "hPS0QnSHi5MiOhwSM78fvpteimg2sVlawDbCDhZ0",
-    sessionToken: "IQoJb3JpZ2luX2VjEEYaCWV1LXdlc3QtMyJGMEQCIH9dP4H8wAOQ55+al+3j+8bBQVO9nO/sJaQsDFEgBDezAiAWSiTU8O1VXJtbKodtg7XCRknNvkevbi5fKK17xRJmOSrvAQhfEAAaDDY3MDY2MTM1MzMzNSIMwAsVxreryDzIE8acKswBpUzch3YqXv6Y92XscbKhlkLOwu8fSAdKC2BODF3LPpEb82I30mGxwkzY4PToMOt2htrmqGgj/MR6hyfIhKBdU/JYQGnbV045u40gS/qAvEhh69r9jKNS7UrGlrRtuKxpkQXBLIcRK+gycyJOfl5oBW4PS4HhGEWlPo3A92Xr7QSrao9P2D1sXQxEwkBHrmu49fEwf3kvkAMGrO4Sh2jRzrPOlQb+7Ql/XrNynymUpjJxSeOWByuv7OI1m0smcfpFPLNDlM0TlUMayAJmMOT946IGOpkBSUE1w+2hT2Qa1QU8gYRtmBQFMEiti9CHXwmmIjBUl1NCaekWkm4SoTX0EtBd9PjYOs2ts8m0FyuvHAt3ypTnjeciS+DQvtkS11J+w9x3QGvqBzCs+jn+jQ+7FxOPMYRpQEHULzrDQENL5o2PxNS9vdsv1KJ9ax71dUjsj2nrCTeOwldzkkiNdnUdNvx5e9BPE2bCPR+MIZ2/"
-});
+})
+
 
 const s3 = new S3Client(awsConfig)
 
-//const testBucketName = 'test-jslib-aws'
-const testBucketName = 'imma-test-jslib-aws'
+const testBucketName = 'test-jslib-aws'
 const testFileKey = 'multipart.txt'
 
 export default function () {
