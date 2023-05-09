@@ -217,7 +217,7 @@ export class S3Client extends AWSClient {
         // Prepare request
         const method = 'PUT'
         const host = `${this.host}`
-  
+
         const signedRequest = this.signature.sign(
             {
                 method: method,
@@ -274,7 +274,7 @@ export class S3Client extends AWSClient {
      * The uploadId returned can be used to upload parts to the object.
      *
      * @param  {string} bucketName - The bucket name containing the object.
-     * @param  {string} objectKey - Key of the object to delete.
+     * @param  {string} objectKey - Key of the object to upload.
      * @return {S3MultipartUpload} - returns the uploadId of the newly created multipart upload.
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
@@ -283,15 +283,15 @@ export class S3Client extends AWSClient {
         // Prepare request
         const method = 'POST'
         const host = `${bucketName}.${this.host}`
-        const query = 'uploads'
 
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
-                path: `/${objectKey}?${query}`,
+                path: `/${objectKey}`,
                 headers: {},
+                query: { uploads: '' },
             },
             {}
         )
@@ -312,7 +312,7 @@ export class S3Client extends AWSClient {
     /**
      * Uploads a part in a multipart upload.
      * @param {string} bucketName - The bucket name containing the object.
-     * @param {string} objectKey - Key of the object to delete.
+     * @param {string} objectKey - Key of the object to upload.
      * @param {string} uploadId - The uploadId of the multipart upload.
      * @param {number} partNumber - The part number of the part to upload.
      * @param {string | ArrayBuffer} data - The content of the part to upload.
@@ -329,15 +329,18 @@ export class S3Client extends AWSClient {
         // Prepare request
         const method = 'PUT'
         const host = `${bucketName}.${this.host}`
-        const query = `partNumber=${partNumber}&uploadId=${uploadId}`
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
-                path: `/${objectKey}?${query}`,
+                path: `/${objectKey}`,
                 headers: {},
                 body: data,
+                query: {
+                    partNumber: `${partNumber}`,
+                    uploadId: `${uploadId}`,
+                },
             },
             {}
         )
@@ -369,7 +372,6 @@ export class S3Client extends AWSClient {
         // Prepare request
         const method = 'POST'
         const host = `${bucketName}.${this.host}`
-        const query = `uploadId=${uploadId}`
         const body = `<CompleteMultipartUpload>${parts
             .map(
                 (part) =>
@@ -379,11 +381,14 @@ export class S3Client extends AWSClient {
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
-                path: `/${objectKey}?${query}`,
+                path: `/${objectKey}`,
                 headers: {},
                 body: body,
+                query: {
+                    uploadId: `${uploadId}`,
+                },
             },
             {}
         )
@@ -408,14 +413,16 @@ export class S3Client extends AWSClient {
         // Prepare request
         const method = 'DELETE'
         const host = `${bucketName}.${this.host}`
-        const query = `uploadId=${uploadId}`
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: host,
-                path: `/${objectKey}?${query}`,
+                path: `/${objectKey}`,
                 headers: {},
+                query: {
+                    uploadId: `${uploadId}`,
+                },
             },
             {}
         )
