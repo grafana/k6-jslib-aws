@@ -9,6 +9,7 @@ services:
       - "127.0.0.1:4510-4559:4510-4559"  # external services port range
     environment:
       - SERVICES=s3,secretsmanager,sqs,kms,ssm
+      - S3_SKIP_SIGNATURE_VALIDATION=0  # enable signature validation
       - DEBUG=${DEBUG-}
       - PERSISTENCE=${PERSISTENCE-}
     volumes:
