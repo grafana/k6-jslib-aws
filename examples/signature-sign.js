@@ -1,4 +1,4 @@
-import http from 'k6/http.js'
+import http from 'k6/http'
 
 import { AWSConfig, SignatureV4 } from '../build/aws.js'
 

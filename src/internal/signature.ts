@@ -75,22 +75,23 @@ export class SignatureV4 {
      * This method mutates the request object.
      *
      * @param request {HTTPRequest} The request to sign.
-     * @param param1 {SignOptions} Options for signing the request.
+     * @param options {Partial<RequestSigningOptions>} Options for signing the request.
      * @returns {SignedHTTPRequest} The signed request.
      */
-    sign(
-        request: HTTPRequest,
-        {
-            signingDate = new Date(),
-            signingService,
-            signingRegion,
-            unsignableHeaders = new Set<string>(),
-            signableHeaders = new Set<string>(),
-        }: RequestSigningOptions
-    ): SignedHTTPRequest {
-        const { longDate, shortDate }: DateInfo = formatDate(signingDate)
-        const service = signingService || this.service
-        const region = signingRegion || this.region
+    sign(request: HTTPRequest, options: Partial<RequestSigningOptions> = {}): SignedHTTPRequest {
+        // Set default values for options which are not provided by the user.
+        const defaultOptions = {
+            signingDate: new Date(),
+            unsignableHeaders: new Set<string>(),
+            signableHeaders: new Set<string>(),
+        }
+
+        // Merge default options with the ones maybe provided by the user.
+        const finalOptions = { ...defaultOptions, ...options }
+
+        const { longDate, shortDate }: DateInfo = formatDate(finalOptions.signingDate)
+        const service = finalOptions.signingService || this.service
+        const region = finalOptions.signingRegion || this.region
         const scope = `${shortDate}/${region}/${service}/${constants.KEY_TYPE_IDENTIFIER}`
 
         // Required by the specification:
@@ -126,17 +127,24 @@ export class SignatureV4 {
         }
 
         let payloadHash = this.computePayloadHash(request)
-        if (!hasHeader(constants.AMZ_CONTENT_SHA256_HEADER, request.headers) && this.applyChecksum) {
+        if (
+            !hasHeader(constants.AMZ_CONTENT_SHA256_HEADER, request.headers) &&
+            this.applyChecksum
+        ) {
             request.headers[constants.AMZ_CONTENT_SHA256_HEADER] = payloadHash
         }
 
-        const canonicalHeaders = this.computeCanonicalHeaders(request, unsignableHeaders, signableHeaders);
+        const canonicalHeaders = this.computeCanonicalHeaders(
+            request,
+            finalOptions.unsignableHeaders,
+            finalOptions.signableHeaders
+        )
         const signature = this.calculateSignature(
             longDate,
             scope,
             this.deriveSigningKey(this.credentials, service, region, shortDate),
-            this.createCanonicalRequest(request, canonicalHeaders, payloadHash),
-        );
+            this.createCanonicalRequest(request, canonicalHeaders, payloadHash)
+        )
 
         /**
          * Step 4 of the signing process: add the signature to the HTTP request's headers.
