@@ -67,7 +67,7 @@ export class SQSClient extends AWSClient {
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'POST',
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: this.host,
                 path: '/',
                 headers: {
@@ -130,7 +130,7 @@ export class SQSClient extends AWSClient {
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'POST',
-                protocol: 'https',
+                protocol: this.scheme,
                 hostname: this.host,
                 path: '/',
                 headers: {
