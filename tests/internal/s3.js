@@ -48,10 +48,10 @@ export function s3TestSuite(data) {
         // Assert
         expect(gotFirstObject).to.be.an('object')
         expect(gotFirstObject.key).to.equal(data.s3.testObjects[0].key)
-        expect(gotFirstObject.body).to.equal(data.s3.testObjects[0].data)
+        expect(gotFirstObject.data).to.equal(data.s3.testObjects[0].body)
         expect(gotSecondObject).to.be.an('object')
         expect(gotSecondObject.key).to.equal(data.s3.testObjects[1].key)
-        expect(gotSecondObject.body).to.equal(data.s3.testObjects[1].data)
+        expect(gotSecondObject.data).to.equal(data.s3.testObjects[1].body)
         expect(getNonExistingObjectFn).to.throw(S3ServiceError)
         expect(getObjectFromNonExistingBucketFn).to.throw(S3ServiceError)
     })
@@ -83,6 +83,23 @@ export function s3TestSuite(data) {
         expect(deleteExistingObjectFn).to.not.throw()
         expect(deleteNonExistingObjectFn).to.not.throw()
         expect(deleteFromNonExistingBucketFn).to.throw(S3ServiceError)
+    })
+
+    describe('copy object', () => {
+        // Arrange
+        const sourceObject = data.s3.testObjects[0]
+        const sourceKey = sourceObject.key
+        const destinationKey = sourceKey + '-new'
+        const bucket = data.s3.testBucketName
+
+        // Act
+        s3Client.copyObject(bucket, sourceKey, bucket, destinationKey)
+        const newObject = s3Client.getObject(bucket, destinationKey)
+
+        // Assert
+        expect(newObject).to.be.an('object')
+        expect(newObject.key).to.equal(destinationKey)
+        expect(newObject.data).to.equal(sourceObject.body)
     })
 
     describe('create multipart upload', () => {
