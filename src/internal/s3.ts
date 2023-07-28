@@ -270,6 +270,41 @@ export class S3Client extends AWSClient {
     }
 
     /**
+     * Copies an object from one bucket to another
+     *
+     * @param  {string} sourceBucket - The source bucket name containing the object.
+     * @param  {string} sourceKey - Key of the source object to copy.
+     * @param  {string} destinationBucket - The destination bucket name containing the object.
+     * @param  {string} destinationKey - Key of the destination object.
+     * @throws  {S3ServiceError}
+     * @throws  {InvalidSignatureError}
+     */
+    copyObject(sourceBucket: string, sourceKey: string, destinationBucket: string, destinationKey: string): void {
+        // Prepare request
+        const method = 'PUT'
+        const host = `${destinationBucket}.${this.host}`
+
+        const signedRequest = this.signature.sign(
+            {
+                method: method,
+                protocol: this.scheme,
+                hostname: host,
+                path: `/${destinationKey}`,
+                headers: {
+                    'x-amz-copy-source': `${sourceBucket}/${sourceKey}`,
+                },
+            },
+            {}
+        )
+
+        const res = http.request(method, signedRequest.url, signedRequest.body || null, {
+            headers: signedRequest.headers,
+        })
+        
+        this._handle_error('CopyObject', res)
+    }
+
+    /**
      * Creates a new multipart upload for a given objectKey.
      * The uploadId returned can be used to upload parts to the object.
      *
@@ -585,6 +620,7 @@ type S3Operation =
     | 'GetObject'
     | 'PutObject'
     | 'DeleteObject'
+    | 'CopyObject'
     | 'CreateMultipartUpload'
     | 'CompleteMultipartUpload'
     | 'UploadPart'
