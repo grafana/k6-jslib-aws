@@ -8,7 +8,7 @@ import { kmsTestSuite } from './internal/kms.js'
 // import { ssmTestSuite } from './internal/ssm.js'
 // import { kinesisTestSuite } from './internal/kinesis.js'
 // import { signatureV4TestSuite } from './internal/signature.js'
-// import { sqsTestSuite } from './internal/sqs.js'
+import { sqsTestSuite } from './internal/sqs.js'
 
 // Must know:
 //   * end2end tests such as these rely on the localstack
@@ -92,7 +92,7 @@ export default async function testSuite(data) {
     await s3TestSuite(data)
     await secretsManagerTestSuite(data)
     await kmsTestSuite(data)
-    // sqsTestSuite(data)
+    await sqsTestSuite(data)
     // ssmTestSuite(data)
     // signatureV4TestSuite(data)
     // kinesisTestSuite(data)

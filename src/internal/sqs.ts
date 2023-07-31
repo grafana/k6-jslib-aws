@@ -21,14 +21,14 @@ export class SQSClient extends AWSClient {
             credentials: {
                 accessKeyId: this.awsConfig.accessKeyId,
                 secretAccessKey: this.awsConfig.secretAccessKey,
-                sessionToken: this.awsConfig.sessionToken
+                sessionToken: this.awsConfig.sessionToken,
             },
             uriEscapePath: true,
-            applyChecksum: true
+            applyChecksum: true,
         })
 
         this.commonHeaders = {
-            'Content-Type': 'application/x-www-form-urlencoded'
+            'Content-Type': 'application/x-www-form-urlencoded',
         }
     }
 
@@ -42,7 +42,11 @@ export class SQSClient extends AWSClient {
      * @param {string} [options.messageGroupId] - The message group ID for FIFO queues
      * @returns {Message} - The message that was sent.
      */
-    sendMessage(queueUrl: string, messageBody: string, options: { messageDeduplicationId?: string; messageGroupId?: string} = {}): Message {
+    async sendMessage(
+        queueUrl: string,
+        messageBody: string,
+        options: { messageDeduplicationId?: string; messageGroupId?: string } = {}
+    ): Promise<Message> {
         const method = 'POST'
 
         let body: any = {
@@ -52,16 +56,12 @@ export class SQSClient extends AWSClient {
             MessageBody: messageBody,
         }
 
-        if (typeof(options.messageDeduplicationId) !== 'undefined') {
-            body = { ...body,
-                MessageDeduplicationId: options.messageDeduplicationId
-            }
+        if (typeof options.messageDeduplicationId !== 'undefined') {
+            body = { ...body, MessageDeduplicationId: options.messageDeduplicationId }
         }
 
-        if (typeof(options.messageGroupId) !== 'undefined') {
-            body = { ...body,
-                MessageGroupId: options.messageGroupId
-            }
+        if (typeof options.messageGroupId !== 'undefined') {
+            body = { ...body, MessageGroupId: options.messageGroupId }
         }
 
         const signedRequest: SignedHTTPRequest = this.signature.sign(
@@ -71,23 +71,20 @@ export class SQSClient extends AWSClient {
                 hostname: this.host,
                 path: '/',
                 headers: {
-                    ...this.commonHeaders
+                    ...this.commonHeaders,
                 },
-                body: toFormUrlEncoded(body)
+                body: toFormUrlEncoded(body),
             },
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
-            headers: signedRequest.headers
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
+            headers: signedRequest.headers,
         })
         this._handleError('SendMessage', res)
 
         const parsed = res.html('SendMessageResponse > SendMessageResult')
-        return new Message(
-            parsed.find('MessageId').text(),
-            parsed.find('MD5OfMessageBody').text()
-        )
+        return new Message(parsed.find('MessageId').text(), parsed.find('MD5OfMessageBody').text())
     }
 
     /**
@@ -101,7 +98,7 @@ export class SQSClient extends AWSClient {
      * @returns {string[]} Object.queueUrls - A list of queue URLs, up to 1000 entries.
      * @returns {string} [Object.nextToken] - In the future, you can use NextToken to request the next set of results.
      */
-    listQueues(parameters: ListQueuesRequestParameters = {}): ListQueuesResponse {
+    async listQueues(parameters: ListQueuesRequestParameters = {}): Promise<ListQueuesResponse> {
         const method = 'POST'
 
         let body: any = {
@@ -109,22 +106,16 @@ export class SQSClient extends AWSClient {
             Version: API_VERSION,
         }
 
-        if (typeof(parameters?.maxResults) !== 'undefined') {
-            body = { ...body,
-                MaxResults: parameters.maxResults
-            }
+        if (typeof parameters?.maxResults !== 'undefined') {
+            body = { ...body, MaxResults: parameters.maxResults }
         }
 
-        if (typeof(parameters?.nextToken) !== 'undefined') {
-            body = { ...body,
-                NextToken: parameters.nextToken
-            }
+        if (typeof parameters?.nextToken !== 'undefined') {
+            body = { ...body, NextToken: parameters.nextToken }
         }
 
-        if (typeof(parameters?.queueNamePrefix) !== 'undefined') {
-            body = { ...body,
-                QueueNamePrefix: parameters.queueNamePrefix
-            }
+        if (typeof parameters?.queueNamePrefix !== 'undefined') {
+            body = { ...body, QueueNamePrefix: parameters.queueNamePrefix }
         }
 
         const signedRequest: SignedHTTPRequest = this.signature.sign(
@@ -135,26 +126,32 @@ export class SQSClient extends AWSClient {
                 path: '/',
                 headers: {
                     ...this.commonHeaders,
-                    'Host': this.host
+                    Host: this.host,
                 },
-                body: toFormUrlEncoded(body)
+                body: toFormUrlEncoded(body),
             },
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
-            headers: signedRequest.headers
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
+            headers: signedRequest.headers,
         })
         this._handleError('ListQueues', res)
 
         let parsed = res.html()
         return {
-            urls: parsed.find('QueueUrl').toArray().map(e => e.text()),
-            nextToken: parsed.find('NextToken').text() || undefined
+            urls: parsed
+                .find('QueueUrl')
+                .toArray()
+                .map((e) => e.text()),
+            nextToken: parsed.find('NextToken').text() || undefined,
         }
     }
 
-    private _handleError(operation: SQSOperation, response: RefinedResponse<ResponseType | undefined>) {
+    private _handleError(
+        operation: SQSOperation,
+        response: RefinedResponse<ResponseType | undefined>
+    ) {
         const errorCode: number = response.error_code
         const errorMessage: string = response.error
 
@@ -203,7 +200,7 @@ export class Message {
  * SQSServiceError indicates an error occurred while interacting with the SQS API.
  */
 export class SQSServiceError extends AWSError {
-    operation: SQSOperation;
+    operation: SQSOperation
 
     constructor(message: string, code: string, operation: SQSOperation) {
         super(message, code)
@@ -220,7 +217,7 @@ type SQSOperation = 'ListQueues' | 'SendMessage'
 export interface SendMessageOptions {
     /*
      * The message deduplication ID for FIFO queues
-    */
+     */
     messageDeduplicationId?: string
 
     /*
