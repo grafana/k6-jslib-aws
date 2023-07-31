@@ -3,7 +3,7 @@ import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js'
 import { AWSConfig } from '../build/aws.js'
 
 import { s3TestSuite } from './internal/s3.js'
-// import { secretsManagerTestSuite } from './internal/secrets-manager.js'
+import { secretsManagerTestSuite } from './internal/secrets-manager.js'
 // import { kmsTestSuite } from './internal/kms.js'
 // import { ssmTestSuite } from './internal/ssm.js'
 // import { kinesisTestSuite } from './internal/kinesis.js'
@@ -90,7 +90,7 @@ export function setup() {
 
 export default async function testSuite(data) {
     await s3TestSuite(data)
-    // secretsManagerTestSuite(data)
+    await secretsManagerTestSuite(data)
     // kmsTestSuite(data)
     // sqsTestSuite(data)
     // ssmTestSuite(data)
