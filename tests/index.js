@@ -4,7 +4,7 @@ import { AWSConfig } from '../build/aws.js'
 
 import { s3TestSuite } from './internal/s3.js'
 import { secretsManagerTestSuite } from './internal/secrets-manager.js'
-// import { kmsTestSuite } from './internal/kms.js'
+import { kmsTestSuite } from './internal/kms.js'
 // import { ssmTestSuite } from './internal/ssm.js'
 // import { kinesisTestSuite } from './internal/kinesis.js'
 // import { signatureV4TestSuite } from './internal/signature.js'
@@ -91,7 +91,7 @@ export function setup() {
 export default async function testSuite(data) {
     await s3TestSuite(data)
     await secretsManagerTestSuite(data)
-    // kmsTestSuite(data)
+    await kmsTestSuite(data)
     // sqsTestSuite(data)
     // ssmTestSuite(data)
     // signatureV4TestSuite(data)
