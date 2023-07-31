@@ -51,10 +51,10 @@ export class SystemsManagerClient extends AWSClient {
      * @throws {SystemsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    getParameter(
+    async getParameter(
         name: string,
         withDecryption: boolean = false
-    ): SystemsManagerParameter | undefined {
+    ): Promise<SystemsManagerParameter | undefined> {
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
@@ -70,7 +70,7 @@ export class SystemsManagerClient extends AWSClient {
             {}
         )
 
-        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
+        const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(SystemsManagerOperation.GetParameter, res)

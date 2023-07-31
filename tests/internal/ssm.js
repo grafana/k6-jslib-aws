@@ -1,38 +1,48 @@
-import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.1/index.js'
+import { asyncDescribe } from './helpers.js'
 import { SystemsManagerClient, SystemsManagerServiceError } from '../../build/ssm.js'
 
-export function ssmTestSuite(data) {
+export async function ssmTestSuite(data) {
     const systemsManagerClient = new SystemsManagerClient(data.awsConfig)
 
-    describe('get parameter', () => {
+    await asyncDescribe('sms.getParameter', async (expect) => {
         // Act
-        // getParameter returns an parameter object: e.g. {parameter: {name: string, value: string...}}
-        const parameterObject = systemsManagerClient.getParameter(
+        const parameterObject = await systemsManagerClient.getParameter(
             data.systemsManager.testParameter.name
         )
-        const nonExistingParameterFn = () =>
-            systemsManagerClient.getParameter('non-existing-parameter')
+
+        let nonExistingParameterError
+        try {
+            await systemsManagerClient.getParameter('non-existing-parameter')
+        } catch (error) {
+            nonExistingParameterError = error
+        }
 
         // Assert
         expect(parameterObject).to.be.an('object')
         expect(parameterObject.value).to.be.an('string')
         expect(parameterObject.value).to.equal(data.systemsManager.testParameter.value)
-        expect(nonExistingParameterFn).to.throw(SystemsManagerServiceError)
+        expect(nonExistingParameterError).to.not.be.undefined
+        expect(nonExistingParameterError).to.be.an.instanceOf(SystemsManagerServiceError)
     })
 
-    describe('get secret parameter', () => {
+    await asyncDescribe('sms.getSecretParameter', async (expect) => {
         // Act
-        // destructure the object to get the values you want directly
-        const { value: parameterValue } = systemsManagerClient.getParameter(
+        const { value: parameterValue } = await systemsManagerClient.getParameter(
             data.systemsManager.testParameterSecret.name,
             true
         )
-        const nonExistingParameterFn = () =>
-            systemsManagerClient.getParameter('non-existing-parameter', true)
+
+        let nonExistingParameterError
+        try {
+            await systemsManagerClient.getParameter('non-existing-parameter', true)
+        } catch (error) {
+            nonExistingParameterError = error
+        }
 
         // Assert
         expect(parameterValue).to.be.an('string')
         expect(parameterValue).to.equal(data.systemsManager.testParameterSecret.value)
-        expect(nonExistingParameterFn).to.throw(SystemsManagerServiceError)
+        expect(nonExistingParameterError).to.not.be.undefined
+        expect(nonExistingParameterError).to.be.an.instanceOf(SystemsManagerServiceError)
     })
 }
