@@ -7,7 +7,7 @@ import { secretsManagerTestSuite } from './internal/secrets-manager.js'
 import { kmsTestSuite } from './internal/kms.js'
 import { ssmTestSuite } from './internal/ssm.js'
 import { kinesisTestSuite } from './internal/kinesis.js'
-// import { signatureV4TestSuite } from './internal/signature.js'
+import { signatureV4TestSuite } from './internal/signature.js'
 import { sqsTestSuite } from './internal/sqs.js'
 
 // Must know:
@@ -89,7 +89,7 @@ export function setup() {
 }
 
 export default async function testSuite(data) {
-    // signatureV4TestSuite(data)
+    signatureV4TestSuite(data)
     await s3TestSuite(data)
     await secretsManagerTestSuite(data)
     await kmsTestSuite(data)
