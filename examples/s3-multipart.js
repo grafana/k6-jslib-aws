@@ -10,16 +10,15 @@ const awsConfig = new AWSConfig({
     sessionToken: __ENV.AWS_SESSION_TOKEN,
 })
 
-
 const s3 = new S3Client(awsConfig)
 
 const testBucketName = 'test-jslib-aws'
 const testFileKey = 'multipart.txt'
 
-export default function () {
+export default async function () {
     // List the buckets the AWS authentication configuration
     // gives us access to.
-    const buckets = s3.listBuckets()
+    const buckets = await s3.listBuckets()
 
     // If our test bucket does not exist, abort the execution.
     if (buckets.filter((b) => b.name === testBucketName).length == 0) {
@@ -32,11 +31,11 @@ export default function () {
     const bigFile = crypto.randomBytes(12 * 1024 * 1024)
 
     // Initialize a multipart upload
-    const multipartUpload = s3.createMultipartUpload(testBucketName, testFileKey)
+    const multipartUpload = await s3.createMultipartUpload(testBucketName, testFileKey)
 
     // Upload the first part
     const firstPartData = bigFile.slice(0, 6 * 1024 * 1024)
-    const firstPart = s3.uploadPart(
+    const firstPart = await s3.uploadPart(
         testBucketName,
         testFileKey,
         multipartUpload.uploadId,
@@ -46,7 +45,7 @@ export default function () {
 
     // Upload the second part
     const secondPartData = bigFile.slice(6 * 1024 * 1024, 12 * 1024 * 1024)
-    const secondPart = s3.uploadPart(
+    const secondPart = await s3.uploadPart(
         testBucketName,
         testFileKey,
         multipartUpload.uploadId,
@@ -55,12 +54,12 @@ export default function () {
     )
 
     // Complete the multipart upload
-    s3.completeMultipartUpload(testBucketName, testFileKey, multipartUpload.uploadId, [
+    await s3.completeMultipartUpload(testBucketName, testFileKey, multipartUpload.uploadId, [
         firstPart,
         secondPart,
     ])
 
     // Let's redownload it verify it's correct, and delete it
-    const obj = s3.getObject(testBucketName, testFileKey)
-    s3.deleteObject(testBucketName, testFileKey)
+    const obj = await s3.getObject(testBucketName, testFileKey)
+    await s3.deleteObject(testBucketName, testFileKey)
 }
