@@ -1,6 +1,6 @@
 # k6-jslib-aws
 
-A library allowing to interact with AWS resources for k6.io
+A library enabling users to interact with AWS resources for k6.io
 
 This is an AWS client library for k6. It intends to allow interacting with a subset of AWS services in the context of k6 load test script.
 
@@ -34,7 +34,7 @@ import { check } from 'k6';
 import exec from 'k6/execution';
 import http from 'k6/http';
 
-import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.4.0/s3.js';
+import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.8.0/s3.js';
 
 const awsConfig = new AWSConfig(
   __ENV.AWS_REGION,
@@ -47,21 +47,21 @@ const testBucketName = 'test-jslib-aws';
 const testInputFileKey = 'productIDs.json';
 const testOutputFileKey = `results-${Date.now()}.json`;
 
-export function setup() {
+export async function setup() {
   // If our test bucket does not exist, abort the execution.
-  const buckets = s3.listBuckets();
+  const buckets = await s3.listBuckets();
   if (buckets.filter((b) => b.name === testBucketName).length == 0) {
     exec.test.abort();
   }
 
   // If our test object does not exist, abort the execution.
-  const objects = s3.listObjects(testBucketName);
+  const objects = await s3.listObjects(testBucketName);
   if (objects.filter((o) => o.key === testInputFileKey).length == 0) {
     exec.test.abort();
   }
 
   // Download the S3 object containing our test data
-  const inputObject = s3.getObject(testBucketName, testInputFileKey);
+  const inputObject = await s3.getObject(testBucketName, testInputFileKey);
 
   // Let's return the downloaded S3 object's data from the
   // setup function to allow the default function to use it.
@@ -70,19 +70,19 @@ export function setup() {
   };
 }
 
-export default function (data) {
+export default async function (data) {
   // Pick a random product ID from our test data
   const randomProductID = data.productIDs[Math.floor(Math.random() * data.productIDs.length)];
 
   // Query our ecommerce website's product page using the ID
-  const res = http.get(`http://your.website.com/product/${randomProductID}/`);
+  const res = await http.asyncRequest("GET", `http://your.website.com/product/${randomProductID}/`);
   check(res, { 'is status 200': res.status === 200 });
 }
 
-export function handleSummary(data) {
+export async function handleSummary(data) {
   // Once the load test is over, let's upload the results to our
   // S3 bucket. This is executed after teardown.
-  s3.putObject(testBucketName, testOutputFileKey, JSON.stringify(data));
+  await s3.putObject(testBucketName, testOutputFileKey, JSON.stringify(data));
 }
 ```
 
@@ -93,7 +93,7 @@ Consult the `SecretsManagerClient` [dedicated k6 documentation page](https://k6.
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.4.0/secrets-manager.js'
+import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.8.0/secrets-manager.js'
 
 const awsConfig = new AWSConfig(
     __ENV.AWS_REGION,
@@ -105,9 +105,9 @@ const secretsManager = new SecretsManagerClient(awsConfig)
 const testSecretName = 'jslib-test-secret'
 const testSecretValue = 'jslib-test-value'
 
-export default function () {
+export default async function () {
     // Let's make sure our test secret is created
-    const testSecret = secretsManager.createSecret(
+    const testSecret = await secretsManager.createSecret(
         testSecretName,
         testSecretValue,
         'this is a test secret, delete me.'
@@ -115,23 +115,23 @@ export default function () {
 
     // List the secrets the AWS authentication configuration
     // gives us access to, and verify the creation was successful.
-    const secrets = secretsManager.listSecrets()
+    const secrets = await secretsManager.listSecrets()
     if (!secrets.filter((s) => s.name === testSecret.name).length == 0) {
         exec.test.abort('test secret not found')
     }
 
     // Now that we know the secret exist, let's update its value
     const newTestSecretValue = 'new-test-value'
-    secretsManager.putSecretValue(testSecretName, newTestSecretValue)
+    await secretsManager.putSecretValue(testSecretName, newTestSecretValue)
 
     // Let's get its value and verify it was indeed updated
-    const updatedSecret = secretsManager.getSecret(testSecretName)
+    const updatedSecret = await secretsManager.getSecret(testSecretName)
     if (updatedSecret.secretString !== newTestSecretValue) {
         exec.test.abort('unable to update test secret')
     }
 
     // Finally, let's delete our test secret and verify it worked
-    secretsManager.deleteSecret(updatedSecret.name, { noRecovery: true })
+    await secretsManager.deleteSecret(updatedSecret.name, { noRecovery: true })
 }
 ```
 
@@ -145,7 +145,7 @@ import { check } from 'k6';
 import exec from 'k6/execution';
 import http from 'k6/http';
 
-import { AWSConfig, SQSClient } from 'https://jslib.k6.io/aws/0.7.0/sqs.js';
+import { AWSConfig, SQSClient } from 'https://jslib.k6.io/aws/0.8.0/sqs.js';
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -157,15 +157,15 @@ const awsConfig = new AWSConfig({
 const sqs = new SQSClient(awsConfig);
 const testQueue = 'https://sqs.us-east-1.amazonaws.com/000000000/test-queue';
 
-export default function () {
+export default async function () {
     // If our test queue does not exist, abort the execution.
-    const queuesResponse = sqs.listQueues()
+    const queuesResponse = await sqs.listQueues()
     if (queuesResponse.queueUrls.filter((q) => q === testQueue).length == 0) {
         exec.test.abort()
     }
 
     // Send message to test queue
-    sqs.sendMessage(testQueue, JSON.stringify({value: '123'}));
+    await sqs.sendMessage(testQueue, JSON.stringify({value: '123'}));
 }
 ```
 
@@ -187,11 +187,11 @@ const awsConfig = new AWSConfig({
 const KMS = new KMSClient(awsConfig)
 const KeyId = 'alias/TestKey'
 
-export default function () {
+export default async function () {
     // Currently, the keys need to be created before hand
 
     // First let's list the keys we have available
-    const keys = KMS.listKeys()
+    const keys = await KMS.listKeys()
     if (keys.length == 0) {
         exec.test.abort('test keys not found')
     }
@@ -202,7 +202,7 @@ export default function () {
     }
 
     //Run generateDataKey call on the key, with the default 32 byte size
-    const dataKey = KMS.generateDataKey(key.keyId)
+    const dataKey = await KMS.generateDataKey(key.keyId)
     if (dataKey.ciphertextBlobText == undefined) {
         exec.test.abort('data key not generated')
     }
@@ -216,7 +216,7 @@ Consult the `SystemsManagerClient` [dedicated k6 documentation page](https://k6.
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SystemsManagerClient } from '../build/ssm.js'
+import { AWSConfig, SystemsManagerClient } from 'https://jslib.k6.io/aws/0.8.0/ssm.js';
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -232,12 +232,12 @@ const testParameterSecretName = 'jslib-test-parameter-secret'
 // this value was created with --type SecureString
 const testParameterSecretValue = 'jslib-test-secret-value'
 
-export default function () {
+export default async function () {
     // Currently the parameter needs to be created before hand
 
     // Let's get its value
     // getParameter returns an parameter object: e.g. {parameter: {name: string, value: string...}}
-    const parameter = systemsManager.getParameter(testParameterName)
+    const parameter = await systemsManager.getParameter(testParameterName)
     if (parameter.value !== testParameterValue) {
         exec.test.abort('test parameter not found')
     }
@@ -260,11 +260,10 @@ Consult the `KinesisClient` [dedicated k6 documentation page](https://k6.io/docs
 
 ```javascript
 import exec from 'k6/execution'
-
-import { AWSConfig, KinesisClient } from 'https://jslib.k6.io/aws/0.7.0/kinesis.js'
 import encoding from 'k6/encoding';
-import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.2/index.js';
 import { fail } from 'k6';
+
+import { AWSConfig, KinesisClient } from 'https://jslib.k6.io/aws/0.8.0/kinesis.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -274,27 +273,58 @@ const awsConfig = new AWSConfig({
 })
 const kinesis = new KinesisClient(awsConfig)
 
-export default function () {
-    describe('01. List Kinesis streams', () => {
-        try {
-            const res = kinesis.listStreams()
-            expect(res.StreamNames.length,"number of streams").to.equal(6);
-        } catch(err) {
-            fail(err)
-        }
+export default async function () {
+    // List the streamds the AWS authentication configuration
+    // gives us access to.
+    const streams = await kinesis.listStreams()
 
+    if (streams.StreamNames.filter((s) => s === dummyStream).length == 0) {
+        fail(`Stream ${dummyStream} does not exist`)
+    }
+
+    // Create our test stream
+    await kinesis.createStream(dummyStream, {
+        ShardCount: 10,
+        StreamModeDetails: {
+            StreamMode: 'PROVISIONED',
+        },
     })
 
-    describe('02. List kinesis stream with arguments', () => {
-        try {
-            const res = kinesis.listStreams({Limit: 1})
-            expect(res.StreamNames.length,"number of streams").to.equal(1);
-        } catch(err) {
-            fail(err)
+    // Put some records in it
+    const records = await kinesis.putRecords({
+        StreamName: dummyStream,
+        Records: [
+            {
+                Data: encoding.b64encode(JSON.stringify({ this: 'is', a: 'test' })),
+                PartitionKey: 'partitionKey1',
+            },
+            {
+                Data: encoding.b64encode(JSON.stringify([{ this: 'is', second: 'test' }])),
+                PartitionKey: 'partitionKey2',
+            },
+        ],
+    })
+
+    // List the streams' shards
+    const shards = await kinesis.listShards(dummyStream).Shards.map((shard) => shard.ShardId)
+
+    // For each shard, read all the data
+    shards.map(async (shard) => {
+        const iterator = await kinesis.getShardIterator(dummyStream, shardId, `TRIM_HORIZON`)
+
+        while (true) {
+            const res = await kinesis.getRecords({ ShardIterator: iterator })
+            iterator = res.NextShardIterator
+
+            if (!res.MillisBehindLatest || res.MillisBehindLatest == `0`) {
+                break
+            }
         }
     })
+
+    // Delete the stream
+    await kinesis.deleteStream({ StreamName: dummyStream })
 }
-
 ```
 
 
