@@ -34,7 +34,7 @@ import { check } from 'k6';
 import exec from 'k6/execution';
 import http from 'k6/http';
 
-import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.8.0/s3.js';
+import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.9.0/s3.js';
 
 const awsConfig = new AWSConfig(
   __ENV.AWS_REGION,
@@ -93,7 +93,7 @@ Consult the `SecretsManagerClient` [dedicated k6 documentation page](https://k6.
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.8.0/secrets-manager.js'
+import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.9.0/secrets-manager.js'
 
 const awsConfig = new AWSConfig(
     __ENV.AWS_REGION,
@@ -145,7 +145,7 @@ import { check } from 'k6';
 import exec from 'k6/execution';
 import http from 'k6/http';
 
-import { AWSConfig, SQSClient } from 'https://jslib.k6.io/aws/0.8.0/sqs.js';
+import { AWSConfig, SQSClient } from 'https://jslib.k6.io/aws/0.9.0/sqs.js';
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -216,7 +216,7 @@ Consult the `SystemsManagerClient` [dedicated k6 documentation page](https://k6.
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SystemsManagerClient } from 'https://jslib.k6.io/aws/0.8.0/ssm.js';
+import { AWSConfig, SystemsManagerClient } from 'https://jslib.k6.io/aws/0.9.0/ssm.js';
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -263,7 +263,7 @@ import exec from 'k6/execution'
 import encoding from 'k6/encoding';
 import { fail } from 'k6';
 
-import { AWSConfig, KinesisClient } from 'https://jslib.k6.io/aws/0.8.0/kinesis.js'
+import { AWSConfig, KinesisClient } from 'https://jslib.k6.io/aws/0.9.0/kinesis.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
