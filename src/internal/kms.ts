@@ -67,7 +67,7 @@ export class KMSClient extends AWSClient {
             {}
         )
 
-        const res = await http.request(this.method, signedRequest.url, signedRequest.body, {
+        const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(KMSOperation.ListKeys, res)
