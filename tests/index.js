@@ -1,4 +1,3 @@
-import { chai } from 'https://jslib.k6.io/k6chaijs/4.3.4.0/index.js'
 import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js'
 
 import { AWSConfig } from '../build/aws.js'
@@ -10,9 +9,6 @@ import { ssmTestSuite } from './internal/ssm.js'
 import { kinesisTestSuite } from './internal/kinesis.js'
 import { signatureV4TestSuite } from './internal/signature.js'
 import { sqsTestSuite } from './internal/sqs.js'
-
-chai.config.aggregateChecks = false
-chai.config.logFailures = true
 
 // Must know:
 //   * end2end tests such as these rely on the localstack
@@ -92,12 +88,12 @@ export function setup() {
     }
 }
 
-export default function testSuite(data) {
-    s3TestSuite(data)
-    secretsManagerTestSuite(data)
-    kmsTestSuite(data)
-    sqsTestSuite(data)
-    ssmTestSuite(data)
+export default async function testSuite(data) {
     signatureV4TestSuite(data)
-    kinesisTestSuite(data)
+    await s3TestSuite(data)
+    await secretsManagerTestSuite(data)
+    await kmsTestSuite(data)
+    await sqsTestSuite(data)
+    await ssmTestSuite(data)
+    await kinesisTestSuite(data)
 }

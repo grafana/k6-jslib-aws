@@ -16,102 +16,60 @@ const awsConfig = new AWSConfig({
 
 const kinesis = new KinesisClient(awsConfig)
 
-const getShardIds = () => {
-    const res = kinesis.listShards(dummyStream)
-    const shardIds = res.Shards.map((shard) => shard.ShardId)
-
-    return shardIds
-}
-
-const getShardIterator = (shardId) => {
-    const res = kinesis.getShardIterator(dummyStream, shardId, `TRIM_HORIZON`)
+const getShardIterator = async (shardId) => {
+    const res = await kinesis.getShardIterator(dummyStream, shardId, `TRIM_HORIZON`)
     return res.ShardIterator
 }
 
-export default function () {
-    describe('01. Create kinesis Stream', () => {
-        try {
-            // Valid Values: PROVISIONED | ON_DEMAND
-            kinesis.createStream(dummyStream, {
-                ShardCount: 10,
-                StreamModeDetails: {
-                    StreamMode: 'PROVISIONED',
-                },
-            })
-        } catch (err) {
-            fail(err)
-        }
+export default async function () {
+    // List the streamds the AWS authentication configuration
+    // gives us access to.
+    const streams = await kinesis.listStreams()
+
+    if (streams.StreamNames.filter((s) => s === dummyStream).length == 0) {
+        fail(`Stream ${dummyStream} does not exist`)
+    }
+
+    // Create our test stream
+    await kinesis.createStream(dummyStream, {
+        ShardCount: 10,
+        StreamModeDetails: {
+            StreamMode: 'PROVISIONED',
+        },
     })
 
-    describe('02. List Kinesis streams', () => {
-        try {
-            const res = kinesis.listStreams()
-            expect(res.StreamNames.length, 'number of streams').to.equal(1)
-        } catch (err) {
-            fail(err)
-        }
+    // Put some records in it
+    const records = await kinesis.putRecords({
+        StreamName: dummyStream,
+        Records: [
+            {
+                Data: encoding.b64encode(JSON.stringify({ this: 'is', a: 'test' })),
+                PartitionKey: 'partitionKey1',
+            },
+            {
+                Data: encoding.b64encode(JSON.stringify([{ this: 'is', second: 'test' }])),
+                PartitionKey: 'partitionKey2',
+            },
+        ],
     })
 
-    describe('03. List kinesis stream with arguments', () => {
-        try {
-            const res = kinesis.listStreams({ limit: 1 })
-            expect(res.StreamNames.length, 'number of streams').to.equal(1)
-        } catch (err) {
-            fail(err)
-        }
-        sleep(2)
-    })
+    // List the streams' shards
+    const shards = await kinesis.listShards(dummyStream).Shards.map((shard) => shard.ShardId)
 
-    describe('04. publish to kinesis Stream', () => {
-        try {
-            for (let i = 0; i < 50; i++) {
-                const res = kinesis.putRecords({
-                    StreamName: dummyStream,
-                    Records: [
-                        {
-                            Data: encoding.b64encode(JSON.stringify({ this: 'is', a: 'test' })),
-                            PartitionKey: 'partitionKey1',
-                        },
-                        {
-                            Data: encoding.b64encode(
-                                JSON.stringify([{ this: 'is', second: 'test' }])
-                            ),
-                            PartitionKey: 'partitionKey2',
-                        },
-                    ],
-                })
-                expect(res.FailedRecordCount, `Failed Records to publish`).to.equal(0)
-                expect(res.Records.length, `Total Records`).to.equal(2)
+    // For each shard, read all the data
+    shards.map(async (shard) => {
+        const iterator = await kinesis.getShardIterator(dummyStream, shardId, `TRIM_HORIZON`)
+
+        while (true) {
+            const res = await kinesis.getRecords({ ShardIterator: iterator })
+            iterator = res.NextShardIterator
+
+            if (!res.MillisBehindLatest || res.MillisBehindLatest == `0`) {
+                break
             }
-        } catch (err) {
-            fail(err)
         }
     })
 
-    describe('05. Gets an Amazon Kinesis read all data ', () => {
-        try {
-            const shards = getShardIds()
-            shards.map((shard) => {
-                let iterator = getShardIterator(shard)
-                while (true) {
-                    const res = kinesis.getRecords({ ShardIterator: iterator })
-                    iterator = res.NextShardIterator
-
-                    if (!res.MillisBehindLatest || res.MillisBehindLatest == `0`) {
-                        break
-                    }
-                }
-            })
-        } catch (err) {
-            fail(err)
-        }
-    })
-
-    describe('06. Delete kinesis Stream', () => {
-        try {
-            kinesis.deleteStream({ StreamName: dummyStream })
-        } catch (err) {
-            fail(err)
-        }
-    })
+    // Delete the stream
+    await kinesis.deleteStream({ StreamName: dummyStream })
 }

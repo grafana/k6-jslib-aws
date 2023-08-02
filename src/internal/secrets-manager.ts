@@ -60,7 +60,7 @@ export class SecretsManagerClient extends AWSClient {
      * @throws  {SecretsManagerServiceError}
      * @throws  {InvalidSignatureError}
      */
-    listSecrets(): Array<Secret> {
+    async listSecrets(): Promise<Array<Secret>> {
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
@@ -76,7 +76,7 @@ export class SecretsManagerClient extends AWSClient {
             {}
         )
 
-        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
+        const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(SecretsManagerOperation.ListSecrets, res)
@@ -93,7 +93,7 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {SecretsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    getSecret(id: string): Secret | undefined {
+    async getSecret(id: string): Promise<Secret | undefined> {
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
@@ -109,7 +109,7 @@ export class SecretsManagerClient extends AWSClient {
             {}
         )
 
-        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
+        const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
 
@@ -136,13 +136,13 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {SecretsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    createSecret(
+    async createSecret(
         name: string,
         secret: string,
         description: string,
         versionID?: string,
         tags?: Array<Object>
-    ): Secret {
+    ): Promise<Secret> {
         versionID = versionID || uuidv4()
 
         const signedRequest = this.signature.sign(
@@ -170,7 +170,7 @@ export class SecretsManagerClient extends AWSClient {
         // header field, as documented by the AWS API docs.
         // headers['X-Amz-Target'] = `${this.serviceName}.CreateSecret`
 
-        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
+        const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(SecretsManagerOperation.CreateSecret, res)
@@ -189,7 +189,7 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {SecretsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    putSecretValue(id: string, secret: string, versionID?: string): Secret {
+    async putSecretValue(id: string, secret: string, versionID?: string): Promise<Secret> {
         versionID = versionID || uuidv4()
 
         const signedRequest = this.signature.sign(
@@ -211,7 +211,7 @@ export class SecretsManagerClient extends AWSClient {
             {}
         )
 
-        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
+        const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(SecretsManagerOperation.PutSecretValue, res)
@@ -231,10 +231,10 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {SecretsManagerServiceError}
      * @throws {InvalidSignatureError}
      */
-    deleteSecret(
+    async deleteSecret(
         id: string,
         { recoveryWindow = 30, noRecovery = false }: { recoveryWindow: number; noRecovery: boolean }
-    ) {
+    ): Promise<void> {
         const payload: { [key: string]: string | boolean | number } = {
             SecretId: id,
         }
@@ -261,7 +261,7 @@ export class SecretsManagerClient extends AWSClient {
             {}
         )
 
-        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
+        const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(SecretsManagerOperation.DeleteSecret, res)

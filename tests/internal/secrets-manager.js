@@ -1,4 +1,4 @@
-import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.1/index.js'
+import { asyncDescribe } from './helpers.js'
 import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js'
 import {
     AWSConfig,
@@ -6,15 +6,12 @@ import {
     SecretsManagerServiceError,
 } from '../../build/secrets-manager.js'
 
-export function secretsManagerTestSuite(data) {
-    // FIXME: due to what is probably a bug in LocalStack, the `localhost`
-    // region is invalid for the secrets manager service. Thus we set it up
-    // to a real one.
+export async function secretsManagerTestSuite(data) {
     const secretsManagerClient = new SecretsManagerClient(data.awsConfig)
 
-    describe('list secrets', () => {
+    await asyncDescribe('secretsManager.listSecrets', async (expect) => {
         // Act
-        const secrets = secretsManagerClient.listSecrets()
+        const secrets = await secretsManagerClient.listSecrets()
 
         // Assert
         expect(secrets).to.be.an('array')
@@ -22,21 +19,28 @@ export function secretsManagerTestSuite(data) {
         expect(secrets[0].name).to.equal(data.secretsManager.testSecrets[0].name)
     })
 
-    describe('get secret', () => {
+    await asyncDescribe('secretsManager.getSecret', async (expect) => {
         // Act
-        const secret = secretsManagerClient.getSecret(data.secretsManager.testSecrets[0].name)
-        const nonExistingSecretFn = () => secretsManagerClient.getSecret('non-existing-secret')
+        const secret = await secretsManagerClient.getSecret(data.secretsManager.testSecrets[0].name)
+
+        let getNonExistingSecretError
+        try {
+            await secretsManagerClient.getSecret('non-existing-secret')
+        } catch (error) {
+            getNonExistingSecretError = error
+        }
 
         // Assert
         expect(secret).to.be.an('object')
         expect(secret.name).to.equal(data.secretsManager.testSecrets[0].name)
         expect(secret.secret).to.equal(data.secretsManager.testSecrets[0].secret)
-        expect(nonExistingSecretFn).to.throw(SecretsManagerServiceError)
+        expect(getNonExistingSecretError).to.not.be.undefined
+        expect(getNonExistingSecretError).to.be.an.instanceOf(SecretsManagerServiceError)
     })
 
-    describe('create secret', () => {
+    await asyncDescribe('secretsManager.createSecret', async (expect) => {
         // Act
-        const secret = secretsManagerClient.createSecret(
+        const secret = await secretsManagerClient.createSecret(
             data.secretsManager.createdSecretName,
             'created-secret-value'
         )
@@ -47,9 +51,9 @@ export function secretsManagerTestSuite(data) {
         expect(secret).to.not.have.property('secret', secret)
     })
 
-    describe('put secret value', () => {
+    await asyncDescribe('secretsManager.putSecretValue', async (expect) => {
         // Act
-        const secret = secretsManagerClient.putSecretValue(
+        const secret = await secretsManagerClient.putSecretValue(
             data.secretsManager.createdSecretName,
             'put-secret-value'
         )
@@ -60,19 +64,25 @@ export function secretsManagerTestSuite(data) {
         expect(secret).to.not.have.property('secret', secret)
     })
 
-    describe('delete secret value', () => {
+    await asyncDescribe('secretsManager.deleteSecretValue', async (expect) => {
         // Act
-        const deleteSecretFn = () =>
-            secretsManagerClient.deleteSecret(data.secretsManager.deleteSecretName, {
+        let deleteSecretError
+        try {
+            await secretsManagerClient.deleteSecret(data.secretsManager.deleteSecretName, {
                 noRecovery: true,
             })
+        } catch (error) {
+            deleteSecretError = error
+        }
 
         // Assert
-        expect(deleteSecretFn).to.not.throw(SecretsManagerServiceError)
+        expect(deleteSecretError).to.be.undefined
     })
 
     // Teardown
 
     // Delete the secret created by the secrets manager tests.
-    secretsManagerClient.deleteSecret(data.secretsManager.createdSecretName, { noRecovery: true })
+    await secretsManagerClient.deleteSecret(data.secretsManager.createdSecretName, {
+        noRecovery: true,
+    })
 }

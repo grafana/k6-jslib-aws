@@ -16,29 +16,28 @@ const s3 = new S3Client(awsConfig)
 const testBucketName = 'test-jslib-aws'
 const testFileKey = 'bonjour.txt'
 
-export default function () {
+export default async function () {
     // List the buckets the AWS authentication configuration
     // gives us access to.
-    const buckets = s3.listBuckets()
+    const buckets = await s3.listBuckets()
 
-    console.log(buckets)
-    // // If our test bucket does not exist, abort the execution.
-    // if (buckets.filter((b) => b.name === testBucketName).length == 0) {
-    //     exec.test.abort()
-    // }
+    // If our test bucket does not exist, abort the execution.
+    if (buckets.filter((b) => b.name === testBucketName).length == 0) {
+        exec.test.abort()
+    }
 
-    // // Let's upload our test file to the bucket
-    // s3.putObject(testBucketName, testFileKey, testFile)
+    // Let's upload our test file to the bucket
+    await s3.putObject(testBucketName, testFileKey, testFile)
 
-    // // Let's list the test bucket objects
-    // const objects = s3.listObjects(testBucketName)
+    // Let's list the test bucket objects
+    const objects = await s3.listObjects(testBucketName)
 
-    // // And verify it does contain our test object
-    // if (objects.filter((o) => o.key === testFileKey).length == 0) {
-    //     exec.test.abort()
-    // }
+    // And verify it does contain our test object
+    if (objects.filter((o) => o.key === testFileKey).length == 0) {
+        exec.test.abort()
+    }
 
-    // // Let's redownload it verify it's correct, and delete it
-    // const obj = s3.getObject(testBucketName, testFileKey)
-    // s3.deleteObject(testBucketName, testFileKey)
+    // Let's redownload it, verify it's correct, and delete it
+    const obj = await s3.getObject(testBucketName, testFileKey)
+    await s3.deleteObject(testBucketName, testFileKey)
 }

@@ -8,7 +8,6 @@ import { AWSError } from './error'
 import { SignedHTTPRequest } from './http'
 import { InvalidSignatureError, SignatureV4 } from './signature'
 
-
 /** Class allowing to interact with Amazon AWS's S3 service */
 export class S3Client extends AWSClient {
     signature: SignatureV4
@@ -43,7 +42,7 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    listBuckets(): Array<S3Bucket> {
+    async listBuckets(): Promise<Array<S3Bucket>> {
         const method = 'GET'
 
         const signedRequest: SignedHTTPRequest = this.signature.sign(
@@ -57,7 +56,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
         this._handle_error('ListBuckets', res)
@@ -99,7 +98,7 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    listObjects(bucketName: string, prefix?: string): Array<S3Object> {
+    async listObjects(bucketName: string, prefix?: string): Promise<Array<S3Object>> {
         // Prepare request
         const method = 'GET'
         const host = `${this.host}`
@@ -119,7 +118,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
         this._handle_error('ListObjectsV2', res)
@@ -168,7 +167,7 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    getObject(bucketName: string, objectKey: string): S3Object {
+    async getObject(bucketName: string, objectKey: string): Promise<S3Object> {
         // Prepare request
         const method = 'GET'
         const host = `${this.host}`
@@ -184,7 +183,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
         this._handle_error('GetObject', res)
@@ -213,7 +212,11 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    putObject(bucketName: string, objectKey: string, data: string | ArrayBuffer) {
+    async putObject(
+        bucketName: string,
+        objectKey: string,
+        data: string | ArrayBuffer
+    ): Promise<void> {
         // Prepare request
         const method = 'PUT'
         const host = `${this.host}`
@@ -232,7 +235,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body, {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error('PutObject', res)
@@ -247,7 +250,7 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    deleteObject(bucketName: string, objectKey: string): void {
+    async deleteObject(bucketName: string, objectKey: string): Promise<void> {
         // Prepare request
         const method = 'DELETE'
         const host = `${this.host}`
@@ -263,7 +266,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
         this._handle_error('DeleteObject', res)
@@ -279,7 +282,12 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    copyObject(sourceBucket: string, sourceKey: string, destinationBucket: string, destinationKey: string): void {
+    async copyObject(
+        sourceBucket: string,
+        sourceKey: string,
+        destinationBucket: string,
+        destinationKey: string
+    ): Promise<void> {
         // Prepare request
         const method = 'PUT'
         const host = `${destinationBucket}.${this.host}`
@@ -297,10 +305,10 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body || null, {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
-        
+
         this._handle_error('CopyObject', res)
     }
 
@@ -314,7 +322,7 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    createMultipartUpload(bucketName: string, objectKey: string): S3MultipartUpload {
+    async createMultipartUpload(bucketName: string, objectKey: string): Promise<S3MultipartUpload> {
         // Prepare request
         const method = 'POST'
         const host = `${bucketName}.${this.host}`
@@ -331,7 +339,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
         this._handle_error('CreateMultipartUpload', res)
@@ -354,13 +362,13 @@ export class S3Client extends AWSClient {
      * @return {S3Part} - returns the ETag of the uploaded part.
      * @throws  {S3ServiceError}
      */
-    uploadPart(
+    async uploadPart(
         bucketName: string,
         objectKey: string,
         uploadId: string,
         partNumber: number,
         data: string | ArrayBuffer
-    ): S3Part {
+    ): Promise<S3Part> {
         // Prepare request
         const method = 'PUT'
         const host = `${bucketName}.${this.host}`
@@ -380,7 +388,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
         this._handle_error('UploadPart', res)
@@ -398,7 +406,7 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    completeMultipartUpload(
+    async completeMultipartUpload(
         bucketName: string,
         objectKey: string,
         uploadId: string,
@@ -428,7 +436,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
 
@@ -444,7 +452,7 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    abortMultipartUpload(bucketName: string, objectKey: string, uploadId: string) {
+    async abortMultipartUpload(bucketName: string, objectKey: string, uploadId: string) {
         // Prepare request
         const method = 'DELETE'
         const host = `${bucketName}.${this.host}`
@@ -462,7 +470,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = http.request(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
         this._handle_error('AbortMultipartUpload', res)

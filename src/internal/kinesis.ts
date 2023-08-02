@@ -78,17 +78,17 @@ export class KinesisClient extends AWSClient {
      * @throws {Error} Throws an error if the stream creation request fails.
      * @returns {void}
      */
-    createStream(
+    async createStream(
         streamName: string,
         options: { shardCount?: number; streamModeDetails?: { streamMode: StreamMode } } = {}
-    ): void {
+    ): Promise<void> {
         const body: any = {
             StreamName: streamName,
             ...(options.shardCount && { ShardCount: options.shardCount }),
             ...(options.streamModeDetails && { StreamMode: options.streamModeDetails.streamMode }),
         }
 
-        this._send_request('CreateStream', body)
+        await this._send_request('CreateStream', body)
     }
 
     /**
@@ -105,10 +105,10 @@ export class KinesisClient extends AWSClient {
      * @throws {Error} Throws an error if the stream deletion request fails.
      * @returns {void}
      */
-    deleteStream(
+    async deleteStream(
         streamName: string,
         parameters: { streamARN?: string; enforceConsumerDeletion?: boolean } = {}
-    ): void {
+    ): Promise<void> {
         const body: any = {
             StreamName: streamName,
             ...(parameters.streamARN && { StreamARN: parameters.streamARN }),
@@ -117,7 +117,7 @@ export class KinesisClient extends AWSClient {
             }),
         }
 
-        this._send_request('DeleteStream', body)
+        await this._send_request('DeleteStream', body)
     }
 
     /**
@@ -135,13 +135,13 @@ export class KinesisClient extends AWSClient {
      * @throws {Error} Throws an error if the list streams request fails.
      * @returns {Partial<ListStreamsResponse>} A partial of the ListStreamsResponse class.
      */
-    listStreams(
+    async listStreams(
         parameters: {
             exclusiveStartStreamName?: string
             limit?: number
             nextToken?: string
         } = {}
-    ): ListStreamsResponse {
+    ): Promise<ListStreamsResponse> {
         const body: any = {
             ...(parameters.exclusiveStartStreamName && {
                 ExclusiveStartStreamName: parameters.exclusiveStartStreamName,
@@ -150,7 +150,7 @@ export class KinesisClient extends AWSClient {
             ...(parameters.nextToken && { NextToken: parameters.nextToken }),
         }
 
-        const res = this._send_request('ListStreams', body)
+        const res = await this._send_request('ListStreams', body)
         return ListStreamsResponse.fromJson(res?.json())
     }
 
@@ -163,10 +163,10 @@ export class KinesisClient extends AWSClient {
      * @throws {Error} Throws an error if the put records request fails.
      * @returns {Partial<PutRecordsResponse>} A partial of the PutRecordsResponse class.
      */
-    putRecords(
+    async putRecords(
         records: PutRecordsRequestEntry[],
         parameters: { streamName?: string; streamARN?: string } = {}
-    ): PutRecordsResponse {
+    ): Promise<PutRecordsResponse> {
         if (!parameters.streamName && !parameters.streamARN) {
             throw new Error('Either streamName or streamARN must be provided')
         }
@@ -177,7 +177,7 @@ export class KinesisClient extends AWSClient {
             ...(parameters.streamARN && { StreamARN: parameters.streamARN }),
         }
 
-        const res = this._send_request('PutRecords', body)
+        const res = await this._send_request('PutRecords', body)
         return PutRecordsResponse.fromJson(res?.json())
     }
 
@@ -190,17 +190,17 @@ export class KinesisClient extends AWSClient {
      * @throws {Error} Throws an error if the get records request fails.
      * @returns {Partial<GetRecordsResponse>} A partial of the GetRecordsResponse class.
      */
-    getRecords(
+    async getRecords(
         shardIterator: string,
         parameters: { limit?: number; streamARN?: string } = {}
-    ): GetRecordsResponse {
+    ): Promise<GetRecordsResponse> {
         const body: any = {
             ShardIterator: shardIterator,
             ...(parameters.limit && { Limit: parameters.limit }),
             ...(parameters.streamARN && { StreamARN: parameters.streamARN }),
         }
 
-        const res = this._send_request('GetRecords', body)
+        const res = await this._send_request('GetRecords', body)
         return GetRecordsResponse.fromJson(res?.json())
     }
 
@@ -218,10 +218,10 @@ export class KinesisClient extends AWSClient {
      * @throws {Error} Throws an error if the list shards request fails.
      * @returns {ListShardsResponse} A ListShardsResponse class instance.
      */
-    listShards(
+    async listShards(
         streamName: string,
         parameters: { nextToken?: string; maxResults?: number } = {}
-    ): ListShardsResponse {
+    ): Promise<ListShardsResponse> {
         const body: any = {
             StreamName: streamName,
             ...(parameters.nextToken && { NextToken: parameters.nextToken }),
@@ -230,7 +230,7 @@ export class KinesisClient extends AWSClient {
             }),
         }
 
-        const res = this._send_request('ListShards', body)
+        const res = await this._send_request('ListShards', body)
         return ListShardsResponse.fromJson(res?.json())
     }
 
@@ -250,12 +250,12 @@ export class KinesisClient extends AWSClient {
      * @throws {Error} Throws an error if the get shard iterator request fails.
      * @returns {string} The next position in the shard from which to start sequentially reading data records. If set to null, the shard has been closed and the requested iterator does not return any more data.
      */
-    getShardIterator(
+    async getShardIterator(
         streamName: string,
         shardId: string,
         shardIteratorType: ShardIteratorKind,
         parameters: { startingSequenceNumber?: string; timestamp?: number } = {}
-    ): GetShardIteratorResponse {
+    ): Promise<GetShardIteratorResponse> {
         const body: any = {
             StreamName: streamName,
             ShardId: shardId,
@@ -266,11 +266,11 @@ export class KinesisClient extends AWSClient {
             ...(parameters.timestamp && { Timestamp: parameters.timestamp }),
         }
 
-        const res = this._send_request('GetShardIterator', body)
+        const res = await this._send_request('GetShardIterator', body)
         return GetShardIteratorResponse.fromJson(res?.json())
     }
 
-    private _send_request(action: string, body: any): any {
+    private async _send_request(action: string, body: any): Promise<any> {
         const signedRequest = this.signature.sign(
             {
                 method: 'POST',
@@ -286,7 +286,7 @@ export class KinesisClient extends AWSClient {
             {}
         )
 
-        const res = http.request('POST', signedRequest.url, signedRequest.body, {
+        const res = await http.asyncRequest('POST', signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
 

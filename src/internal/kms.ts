@@ -50,7 +50,7 @@ export class KMSClient extends AWSClient {
      *
      * @returns an array of all the available keys
      */
-    listKeys(): Array<KMSKey> {
+    async listKeys(): Promise<Array<KMSKey>> {
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
@@ -67,7 +67,7 @@ export class KMSClient extends AWSClient {
             {}
         )
 
-        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
+        const res = await http.request(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(KMSOperation.ListKeys, res)
@@ -93,7 +93,10 @@ export class KMSClient extends AWSClient {
      * @throws {InvalidSignatureError}
      * @returns {KMSDataKey} - The generated data key.
      */
-    generateDataKey(id: string, size: KMSKeySize = KMSKeySize.Size256): KMSDataKey | undefined {
+    async generateDataKey(
+        id: string,
+        size: KMSKeySize = KMSKeySize.Size256
+    ): Promise<KMSDataKey | undefined> {
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
@@ -110,7 +113,7 @@ export class KMSClient extends AWSClient {
             {}
         )
 
-        const res = http.request(this.method, signedRequest.url, signedRequest.body, {
+        const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
         this._handle_error(KMSOperation.GenerateDataKey, res)

@@ -11,11 +11,11 @@ const awsConfig = new AWSConfig({
 const KMS = new KMSClient(awsConfig)
 const KeyId = 'alias/TestKey'
 
-export default function () {
+export default async function () {
     // Currently, the keys need to be created before hand
 
     // First let's list the keys we have available
-    const keys = KMS.listKeys()
+    const keys = await KMS.listKeys()
     if (keys.length == 0) {
         exec.test.abort('test keys not found')
     }
@@ -26,7 +26,7 @@ export default function () {
     }
 
     //Run generateDataKey call on the key, with the default 32 byte size
-    const dataKey = KMS.generateDataKey(key.keyId)
+    const dataKey = await KMS.generateDataKey(key.keyId)
     if (dataKey.ciphertextBlob == undefined) {
         exec.test.abort('data key not generated')
     }

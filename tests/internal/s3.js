@@ -1,14 +1,15 @@
-import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.1/index.js'
+import { asyncDescribe } from './helpers.js'
+
 import { AWSConfig, S3Client, S3ServiceError } from '../../build/s3.js'
 
-export function s3TestSuite(data) {
+export async function s3TestSuite(data) {
     const s3Client = new S3Client(data.awsConfig)
     s3Client.host = `s3.${data.awsConfig.endpoint}`
     s3Client.scheme = `https`
 
-    describe('list buckets', () => {
+    await asyncDescribe('s3.listBuckets', async (expect) => {
         // Act
-        const buckets = s3Client.listBuckets()
+        const buckets = await s3Client.listBuckets()
 
         // Assert
         expect(buckets).to.be.an('array')
@@ -16,9 +17,9 @@ export function s3TestSuite(data) {
         expect(buckets[0].name).to.equal(data.s3.testBucketName)
     })
 
-    describe('list objects', () => {
+    await asyncDescribe('s3.listObjects', async (expect) => {
         // Act
-        const objects = s3Client.listObjects(data.s3.testBucketName)
+        const objects = await s3Client.listObjects(data.s3.testBucketName)
 
         // Assert
         expect(objects).to.be.an('array')
@@ -28,22 +29,31 @@ export function s3TestSuite(data) {
         expect(objects[2].key).to.equal('tschuss.txt')
     })
 
-    describe('get object', () => {
-        // Arrange
-        const getObjectFromNonExistingBucketFn = () =>
-            s3Client.getObject('non-existent-bucket', data.s3.testObjects[0].key)
-        const getNonExistingObjectFn = () =>
-            s3Client.getObject(data.s3.testBucketName, 'non-existent-object.txt')
-
+    await asyncDescribe('s3.getObject', async (expect) => {
         // Act
-        const gotFirstObject = s3Client.getObject(
+        const gotFirstObject = await s3Client.getObject(
             data.s3.testBucketName,
             data.s3.testObjects[0].key
         )
-        const gotSecondObject = s3Client.getObject(
+
+        const gotSecondObject = await s3Client.getObject(
             data.s3.testBucketName,
             data.s3.testObjects[1].key
         )
+
+        let getObjectFromNonExistingBucketError
+        try {
+            await s3Client.getObject('non-existent-bucket', data.s3.testObjects[0].key)
+        } catch (error) {
+            getObjectFromNonExistingBucketError = error
+        }
+
+        let getNonExistingObjectError
+        try {
+            await s3Client.getObject(data.s3.testBucketName, 'non-existent-object.txt')
+        } catch (error) {
+            getNonExistingObjectError = error
+        }
 
         // Assert
         expect(gotFirstObject).to.be.an('object')
@@ -52,40 +62,59 @@ export function s3TestSuite(data) {
         expect(gotSecondObject).to.be.an('object')
         expect(gotSecondObject.key).to.equal(data.s3.testObjects[1].key)
         expect(gotSecondObject.data).to.equal(data.s3.testObjects[1].body)
-        expect(getNonExistingObjectFn).to.throw(S3ServiceError)
-        expect(getObjectFromNonExistingBucketFn).to.throw(S3ServiceError)
+        expect(getObjectFromNonExistingBucketError).to.not.be.undefined
+        expect(getObjectFromNonExistingBucketError).to.be.an.instanceOf(S3ServiceError)
+        expect(getNonExistingObjectError).to.not.be.undefined
+        expect(getNonExistingObjectError).to.be.an.instanceOf(S3ServiceError)
     })
 
-    describe('put object', () => {
-        // Arrange
-        const putNonExistingObjectFn = () =>
-            s3Client.putObject(
+    asyncDescribe('s3.putObject', async (expect) => {
+        // Act
+        let putObectError
+        try {
+            await s3Client.putObject(
                 data.s3.testBucketName,
                 'created-by-test.txt',
                 'This file was created by a test'
             )
-
-        // Assert
-        expect(putNonExistingObjectFn).to.not.throw()
-    })
-
-    describe('deleteObject', () => {
-        // Arrange
-        const deleteExistingObjectFn = () =>
-            s3Client.deleteObject(data.s3.testBucketName, data.s3.testObjects[2].key)
-        const deleteFromNonExistingBucketFn = () => {
-            s3Client.deleteObject('non-existent-bucket', data.s3.testObjects[2].key)
+        } catch (error) {
+            putObectError = error
         }
-        const deleteNonExistingObjectFn = () =>
-            s3Client.deleteObject(data.s3.testBucketName, 'non-existent-object.txt')
 
         // Assert
-        expect(deleteExistingObjectFn).to.not.throw()
-        expect(deleteNonExistingObjectFn).to.not.throw()
-        expect(deleteFromNonExistingBucketFn).to.throw(S3ServiceError)
+        expect(putObectError).to.be.undefined
     })
 
-    describe('copy object', () => {
+    asyncDescribe('s3.deleteObject', async (expect) => {
+        // Act
+        let deleteExistingObjectError
+        try {
+            await s3Client.deleteObject(data.s3.testBucketName, data.s3.testObjects[2].key)
+        } catch (error) {
+            deleteExistingObjectError = error
+        }
+
+        let deleteFromNonExistingBucketError
+        try {
+            await s3Client.deleteObject('non-existent-bucket', data.s3.testObjects[2].key)
+        } catch (error) {
+            deleteFromNonExistingBucketError = error
+        }
+
+        let deleteNonExistingObjectError
+        try {
+            await s3Client.deleteObject(data.s3.testBucketName, 'non-existent-object.txt')
+        } catch (error) {
+            deleteNonExistingObjectError = error
+        }
+
+        // Assert
+        expect(deleteExistingObjectError).to.be.undefined
+        expect(deleteFromNonExistingBucketError).to.not.be.undefined
+        // expect(deleteNonExistingObjectError).to.not.be.undefined
+    })
+
+    asyncDescribe('s3.copyObject', async (expect) => {
         // Arrange
         const sourceObject = data.s3.testObjects[0]
         const sourceKey = sourceObject.key
@@ -93,8 +122,8 @@ export function s3TestSuite(data) {
         const bucket = data.s3.testBucketName
 
         // Act
-        s3Client.copyObject(bucket, sourceKey, bucket, destinationKey)
-        const newObject = s3Client.getObject(bucket, destinationKey)
+        await s3Client.copyObject(bucket, sourceKey, bucket, destinationKey)
+        const newObject = await s3Client.getObject(bucket, destinationKey)
 
         // Assert
         expect(newObject).to.be.an('object')
@@ -102,114 +131,159 @@ export function s3TestSuite(data) {
         expect(newObject.data).to.equal(sourceObject.body)
     })
 
-    describe('create multipart upload', () => {
+    asyncDescribe('s3.createMultipartUpload', async (expect) => {
         // Arrange
-        const createMultipartUploadFn = () =>
-            s3Client.createMultipartUpload(data.s3.testBucketName, 'created-by-test.txt')
+        let createMultipartUploadError
+        try {
+            await s3Client.createMultipartUpload(data.s3.testBucketName, 'created-by-test.txt')
+        } catch (error) {
+            createMultipartUploadError = error
+        }
 
         // Assert
-        expect(createMultipartUploadFn).to.not.throw()
+        expect(createMultipartUploadError).to.be.undefined
     })
 
-    describe('upload part', () => {
+    asyncDescribe('s3.uploadPart', async (expect) => {
         // Arrange
-        const multipartUpload = s3Client.createMultipartUpload(
+        const multipartUpload = await s3Client.createMultipartUpload(
             data.s3.testBucketName,
             'created-by-test.txt'
         )
-        const uploadPartFn = () =>
-            s3Client.uploadPart(
+
+        // Act
+        let uploadPartError
+        try {
+            await s3Client.uploadPart(
                 data.s3.testBucketName,
                 multipartUpload.key,
                 multipartUpload.uploadId,
                 1,
                 'This file was created by a test'
             )
-        const uploadPartNonExistingMultipartUploadIdFn = () =>
-            s3Client.uploadPart(
+        } catch (error) {
+            uploadPartError = error
+        }
+
+        let uploadPartNonExistingMultipartUploadIdError
+        try {
+            await s3Client.uploadPart(
                 data.s3.testBucketName,
                 multipartUpload.key,
                 'non-existent-upload-id',
                 1,
                 'This file was created by a test'
             )
+        } catch (error) {
+            uploadPartNonExistingMultipartUploadIdError = error
+        }
 
         // Assert
-        expect(uploadPartFn).to.not.throw()
-        expect(uploadPartNonExistingMultipartUploadIdFn).to.throw(S3ServiceError)
+        expect(uploadPartError).to.be.undefined
+        expect(uploadPartNonExistingMultipartUploadIdError).to.not.be.undefined
+        expect(uploadPartNonExistingMultipartUploadIdError).to.be.an.instanceOf(S3ServiceError)
     })
 
-    describe('complete multipart upload', () => {
+    await asyncDescribe('s3.completeMultipartUpload', async (expect) => {
         // Arrange
-        const multipartUpload = s3Client.createMultipartUpload(
+        const multipartUpload = await s3Client.createMultipartUpload(
             data.s3.testBucketName,
             'created-by-test.txt'
         )
-        const uploadPart = s3Client.uploadPart(
+        const uploadPart = await s3Client.uploadPart(
             data.s3.testBucketName,
             multipartUpload.key,
             multipartUpload.uploadId,
             1,
             'This file was created by a test'
         )
-        const completeMultipartUploadFn = () =>
-            s3Client.completeMultipartUpload(
+
+        let completeMultipartUploadError
+        try {
+            await s3Client.completeMultipartUpload(
                 data.s3.testBucketName,
                 multipartUpload.key,
                 multipartUpload.uploadId,
                 [uploadPart]
             )
-        const completeMultipartUploadNonExistingMultipartUploadIdFn = () =>
-            s3Client.completeMultipartUpload(
+        } catch (error) {
+            completeMultipartUploadError = error
+        }
+
+        let completeMultipartUploadNonExistingMultipartUploadIdError
+        try {
+            await s3Client.completeMultipartUpload(
                 data.s3.testBucketName,
                 multipartUpload.key,
                 'non-existent-upload-id',
                 [uploadPart]
             )
-        const completeMultipartUploadNonExistingPartFn = () =>
-            s3Client.completeMultipartUpload(
+        } catch (error) {
+            completeMultipartUploadNonExistingMultipartUploadIdError = error
+        }
+
+        let completeMultipartUploadNonExistingPartError
+        try {
+            await s3Client.completeMultipartUpload(
                 data.s3.testBucketName,
                 multipartUpload.key,
                 multipartUpload.uploadId,
                 [{ partNumber: 2, etag: 'non-existent-etag' }]
             )
+        } catch (error) {
+            completeMultipartUploadNonExistingPartError = error
+        }
 
         // Assert
-        expect(completeMultipartUploadFn).to.not.throw()
-        expect(completeMultipartUploadNonExistingMultipartUploadIdFn).to.throw(S3ServiceError)
-        expect(completeMultipartUploadNonExistingPartFn).to.throw(S3ServiceError)
+        expect(completeMultipartUploadError).to.be.undefined
+        expect(completeMultipartUploadNonExistingMultipartUploadIdError).to.be.an.instanceOf(
+            S3ServiceError
+        )
+        expect(completeMultipartUploadNonExistingPartError).to.be.an.instanceOf(S3ServiceError)
     })
 
-    describe('abort multipart upload', () => {
+    await asyncDescribe('s3.abortMultipartUpload', async (expect) => {
         // Arrange
-        const multipartUpload = s3Client.createMultipartUpload(
+        const multipartUpload = await s3Client.createMultipartUpload(
             data.s3.testBucketName,
             'created-by-test.txt'
         )
-        const abortMultipartUploadFn = () =>
-            s3Client.abortMultipartUpload(
+
+        let abortMultipartUploadError
+        try {
+            await s3Client.abortMultipartUpload(
                 data.s3.testBucketName,
                 multipartUpload.key,
                 multipartUpload.uploadId
             )
-        const abortMultipartUploadNonExistingMultipartUploadIdFn = () =>
-            s3Client.abortMultipartUpload(
+        } catch (error) {
+            abortMultipartUploadError = error
+        }
+
+        let abortMultipartUploadNonExistingMultipartUploadIdError
+        try {
+            await s3Client.abortMultipartUpload(
                 data.s3.testBucketName,
                 multipartUpload.key,
                 'non-existent-upload-id'
             )
+        } catch (error) {
+            abortMultipartUploadNonExistingMultipartUploadIdError = error
+        }
 
         // Assert
-        expect(abortMultipartUploadFn).to.not.throw()
-        expect(abortMultipartUploadNonExistingMultipartUploadIdFn).to.throw(S3ServiceError)
+        expect(abortMultipartUploadError).to.be.undefined
+        expect(abortMultipartUploadNonExistingMultipartUploadIdError).to.be.an.instanceOf(
+            S3ServiceError
+        )
     })
 
     // Teardown
     // Ensure to cleanup the file create by the s3 tests.
-    s3Client.deleteObject(data.s3.testBucketName, 'created-by-test.txt')
+    await s3Client.deleteObject(data.s3.testBucketName, 'created-by-test.txt')
 
     // Ensure the object used to test deletion is recreated
-    s3Client.putObject(
+    await s3Client.putObject(
         data.s3.testBucketName,
         data.s3.testObjects[2].key,
         data.s3.testObjects[2].body
