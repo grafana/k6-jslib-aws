@@ -1,6 +1,6 @@
 import http from 'k6/http'
 
-import { AWSConfig, SignatureV4 } from '../build/aws.js'
+import { AWSConfig, SignatureV4 } from '../build/signature.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,

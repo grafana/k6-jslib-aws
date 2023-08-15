@@ -14,4 +14,6 @@ export {
     SIGNING_ALGORITHM_IDENTIFIER,
     UNSIGNED_PAYLOAD,
 } from './internal/constants'
+export { AWSConfig, InvalidAWSConfigError } from './internal/config'
+export { InvalidSignatureError } from './internal/signature'
 export { SignatureV4 } from './internal/signature'
