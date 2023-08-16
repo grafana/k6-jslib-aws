@@ -56,7 +56,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
         this._handle_error('ListBuckets', res)
@@ -118,7 +118,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
         this._handle_error('ListObjectsV2', res)
@@ -183,7 +183,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
         this._handle_error('GetObject', res)
@@ -266,7 +266,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
         this._handle_error('DeleteObject', res)
@@ -339,7 +339,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
         this._handle_error('CreateMultipartUpload', res)
@@ -388,7 +388,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
         this._handle_error('UploadPart', res)
@@ -436,7 +436,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
 
@@ -470,7 +470,7 @@ export class S3Client extends AWSClient {
             {}
         )
 
-        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
+        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
         this._handle_error('AbortMultipartUpload', res)
