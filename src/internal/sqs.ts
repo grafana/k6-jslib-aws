@@ -67,8 +67,7 @@ export class SQSClient extends AWSClient {
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'POST',
-                protocol: this.scheme,
-                hostname: this.host,
+                endpoint: this.endpoint,
                 path: '/',
                 headers: {
                     ...this.commonHeaders,
@@ -121,12 +120,11 @@ export class SQSClient extends AWSClient {
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'POST',
-                protocol: this.scheme,
-                hostname: this.host,
+                endpoint: this.endpoint,
                 path: '/',
                 headers: {
                     ...this.commonHeaders,
-                    Host: this.host,
+                    Host: this.endpoint.host,
                 },
                 body: toFormUrlEncoded(body),
             },

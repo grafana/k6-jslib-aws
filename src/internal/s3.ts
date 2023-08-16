@@ -48,8 +48,7 @@ export class S3Client extends AWSClient {
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
                 method: 'GET',
-                protocol: this.scheme,
-                hostname: this.host,
+                endpoint: this.endpoint,
                 path: '/',
                 headers: {},
             },
@@ -99,15 +98,12 @@ export class S3Client extends AWSClient {
      * @throws  {InvalidSignatureError}
      */
     async listObjects(bucketName: string, prefix?: string): Promise<Array<S3Object>> {
-        // Prepare request
         const method = 'GET'
-        const host = `${this.host}`
 
         const signedRequest: SignedHTTPRequest = this.signature.sign(
             {
-                method: 'GET',
-                protocol: this.scheme,
-                hostname: host,
+                method: method,
+                endpoint: this.endpoint,
                 path: `/${bucketName}/`,
                 query: {
                     'list-type': '2',
@@ -170,13 +166,11 @@ export class S3Client extends AWSClient {
     async getObject(bucketName: string, objectKey: string): Promise<S3Object> {
         // Prepare request
         const method = 'GET'
-        const host = `${this.host}`
 
         const signedRequest = this.signature.sign(
             {
-                method: 'GET',
-                protocol: this.scheme,
-                hostname: host,
+                method: method,
+                endpoint: this.endpoint,
                 path: `/${bucketName}/${objectKey}`,
                 headers: {},
             },
@@ -219,16 +213,14 @@ export class S3Client extends AWSClient {
     ): Promise<void> {
         // Prepare request
         const method = 'PUT'
-        const host = `${this.host}`
 
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: this.scheme,
-                hostname: host,
+                endpoint: this.endpoint,
                 path: `/${bucketName}/${objectKey}`,
                 headers: {
-                    Host: host,
+                    Host: this.endpoint.host,
                 },
                 body: data,
             },
@@ -253,13 +245,11 @@ export class S3Client extends AWSClient {
     async deleteObject(bucketName: string, objectKey: string): Promise<void> {
         // Prepare request
         const method = 'DELETE'
-        const host = `${this.host}`
 
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: this.scheme,
-                hostname: host,
+                endpoint: this.endpoint,
                 path: `/${bucketName}/${objectKey}`,
                 headers: {},
             },
@@ -288,15 +278,15 @@ export class S3Client extends AWSClient {
         destinationBucket: string,
         destinationKey: string
     ): Promise<void> {
-        // Prepare request
         const method = 'PUT'
-        const host = `${destinationBucket}.${this.host}`
+
+        const bucketEndpoint = this.endpoint.copy()
+        bucketEndpoint.hostname = `${destinationBucket}.${this.endpoint.hostname}`
 
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: this.scheme,
-                hostname: host,
+                endpoint: bucketEndpoint,
                 path: `/${destinationKey}`,
                 headers: {
                     'x-amz-copy-source': `${sourceBucket}/${sourceKey}`,
@@ -323,15 +313,15 @@ export class S3Client extends AWSClient {
      * @throws  {InvalidSignatureError}
      */
     async createMultipartUpload(bucketName: string, objectKey: string): Promise<S3MultipartUpload> {
-        // Prepare request
         const method = 'POST'
-        const host = `${bucketName}.${this.host}`
+
+        const bucketEndpoint = this.endpoint.copy()
+        bucketEndpoint.hostname = `${bucketName}.${this.endpoint.hostname}`
 
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: this.scheme,
-                hostname: host,
+                endpoint: bucketEndpoint,
                 path: `/${objectKey}`,
                 headers: {},
                 query: { uploads: '' },
@@ -369,14 +359,15 @@ export class S3Client extends AWSClient {
         partNumber: number,
         data: string | ArrayBuffer
     ): Promise<S3Part> {
-        // Prepare request
         const method = 'PUT'
-        const host = `${bucketName}.${this.host}`
+
+        const bucketEndpoint = this.endpoint.copy()
+        bucketEndpoint.hostname = `${bucketName}.${this.endpoint.hostname}`
+
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: this.scheme,
-                hostname: host,
+                endpoint: bucketEndpoint,
                 path: `/${objectKey}`,
                 headers: {},
                 body: data,
@@ -414,18 +405,20 @@ export class S3Client extends AWSClient {
     ) {
         // Prepare request
         const method = 'POST'
-        const host = `${bucketName}.${this.host}`
         const body = `<CompleteMultipartUpload>${parts
             .map(
                 (part) =>
                     `<Part><PartNumber>${part.partNumber}</PartNumber><ETag>${part.eTag}</ETag></Part>`
             )
             .join('')}</CompleteMultipartUpload>`
+
+        const bucketEndpoint = this.endpoint.copy()
+        bucketEndpoint.hostname = `${bucketName}.${this.endpoint.hostname}`
+
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: this.scheme,
-                hostname: host,
+                endpoint: bucketEndpoint,
                 path: `/${objectKey}`,
                 headers: {},
                 body: body,
@@ -453,14 +446,15 @@ export class S3Client extends AWSClient {
      * @throws  {InvalidSignatureError}
      */
     async abortMultipartUpload(bucketName: string, objectKey: string, uploadId: string) {
-        // Prepare request
         const method = 'DELETE'
-        const host = `${bucketName}.${this.host}`
+
+        const bucketEndpoint = this.endpoint.copy()
+        bucketEndpoint.hostname = `${bucketName}.${this.endpoint.hostname}`
+
         const signedRequest = this.signature.sign(
             {
                 method: method,
-                protocol: this.scheme,
-                hostname: host,
+                endpoint: bucketEndpoint,
                 path: `/${objectKey}`,
                 headers: {},
                 query: {
