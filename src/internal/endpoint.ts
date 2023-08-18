@@ -94,10 +94,15 @@ export class Endpoint {
      * @param {string} value - The value to set for the full URL.
      */
     public set href(value: string) {
-        const urlObj = new URL(value)
-        this._protocol = urlObj.protocol.slice(0, -1) // remove the trailing colon
-        this._hostname = urlObj.hostname
-        this._port = urlObj.port ? parseInt(urlObj.port) : undefined
+        const protocolMatch = value.match(/^https?:/)
+        const withoutProtocol = value.replace(/^https?:\/\//, '')
+        const [hostnameWithPort] = withoutProtocol.split('/')
+
+        this._protocol = protocolMatch ? protocolMatch[0].slice(0, -1) : Endpoint.DEFAULT_PROTOCOL // remove the trailing colon
+        this._hostname = hostnameWithPort.split(':')[0]
+        this._port = hostnameWithPort.split(':')[1]
+            ? parseInt(hostnameWithPort.split(':')[1])
+            : undefined
     }
 
     /**

@@ -36,7 +36,6 @@ export class AWSConfig {
      *
      * @type {string} ['amazonaws.com']
      */
-    // endpoint: string = 'amazonaws.com'
     endpoint?: Endpoint
 
     /**
@@ -61,7 +60,6 @@ export class AWSConfig {
         const accessKeyId = __ENV.AWS_ACCESS_KEY_ID
         const secretAccessKey = __ENV.AWS_SECRET_ACCESS_KEY
         const sessionToken: string | undefined = __ENV.AWS_SESSION_TOKEN
-        const scheme: HTTPScheme | undefined = options?.scheme
         const endpoint: Endpoint | string | undefined = options?.endpoint
 
         return new AWSConfig({
@@ -69,7 +67,6 @@ export class AWSConfig {
             accessKeyId,
             secretAccessKey,
             sessionToken,
-            scheme: scheme,
             endpoint: endpoint,
         })
     }
@@ -178,7 +175,6 @@ export interface AWSConnectionOptions {
      *
      * @type {string}
      */
-    // endpoint?: string
     endpoint?: Endpoint | string
 }
 
