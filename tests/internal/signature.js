@@ -1,6 +1,7 @@
 import {
     SignatureV4,
     HTTPRequest,
+    Endpoint,
     AMZ_ALGORITHM_QUERY_PARAM,
     AMZ_CONTENT_SHA256_HEADER,
     AMZ_CREDENTIAL_QUERY_PARAM,
@@ -34,23 +35,30 @@ const signer = new SignatureV4(signerInit)
 
 const minimalRequest = {
     method: 'POST',
-    protocol: 'https',
+    endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
     path: '/',
     headers: {
         host: 'foo.us-bar-1.amazonaws.com',
     },
-    hostname: 'foo.us-bar-1.amazonaws.com',
 }
 
 export function signatureV4TestSuite() {
     describe('SignatureV4', () => {
         describe('#sign', () => {
             describe('#sign should sign requests without bodies', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-
-                const { headers } = signer.sign(request, {
-                    signingDate: new Date('2000-01-01T00:00:00Z'),
-                })
+                const { headers } = signer.sign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                        },
+                    },
+                    {
+                        signingDate: new Date('2000-01-01T00:00:00Z'),
+                    }
+                )
 
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=1e3b24fcfd7655c0c245d99ba7b6b5ca6174eab903ebfbda09ce457af062ad30'
@@ -64,13 +72,21 @@ export function signatureV4TestSuite() {
                     region: 'us-foo-1',
                 })
 
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-
-                const { headers } = signer.sign(request, {
-                    signingDate: new Date('2000-01-01T00:00:00Z'),
-                    signingService: signerInit.service,
-                    signingRegion: signerInit.region,
-                })
+                const { headers } = signer.sign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                        },
+                    },
+                    {
+                        signingDate: new Date('2000-01-01T00:00:00Z'),
+                        signingService: signerInit.service,
+                        signingRegion: signerInit.region,
+                    }
+                )
 
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=1e3b24fcfd7655c0c245d99ba7b6b5ca6174eab903ebfbda09ce457af062ad30'
@@ -81,9 +97,17 @@ export function signatureV4TestSuite() {
                 const request = JSON.parse(JSON.stringify(minimalRequest))
                 delete request.headers[HOST_HEADER]
 
-                const { headers } = signer.sign(request, {
-                    signingDate: new Date('2000-01-01T00:00:00Z'),
-                })
+                const { headers } = signer.sign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {},
+                    },
+                    {
+                        signingDate: new Date('2000-01-01T00:00:00Z'),
+                    }
+                )
 
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=1e3b24fcfd7655c0c245d99ba7b6b5ca6174eab903ebfbda09ce457af062ad30'
@@ -96,12 +120,20 @@ export function signatureV4TestSuite() {
             })
 
             describe('#sign should sign requests with string bodies', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-                request.body = 'It was the best of times, it was the worst of times'
-
-                const { headers } = signer.sign(request, {
-                    signingDate: new Date('2000-01-01T00:00:00Z'),
-                })
+                const { headers } = signer.sign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                        },
+                        body: 'It was the best of times, it was the worst of times',
+                    },
+                    {
+                        signingDate: new Date('2000-01-01T00:00:00Z'),
+                    }
+                )
 
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=cf22a0befff359388f136b158f0b1b43db7b18d2ca65ce4112bc88a16815c4b6'
@@ -109,12 +141,20 @@ export function signatureV4TestSuite() {
             })
 
             describe('#sign should sign requests with binary bodies', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-                request.body = new Uint8Array([0xde, 0xad, 0xbe, 0xef])
-
-                const { headers } = signer.sign(request, {
-                    signingDate: new Date('2000-01-01T00:00:00Z'),
-                })
+                const { headers } = signer.sign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                        },
+                        body: new Uint8Array([0xde, 0xad, 0xbe, 0xef]),
+                    },
+                    {
+                        signingDate: new Date('2000-01-01T00:00:00Z'),
+                    }
+                )
 
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=89f092f52faedb8a6be1890b2a511b88e7998389d62bd7d72915e2f4ee271a64'
@@ -122,13 +162,21 @@ export function signatureV4TestSuite() {
             })
 
             describe('#sign should sign with unsigned bodies when instructed', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-                request.body = 'It was the best of times, it was the worst of times'
-                request.headers[AMZ_CONTENT_SHA256_HEADER] = UNSIGNED_PAYLOAD
-
-                const { headers } = signer.sign(request, {
-                    signingDate: new Date('2000-01-01T00:00:00Z'),
-                })
+                const { headers } = signer.sign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                            [AMZ_CONTENT_SHA256_HEADER]: UNSIGNED_PAYLOAD,
+                        },
+                        body: 'It was the best of times, it was the worst of times',
+                    },
+                    {
+                        signingDate: new Date('2000-01-01T00:00:00Z'),
+                    }
+                )
 
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=2d17bf1aa1624819549626389790503937599b27a998286e0e190b897b1467dd'
@@ -137,16 +185,24 @@ export function signatureV4TestSuite() {
             })
 
             describe('#sign should set the x-amz-date header', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-                const { headers } = signer.sign(request, {
-                    signingDate: new Date('2000-01-01T00:00:00Z'),
-                })
+                const { headers } = signer.sign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                        },
+                    },
+                    {
+                        signingDate: new Date('2000-01-01T00:00:00Z'),
+                    }
+                )
 
                 expect(headers[AMZ_DATE_HEADER]).to.equal('20000101T000000Z')
             })
 
             describe('#sign should set the x-amz-token header if the credentials have a session token', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
                 const signer = new SignatureV4({
                     service: 'foo',
                     region: 'us-bar-1',
@@ -157,9 +213,19 @@ export function signatureV4TestSuite() {
                     },
                 })
 
-                const { headers } = signer.sign(request, {
-                    signingDate: new Date('2000-01-01T00:00:00Z'),
-                })
+                const { headers } = signer.sign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                        },
+                    },
+                    {
+                        signingDate: new Date('2000-01-01T00:00:00Z'),
+                    }
+                )
 
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date;x-amz-security-token, Signature=4fd09a8cf3b28a62a9c6c424f03ababcd703528578bc6ec9184fc585f18c3fbb'
@@ -167,17 +233,22 @@ export function signatureV4TestSuite() {
             })
 
             describe('#sign should allow specifying custom unsignable headers', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-                request.headers = {
-                    host: 'foo.us-bar-1.amazonaws.com',
-                    foo: 'bar',
-                    'user-agent': 'baz',
-                }
-
-                const { headers } = signer.sign(request, {
-                    signingDate: new Date('2000-01-01T00:00:00Z'),
-                    unsignableHeaders: new Set(['user-agent']),
-                })
+                const { headers } = signer.sign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                            foo: 'bar',
+                            'user-agent': 'baz',
+                        },
+                    },
+                    {
+                        signingDate: new Date('2000-01-01T00:00:00Z'),
+                        unsignableHeaders: new Set(['user-agent']),
+                    }
+                )
 
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=foo;host;x-amz-content-sha256;x-amz-date, Signature=b053cb495ff12f2615f440a66745fec3010c9ef8824587556477c9d0159afc8e'
@@ -185,93 +256,129 @@ export function signatureV4TestSuite() {
             })
 
             describe('#sign should allow specifying custom signable headers to override custom and always unsignable ones', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-                request.headers = {
-                    host: 'foo.us-bar-1.amazonaws.com',
-                    foo: 'bar',
-                    'user-agent': 'baz',
-                }
-
-                const { headers } = signer.sign(request, {
-                    signingDate: new Date('2000-01-01T00:00:00Z'),
-                    unsignableHeaders: new Set(['foo']),
-                    signableHeaders: new Set(['foo', 'user-agent']),
-                })
+                const { headers } = signer.sign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                            foo: 'bar',
+                            'user-agent': 'baz',
+                        },
+                    },
+                    {
+                        signingDate: new Date('2000-01-01T00:00:00Z'),
+                        unsignableHeaders: new Set(['foo']),
+                        signableHeaders: new Set(['foo', 'user-agent']),
+                    }
+                )
 
                 expect(headers[AUTHORIZATION_HEADER]).to.equal(
                     'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=foo;host;user-agent;x-amz-content-sha256;x-amz-date, Signature=7ab8a270e30046c718408d1a0c015f5ed822fca59c446cd579fc7461257b7333'
                 )
             })
 
-            describe("URI encoding paths", () => {
-                const minimalRequest = {
-                  method: "POST",
-                  protocol: "https:",
-                  path: "/foo%3Dbar",
-                  headers: {
-                    host: "foo.us-bar-1.amazonaws.com",
-                  },
-                  hostname: "foo.us-bar-1.amazonaws.com",
-                };
-
+            describe('URI encoding paths', () => {
                 const signingOptions = {
-                  signingDate: new Date("2000-01-01T00:00:00.000Z"),
-                };
+                    signingDate: new Date('2000-01-01T00:00:00.000Z'),
+                }
 
-                describe("should URI-encode the path by default", () => {
-                  const { headers } = signer.sign(minimalRequest, signingOptions);
-                  expect(headers[AUTHORIZATION_HEADER]).to.equal(
-                    "AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=fb4948cab44a9c47ce3b1a2489d01ec939fea9e79eccdb4593c11a94f207e075"
-                  );
-                });
+                describe('should URI-encode the path by default', () => {
+                    const { headers } = signer.sign(
+                        {
+                            method: 'POST',
+                            endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                            path: '/foo%3Dbar',
+                            headers: {
+                                host: 'foo.us-bar-1.amazonaws.com',
+                            },
+                        },
+                        signingOptions
+                    )
 
-                describe("should normalize relative path by default", () => {
-                  const request = JSON.parse(JSON.stringify(minimalRequest))
-                  request.path = "/abc/../foo%3Dbar"
+                    expect(headers[AUTHORIZATION_HEADER]).to.equal(
+                        'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=fb4948cab44a9c47ce3b1a2489d01ec939fea9e79eccdb4593c11a94f207e075'
+                    )
+                })
 
-                  const { headers } = signer.sign(request, signingOptions);
+                describe('should normalize relative path by default', () => {
+                    const { headers } = signer.sign(
+                        {
+                            method: 'POST',
+                            endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                            path: '/abc/../foo%3Dbar',
+                            headers: {
+                                host: 'foo.us-bar-1.amazonaws.com',
+                            },
+                        },
+                        signingOptions
+                    )
 
-                  expect(headers[AUTHORIZATION_HEADER]).to.contain("Signature=fb4948cab44a9c47ce3b1a2489d01ec939fea9e79eccdb4593c11a94f207e075");
-                });
+                    expect(headers[AUTHORIZATION_HEADER]).to.contain(
+                        'Signature=fb4948cab44a9c47ce3b1a2489d01ec939fea9e79eccdb4593c11a94f207e075'
+                    )
+                })
 
-                describe("should normalize path with consecutive slashes by default", () => {
-                  const request = JSON.parse(JSON.stringify(minimalRequest))
-                  request.path = "//foo%3Dbar"
+                describe('should normalize path with consecutive slashes by default', () => {
+                    const { headers } = signer.sign(
+                        {
+                            method: 'POST',
+                            endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                            path: '//foo%3Dbar',
+                            headers: {
+                                host: 'foo.us-bar-1.amazonaws.com',
+                            },
+                        },
+                        signingOptions
+                    )
 
-                  const { headers } = signer.sign(request, signingOptions);
+                    expect(headers[AUTHORIZATION_HEADER]).to.contain(
+                        'Signature=fb4948cab44a9c47ce3b1a2489d01ec939fea9e79eccdb4593c11a94f207e075'
+                    )
+                })
 
-                  expect(headers[AUTHORIZATION_HEADER]).to.contain("Signature=fb4948cab44a9c47ce3b1a2489d01ec939fea9e79eccdb4593c11a94f207e075");
-                });
+                describe('should not URI-encode the path if URI path escaping was disabled on the signer', () => {
+                    // Setting `uriEscapePath` to `false` creates an
+                    // S3-compatible signer. The expected authorization header
+                    // included below was calculated using the
+                    // `Aws\Signature\S3SignatureV4` class from the AWS SDK for
+                    // PHP
+                    const signer = new SignatureV4({
+                        service: 'foo',
+                        region: 'us-bar-1',
+                        credentials: {
+                            accessKeyId: 'foo',
+                            secretAccessKey: 'bar',
+                        },
+                        uriEscapePath: false,
+                    })
 
-                describe("should not URI-encode the path if URI path escaping was disabled on the signer", () => {
-                  // Setting `uriEscapePath` to `false` creates an
-                  // S3-compatible signer. The expected authorization header
-                  // included below was calculated using the
-                  // `Aws\Signature\S3SignatureV4` class from the AWS SDK for
-                  // PHP
-                  const signer = new SignatureV4({
-                    service: "foo",
-                    region: "us-bar-1",
-                    credentials: {
-                      accessKeyId: "foo",
-                      secretAccessKey: "bar",
-                    },
-                    uriEscapePath: false,
-                  });
+                    const request = JSON.parse(JSON.stringify(minimalRequest))
+                    request.headers['X-Amz-Content-Sha256'] =
+                        'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855'
 
-                  const request = JSON.parse(JSON.stringify(minimalRequest))
-                  request.headers["X-Amz-Content-Sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+                    const { headers } = signer.sign(
+                        {
+                            method: 'POST',
+                            endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                            path: '/foo%3Dbar',
+                            headers: {
+                                host: 'foo.us-bar-1.amazonaws.com',
+                                'X-Amz-Content-Sha256':
+                                    'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+                            },
+                        },
+                        {
+                            signingDate: new Date('2000-01-01T00:00:00.000Z'),
+                        }
+                    )
 
-                  const { headers } = signer.sign(request, {
-                      signingDate: new Date("2000-01-01T00:00:00.000Z"),
-                    }
-                  );
-
-                  expect(headers[AUTHORIZATION_HEADER]).to.equal(
-                    "AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=0d859e5a74374efc2c9f14ba9352df14c68e411a1f44bd639fdd024e5f7b7ef1"
-                  );
-                });
-            });
+                    expect(headers[AUTHORIZATION_HEADER]).to.equal(
+                        'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=0d859e5a74374efc2c9f14ba9352df14c68e411a1f44bd639fdd024e5f7b7ef1'
+                    )
+                })
+            })
         })
 
         describe('#presign', () => {
@@ -281,8 +388,17 @@ export function signatureV4TestSuite() {
             }
 
             describe('should sign requests without bodies', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-                const { query } = signer.presign(request, presigningOptions)
+                const { query } = signer.presign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                        },
+                    },
+                    presigningOptions
+                )
 
                 expect(query).to.deep.equal({
                     [AMZ_ALGORITHM_QUERY_PARAM]: SIGNING_ALGORITHM_IDENTIFIER,
@@ -296,13 +412,21 @@ export function signatureV4TestSuite() {
             })
 
             describe('should sign request without hoisting some headers', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-                request.headers['x-amz-not-hoisted'] = 'test'
-
                 const options = JSON.parse(JSON.stringify(presigningOptions))
                 options.unhoistableHeaders = new Set(['x-amz-not-hoisted'])
 
-                const { query, headers } = signer.presign(request, options)
+                const { query, headers } = signer.presign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                            'x-amz-not-hoisted': 'test',
+                        },
+                    },
+                    options
+                )
 
                 expect(query).to.deep.equal({
                     [AMZ_ALGORITHM_QUERY_PARAM]: SIGNING_ALGORITHM_IDENTIFIER,
@@ -325,12 +449,21 @@ export function signatureV4TestSuite() {
                     credentials: credentials,
                 })
 
-                const request = JSON.parse(JSON.stringify(minimalRequest))
                 const options = JSON.parse(JSON.stringify(presigningOptions))
                 options.signingService = signerInit.service
                 options.signingRegion = signerInit.region
 
-                const { query } = signer.presign(request, options)
+                const { query } = signer.presign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                        },
+                    },
+                    options
+                )
 
                 expect(query).to.deep.equal({
                     [AMZ_ALGORITHM_QUERY_PARAM]: SIGNING_ALGORITHM_IDENTIFIER,
@@ -344,17 +477,32 @@ export function signatureV4TestSuite() {
             })
 
             describe('should default expires to 3600 seconds if not explicitly passed', () => {
-                const { query } = signer.presign(minimalRequest)
+                const { query } = signer.presign({
+                    method: 'POST',
+                    endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                    path: '/',
+                    headers: {
+                        host: 'foo.us-bar-1.amazonaws.com',
+                    },
+                })
 
                 expect(query).to.have.own.property(AMZ_EXPIRES_QUERY_PARAM)
                 expect(query[AMZ_EXPIRES_QUERY_PARAM]).to.equal('3600')
             })
 
             describe('should sign requests with string bodies', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-                request.body = 'It was the best of times, it was the worst of times'
-
-                const { query } = signer.presign(request, presigningOptions)
+                const { query } = signer.presign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                        },
+                        body: 'It was the best of times, it was the worst of times',
+                    },
+                    presigningOptions
+                )
 
                 expect(query).to.deep.equal({
                     [AMZ_ALGORITHM_QUERY_PARAM]: SIGNING_ALGORITHM_IDENTIFIER,
@@ -368,9 +516,6 @@ export function signatureV4TestSuite() {
             })
 
             describe('should sign requests with binary bodies', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-                request.body = new Uint8Array([0xde, 0xad, 0xbe, 0xef])
-
                 const want = {
                     [AMZ_ALGORITHM_QUERY_PARAM]: SIGNING_ALGORITHM_IDENTIFIER,
                     [AMZ_CREDENTIAL_QUERY_PARAM]: 'foo/20000101/us-bar-1/foo/aws4_request',
@@ -381,7 +526,18 @@ export function signatureV4TestSuite() {
                         'bd1427cfdc9a3b0a55609b0114d1dab4dfebca81a9496d6c47dedf65a3ec3bcb',
                 }
 
-                const { query } = signer.presign(request, presigningOptions)
+                const { query } = signer.presign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                        },
+                        body: new Uint8Array([0xde, 0xad, 0xbe, 0xef]),
+                    },
+                    presigningOptions
+                )
 
                 expect(query).to.deep.equal({
                     [AMZ_ALGORITHM_QUERY_PARAM]: SIGNING_ALGORITHM_IDENTIFIER,
@@ -405,9 +561,17 @@ export function signatureV4TestSuite() {
                     },
                 })
 
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-
-                const { query } = signer.presign(request, presigningOptions)
+                const { query } = signer.presign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                        },
+                    },
+                    presigningOptions
+                )
 
                 expect(query).to.deep.equal({
                     [AMZ_TOKEN_QUERY_PARAM]: 'baz',
@@ -421,42 +585,51 @@ export function signatureV4TestSuite() {
                 })
             })
 
-            // FIXME: this test returns the wrong signature hash
-            //     describe('should use the precalculated payload checksum if provided', () => {
-            //         const request = JSON.parse(JSON.stringify(minimalRequest))
-            //         request.body = new Uint8Array([0xde, 0xad, 0xbe, 0xef])
-            //         request.headers[AMZ_CONTENT_SHA256_HEADER] = UNSIGNED_PAYLOAD
+            //         // FIXME: this test returns the wrong signature hash
+            //         //     describe('should use the precalculated payload checksum if provided', () => {
+            //         //         const request = JSON.parse(JSON.stringify(minimalRequest))
+            //         //         request.body = new Uint8Array([0xde, 0xad, 0xbe, 0xef])
+            //         //         request.headers[AMZ_CONTENT_SHA256_HEADER] = UNSIGNED_PAYLOAD
 
-            //         console.log(`request: ${JSON.stringify(request)}`)
-            //         const { query } = signer.presign(request, presigningOptions)
+            //         //         console.log(`request: ${JSON.stringify(request)}`)
+            //         //         const { query } = signer.presign(request, presigningOptions)
 
-            //         expect(query).to.deep.equal({
-            //             [AMZ_CONTENT_SHA256_HEADER]: UNSIGNED_PAYLOAD,
-            //             [AMZ_ALGORITHM_QUERY_PARAM]: SIGNING_ALGORITHM_IDENTIFIER,
-            //             [AMZ_CREDENTIAL_QUERY_PARAM]: 'foo/20000101/us-bar-1/foo/aws4_request',
-            //             [AMZ_DATE_QUERY_PARAM]: '20000101T000000Z',
-            //             [AMZ_EXPIRES_QUERY_PARAM]: presigningOptions.expiresIn.toString(),
-            //             [AMZ_SIGNED_HEADERS_QUERY_PARAM]: HOST_HEADER,
-            //             [AMZ_SIGNATURE_QUERY_PARAM]:
-            //                 '04ccc7891757c0ca3811d0e018e4655919ef11fa7b956fe9b782f273cec2374f',
-            //         })
-            //     })
+            //         //         expect(query).to.deep.equal({
+            //         //             [AMZ_CONTENT_SHA256_HEADER]: UNSIGNED_PAYLOAD,
+            //         //             [AMZ_ALGORITHM_QUERY_PARAM]: SIGNING_ALGORITHM_IDENTIFIER,
+            //         //             [AMZ_CREDENTIAL_QUERY_PARAM]: 'foo/20000101/us-bar-1/foo/aws4_request',
+            //         //             [AMZ_DATE_QUERY_PARAM]: '20000101T000000Z',
+            //         //             [AMZ_EXPIRES_QUERY_PARAM]: presigningOptions.expiresIn.toString(),
+            //         //             [AMZ_SIGNED_HEADERS_QUERY_PARAM]: HOST_HEADER,
+            //         //             [AMZ_SIGNATURE_QUERY_PARAM]:
+            //         //                 '04ccc7891757c0ca3811d0e018e4655919ef11fa7b956fe9b782f273cec2374f',
+            //         //         })
+            //         //     })
 
-            describe('should allo specifying custom unsignable headers', () => {
-                const request = JSON.parse(JSON.stringify(minimalRequest))
-                request.headers = {
-                    host: 'foo.us-bar-1.amazonaws.com',
-                    foo: 'bar',
-                    'user-agent': 'baz',
-                }
-
+            describe('should allow specifying custom unsignable headers', () => {
                 const options = JSON.parse(JSON.stringify(presigningOptions))
                 options.unsignableHeaders = new Set(['foo'])
 
-                const { headers: headersAsSigned, query } = signer.presign(request, options)
+                const { headers: headersAsSigned, query } = signer.presign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                        path: '/',
+                        headers: {
+                            host: 'foo.us-bar-1.amazonaws.com',
+                            foo: 'bar',
+                            'user-agent': 'baz',
+                        },
+                    },
+                    options
+                )
 
                 expect(query).to.have.property(AMZ_SIGNED_HEADERS_QUERY_PARAM, 'host')
-                expect(headersAsSigned).to.deep.equal(request.headers)
+                expect(headersAsSigned).to.deep.equal({
+                    host: 'foo.us-bar-1.amazonaws.com',
+                    foo: 'bar',
+                    'user-agent': 'baz',
+                })
             })
 
             describe('should fail if the expiresIn is more than a week in the future', () => {
@@ -464,11 +637,21 @@ export function signatureV4TestSuite() {
                 options.expiresIn = 7 * 24 * 60 * 60 + 1
 
                 expect(() => {
-                    signer.presign(minimalRequest, options)
+                    signer.presign(
+                        {
+                            method: 'POST',
+                            endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com'),
+                            path: '/',
+                            headers: {
+                                host: 'foo.us-bar-1.amazonaws.com',
+                            },
+                        },
+                        options
+                    )
                 }).to.throw()
             })
 
-            // TODO: test paths URI encoding?
+            //         // TODO: test paths URI encoding?
         })
     })
 }

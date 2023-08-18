@@ -1,4 +1,5 @@
 import { HTTPScheme } from './http'
+import { Endpoint } from './endpoint'
 
 /** Class holding an AWS connection information */
 export class AWSConfig {
@@ -31,20 +32,11 @@ export class AWSConfig {
     sessionToken?: string
 
     /**
-     * The HTTP scheme to use when connecting to AWS.
-     *
-     * @type {HTTPScheme} ['https']
-     */
-    scheme: HTTPScheme = 'https'
-
-    // FIXME: Should really be called "host" instead. When used
-    // with localstack we pass a complete host (hostname:port) here.
-    /**
      * The AWS hostname to connect to.
      *
      * @type {string} ['amazonaws.com']
      */
-    endpoint: string = 'amazonaws.com'
+    endpoint?: Endpoint
 
     /**
      * fromEnvironment creates an AWSConfig from the environment variables.
@@ -64,19 +56,17 @@ export class AWSConfig {
      * @returns
      */
     static fromEnvironment(options?: AWSConnectionOptions): AWSConfig {
-        const region = __ENV.AWS_REGION;
-        const accessKeyId = __ENV.AWS_ACCESS_KEY_ID;
-        const secretAccessKey = __ENV.AWS_SECRET_ACCESS_KEY;
-        const sessionToken: string | undefined = __ENV.AWS_SESSION_TOKEN;
-        const scheme: HTTPScheme | undefined = options?.scheme;
-        const endpoint: string | undefined = options?.endpoint;
+        const region = __ENV.AWS_REGION
+        const accessKeyId = __ENV.AWS_ACCESS_KEY_ID
+        const secretAccessKey = __ENV.AWS_SECRET_ACCESS_KEY
+        const sessionToken: string | undefined = __ENV.AWS_SESSION_TOKEN
+        const endpoint: Endpoint | string | undefined = options?.endpoint
 
         return new AWSConfig({
             region,
             accessKeyId,
             secretAccessKey,
             sessionToken,
-            scheme: scheme,
             endpoint: endpoint,
         })
     }
@@ -126,12 +116,12 @@ export class AWSConfig {
             this.sessionToken = options.sessionToken
         }
 
-        if (options.scheme !== undefined) {
-            this.scheme = options.scheme
-        }
-
         if (options.endpoint !== undefined) {
-            this.endpoint = options.endpoint
+            if (typeof options.endpoint === 'string') {
+                this.endpoint = new Endpoint(options.endpoint)
+            } else {
+                this.endpoint = options.endpoint
+            }
         }
     }
 }
@@ -185,7 +175,7 @@ export interface AWSConnectionOptions {
      *
      * @type {string}
      */
-    endpoint?: string
+    endpoint?: Endpoint | string
 }
 
 /** Class representing an invalid AWS configuration */

@@ -64,8 +64,7 @@ export class SecretsManagerClient extends AWSClient {
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
-                protocol: this.awsConfig.scheme,
-                hostname: this.host,
+                endpoint: this.endpoint,
                 path: '/',
                 headers: {
                     ...this.commonHeaders,
@@ -97,8 +96,7 @@ export class SecretsManagerClient extends AWSClient {
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
-                protocol: this.awsConfig.scheme,
-                hostname: this.host,
+                endpoint: this.endpoint,
                 path: '/',
                 headers: {
                     ...this.commonHeaders,
@@ -148,8 +146,7 @@ export class SecretsManagerClient extends AWSClient {
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
-                protocol: this.awsConfig.scheme,
-                hostname: this.host,
+                endpoint: this.endpoint,
                 path: '/',
                 headers: {
                     ...this.commonHeaders,
@@ -195,8 +192,7 @@ export class SecretsManagerClient extends AWSClient {
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
-                protocol: this.awsConfig.scheme,
-                hostname: this.host,
+                endpoint: this.endpoint,
                 path: '/',
                 headers: {
                     ...this.commonHeaders,
@@ -249,8 +245,7 @@ export class SecretsManagerClient extends AWSClient {
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
-                protocol: this.awsConfig.scheme,
-                hostname: this.host,
+                endpoint: this.endpoint,
                 path: '/',
                 headers: {
                     ...this.commonHeaders,

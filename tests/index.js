@@ -18,82 +18,78 @@ import { sqsTestSuite } from './internal/sqs.js'
 //   some data using the scripts found in tests/localstack_init/*.sh.
 //   These scripts are ran everytime the localstack container starts.
 //   The following tests rely on the data created by these scripts.
-export function setup() {
-    // Initialize an AWS configuration set to use the localstack service.
-    const awsConfig = new AWSConfig({
-        // Localstack talks http
-        scheme: 'http',
+//
+// Initialize an AWS configuration set to use the localstack service.
+const awsConfig = new AWSConfig({
+    // Localstack runs on localhost:4566
+    endpoint: 'http://localhost.localstack.cloud:4566',
 
-        // Localstack runs on localhost:4566
-        endpoint: 'localhost.localstack.cloud:4566',
+    // Localstack is setup to use the us-east-1 region
+    region: 'us-east-1',
 
-        // Localstack is setup to use the us-east-1 region
-        region: 'us-east-1',
+    // Dummy value to keep the client happy
+    accessKeyId: 'RUSZHYJUBIXGH4A5AAIX',
 
-        // Dummy value to keep the client happy
-        accessKeyId: 'RUSZHYJUBIXGH4A5AAIX',
+    // Dummy value to keep the client happy
+    secretAccessKey: '9g7dpx9QU4XNawNHkMnXUQ6LgTfZIPG6fnIdADDQ',
 
-        // Dummy value to keep the client happy
-        secretAccessKey: '9g7dpx9QU4XNawNHkMnXUQ6LgTfZIPG6fnIdADDQ',
+    // Dummy value to keep the client happy
+    sessionToken: 'sessiontoken',
+})
 
-        // Dummy value to keep the client happy
-        sessionToken: 'sessiontoken',
-    })
+const testData = {
+    awsConfig: awsConfig,
 
-    return {
-        awsConfig: awsConfig,
-
-        // S3 tests specific data
-        s3: {
-            testBucketName: 'test-jslib-aws',
-            testObjects: [
-                {
-                    key: 'bonjour.txt',
-                    body: 'Bonjour le monde!',
-                },
-                {
-                    key: 'tschuss.txt',
-                    body: 'Tschuss, welt!',
-                },
-                {
-                    key: 'delete.txt',
-                    body: 'Delete me in a test!',
-                },
-            ],
-        },
-
-        // Secrets Manager tests specific data
-        secretsManager: {
-            createdSecretName: `test-created-secret-${randomIntBetween(0, 10000)}`,
-            deleteSecretName: 'test-delete-secret',
-            testSecrets: [
-                {
-                    name: 'test-secret',
-                    secret: 'test-secret-value',
-                },
-            ],
-        },
-
-        // Systems Manager tests specific data
-        systemsManager: {
-            testParameter: {
-                name: `test-parameter`,
-                value: `test-parameter-value`,
+    // S3 tests specific data
+    s3: {
+        testBucketName: 'test-jslib-aws',
+        testObjects: [
+            {
+                key: 'bonjour.txt',
+                body: 'Bonjour le monde!',
             },
-            testParameterSecret: {
-                name: `test-parameter-secret`,
-                value: `test-parameter-secret-value`,
+            {
+                key: 'tschuss.txt',
+                body: 'Tschuss, welt!',
             },
+            {
+                key: 'delete.txt',
+                body: 'Delete me in a test!',
+            },
+        ],
+    },
+
+    // Secrets Manager tests specific data
+    secretsManager: {
+        createdSecretName: `test-created-secret-${randomIntBetween(0, 10000)}`,
+        deleteSecretName: 'test-delete-secret',
+        testSecrets: [
+            {
+                name: 'test-secret',
+                secret: 'test-secret-value',
+            },
+        ],
+    },
+
+    // Systems Manager tests specific data
+    systemsManager: {
+        testParameter: {
+            name: `test-parameter`,
+            value: `test-parameter-value`,
         },
-    }
+        testParameterSecret: {
+            name: `test-parameter-secret`,
+            value: `test-parameter-secret-value`,
+        },
+    },
 }
 
-export default async function testSuite(data) {
-    signatureV4TestSuite(data)
-    await s3TestSuite(data)
-    await secretsManagerTestSuite(data)
-    await kmsTestSuite(data)
-    await sqsTestSuite(data)
-    await ssmTestSuite(data)
-    await kinesisTestSuite(data)
+export default async function testSuite() {
+    signatureV4TestSuite(testData)
+    await s3TestSuite(testData)
+    await secretsManagerTestSuite(testData)
+    await kmsTestSuite(testData)
+    await sqsTestSuite(testData)
+    await ssmTestSuite(testData)
+    await kinesisTestSuite(testData)
 }
