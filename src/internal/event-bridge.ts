@@ -8,7 +8,24 @@ import { InvalidSignatureError, SignatureV4 } from './signature'
 import { AMZ_TARGET_HEADER } from './constants'
 import { HTTPHeaders, HTTPMethod } from './http'
 
-type PutEventEntry = {
+/**
+ * Represents an event to be submitted.
+ *
+ * @typedef {Object} PutEventEntry
+ *
+ * @property {string} Detail - A valid serialized JSON object. There is no other schema imposed. The JSON object may contain fields and nested sub-objects.
+ * @property {string} DetailType - Free-form string, with a maximum of 128 characters, used to decide what fields to expect in the event detail.
+ * @property {string} EventBusName - The name or ARN of the event bus to receive the event. Only the rules that are associated with this event bus are used to match the event. If you omit this, the default event bus is used.
+ * @property {string[]} Resources - AWS resources, identified by Amazon Resource Name (ARN), which the event primarily concerns. Any number, including zero, may be present.
+ * @property {string} Source - The source of the event.
+ */
+interface PutEventEntry {
+    Detail: string
+    DetailType: string
+    EventBusName: string
+    Resources: [string]
+    Source: string
+}
     Detail: string
     DetailType: string
     EventBusName: string
