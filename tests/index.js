@@ -9,6 +9,7 @@ import { ssmTestSuite } from './internal/ssm.js'
 import { kinesisTestSuite } from './internal/kinesis.js'
 import { signatureV4TestSuite } from './internal/signature.js'
 import { sqsTestSuite } from './internal/sqs.js'
+import { eventBridgeTestSuite } from './internal/event-bridge.js'
 
 // Must know:
 //   * end2end tests such as these rely on the localstack
@@ -84,12 +85,13 @@ const testData = {
     },
 }
 
-export default async function testSuite() {
-    signatureV4TestSuite(testData)
-    await s3TestSuite(testData)
-    await secretsManagerTestSuite(testData)
-    await kmsTestSuite(testData)
-    await sqsTestSuite(testData)
-    await ssmTestSuite(testData)
-    await kinesisTestSuite(testData)
+export default async function testSuite(data) {
+    signatureV4TestSuite(data)
+    await s3TestSuite(data)
+    await secretsManagerTestSuite(data)
+    await kmsTestSuite(data)
+    await sqsTestSuite(data)
+    await ssmTestSuite(data)
+    await kinesisTestSuite(data)
+    await eventBridgeTestSuite(data)
 }
