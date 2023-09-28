@@ -99,7 +99,7 @@ export class SignatureV4 {
         //   Standard headers like content-type are optional.
         //   For HTTP/2 requests, you must include the :authority header instead of
         //   the host header. Different services might require other headers."
-        request.headers[constants.HOST_HEADER] = request.hostname
+        request.headers[constants.HOST_HEADER] = request.endpoint.hostname
 
         // Filter out headers that will be generated and managed by the signing process.
         // If the user provide any of those as part of the HTTPRequest's headers, they
@@ -158,7 +158,7 @@ export class SignatureV4 {
             `Signature=${signature}`
 
         // If a request path was provided, add it to the URL
-        let url = `${request.protocol}://${request.hostname}`
+        let url = request.endpoint.href
         if (request.path) {
             url += request.path
         }
@@ -214,7 +214,7 @@ export class SignatureV4 {
         //   Standard headers like content-type are optional.
         //   For HTTP/2 requests, you must include the :authority header instead of
         //   the host header. Different services might require other headers."
-        request.headers[constants.HOST_HEADER] = originalRequest.hostname
+        request.headers[constants.HOST_HEADER] = originalRequest.endpoint.hostname
 
         // If the user provided a session token, include it in the signed url query string.
         if (this.credentials.sessionToken) {
@@ -259,7 +259,7 @@ export class SignatureV4 {
         )
 
         // If a request path was provided, add it to the URL
-        let url = `${request.protocol}://${request.hostname}`
+        let url = request.endpoint.href
         if (request.path) {
             url += request.path
         }

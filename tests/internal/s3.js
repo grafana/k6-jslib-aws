@@ -4,8 +4,11 @@ import { AWSConfig, S3Client, S3ServiceError } from '../../build/s3.js'
 
 export async function s3TestSuite(data) {
     const s3Client = new S3Client(data.awsConfig)
-    s3Client.host = `s3.${data.awsConfig.endpoint}`
-    s3Client.scheme = `https`
+
+    // Ensure the endpoint's hostname is prefixed with the service name
+    const s3Endpoint = data.awsConfig.endpoint.copy()
+    s3Endpoint.hostname = `s3.${data.awsConfig.endpoint.hostname}`
+    s3Client.endpoint = s3Endpoint
 
     await asyncDescribe('s3.listBuckets', async (expect) => {
         // Act

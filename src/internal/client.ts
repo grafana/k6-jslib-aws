@@ -1,6 +1,7 @@
 import { AWSConfig } from './config'
+import { Endpoint } from './endpoint'
 import { HTTPHeaders } from './http'
-import { HTTPScheme } from './http'
+
 /**
  * Class allowing to build requests targeting AWS APIs
  *
@@ -12,8 +13,8 @@ export class AWSClient {
     awsConfig: AWSConfig
     serviceName: string
 
-    private _host?: string
-    private _scheme?: HTTPScheme
+    private _endpoint?: Endpoint
+
     /**
      * @param {AWSConfig} awsConfig - configuration attributes to use when interacting with AWS' APIs
      * @param  {string} serviceName - name of the service to target.
@@ -22,34 +23,30 @@ export class AWSClient {
     constructor(awsConfig: AWSConfig, serviceName: string) {
         this.awsConfig = awsConfig
         this.serviceName = serviceName
+
+        // If an endpoint is provided in the config, set it
+        // to ensure the default endpoint is not used.
+        if (awsConfig.endpoint != undefined) {
+            this._endpoint = awsConfig.endpoint
+        }
     }
 
     /**
-     * Property computing the URL to send the requests to when interacting with
-     * the specific AWS service the child class implements the functionalities of.
+     * Represents the endpoint URL of the AWS service.
+     *
+     * If no custom endpoint is set, a default endpoint will be constructed
+     * using the service name and region provided in the AWS config.
+     *
+     * @type {Endpoint}
+     * @public
      */
-    public get host() {
-        if (this._host == undefined) {
-          this._host = `${this.serviceName}.${this.awsConfig.region}.${this.awsConfig.endpoint}`
+    public get endpoint() {
+        if (this._endpoint == undefined) {
+            this._endpoint = new Endpoint(
+                `https://${this.serviceName}.${this.awsConfig.region}.amazonaws.com`
+            )
         }
-        return this._host
-    }
-
-    public set host(host: string) {
-        this._host = host
-    }
-
-      /**
-     * Property computing the scheme to use http or https. Defaults to https as per AWSConfig Defaults
-     * the specific AWS service the child class implements the functionalities of.
-     */
-  
-    public get scheme() {
-
-      if (this._scheme == undefined) {
-        this._scheme = this.awsConfig.scheme;
-      }
-      return this._scheme
+        return this._endpoint
     }
   
     // Validatiuon should be done by the type declaration 
@@ -57,6 +54,17 @@ export class AWSClient {
       this._scheme = scheme
   }
 
+    /**
+     * Updates the endpoint URL of the AWS service.
+     *
+     * This can be used to override the default AWS service endpoint or set a custom endpoint.
+     *
+     * @param {Endpoint} endpoint - The new endpoint to set for the AWS service.
+     * @public
+     */
+    public set endpoint(endpoint: Endpoint) {
+        this._endpoint = endpoint
+    }
 }
 
 /**

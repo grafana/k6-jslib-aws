@@ -1,3 +1,5 @@
+import { Endpoint } from './endpoint'
+
 /**
  * Type representing HTTP schemes
  */
@@ -46,19 +48,9 @@ export interface HTTPRequest {
     method: HTTPMethod
 
     /**
-     * The protocol to use (http or https)
+     * Represents an AWS service endpoint, providing utilities for parsing and handling URL details.
      */
-    protocol: HTTPScheme
-
-    /**
-     * The hostname (domain name or IP address) the request targets
-     */
-    hostname: string
-
-    /**
-     * The port to the request targets
-     */
-    port?: number
+    endpoint: Endpoint
 
     /**
      * The path to the resource

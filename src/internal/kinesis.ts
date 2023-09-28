@@ -274,8 +274,7 @@ export class KinesisClient extends AWSClient {
         const signedRequest = this.signature.sign(
             {
                 method: 'POST',
-                protocol: this.awsConfig.scheme,
-                hostname: this.host,
+                endpoint: this.endpoint,
                 path: '/',
                 headers: {
                     ...this.commonHeaders,
