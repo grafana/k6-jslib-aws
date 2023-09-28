@@ -1,9 +1,9 @@
-import { JSONObject } from 'k6'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
 import { AWSClient } from './client'
 import { AWSConfig } from './config'
 import { AWSError } from './error'
+import { JSONObject } from './json'
 import { InvalidSignatureError, SignatureV4 } from './signature'
 import { AMZ_TARGET_HEADER } from './constants'
 import { HTTPHeaders, HTTPMethod } from './http'
@@ -20,18 +20,13 @@ import { HTTPHeaders, HTTPMethod } from './http'
  * @property {string} Source - The source of the event.
  */
 interface PutEventEntry {
-    Detail: string
+    Detail: JSONObject
     DetailType: string
     EventBusName: string
     Resources: [string]
     Source: string
 }
     Detail: string
-    DetailType: string
-    EventBusName: string
-    Resources: [string]
-    Source: string
-}
 
 /**
  * Represents the input for a put events operation.
@@ -44,9 +39,6 @@ interface PutEventEntry {
 interface PutEventsInput {
     EndpointId?: string
     Entries: Partial<PutEventEntry>[]
-}
-    EndpointId?: string
-    Entries: PutEventEntry[]
 }
 
 /**
