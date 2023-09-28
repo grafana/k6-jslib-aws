@@ -9,40 +9,7 @@ import { AMZ_TARGET_HEADER } from './constants'
 import { HTTPHeaders, HTTPMethod } from './http'
 
 /**
- * Represents an event to be submitted.
- *
- * @typedef {Object} PutEventEntry
- *
- * @property {string} Detail - A valid serialized JSON object. There is no other schema imposed. The JSON object may contain fields and nested sub-objects.
- * @property {string} DetailType - Free-form string, with a maximum of 128 characters, used to decide what fields to expect in the event detail.
- * @property {string} EventBusName - The name or ARN of the event bus to receive the event. Only the rules that are associated with this event bus are used to match the event. If you omit this, the default event bus is used.
- * @property {string[]} Resources - AWS resources, identified by Amazon Resource Name (ARN), which the event primarily concerns. Any number, including zero, may be present.
- * @property {string} Source - The source of the event.
- */
-interface PutEventEntry {
-    Detail: JSONObject
-    DetailType: string
-    EventBusName: string
-    Resources: [string]
-    Source: string
-}
-    Detail: string
-
-/**
- * Represents the input for a put events operation.
- *
- * @typedef {Object} PutEventsInput
- *
- * @property {string} [EndpointId] - The optional URL subdomain of the endpoint.
- * @property {Partial<PutEventEntry>[]} Entries - An array of entries that defines an event in your system.
- */
-interface PutEventsInput {
-    EndpointId?: string
-    Entries: Partial<PutEventEntry>[]
-}
-
-/**
- * Class allowing to interact with Amazon AWS's SecretsManager service
+ * Class allowing to interact with Amazon AWS's Event Bridge service
  */
 export class EventBridgeClient extends AWSClient {
     method: HTTPMethod
@@ -70,6 +37,43 @@ export class EventBridgeClient extends AWSClient {
         this.commonHeaders = {
             'Content-Type': 'application/x-amz-json-1.1',
         }
+    }
+
+    /**
+     * Sends custom events to Amazon EventBridge so that they can be matched to rules.
+     *  
+     * @param {PutEventsInput} input - The input for the PutEvents operation. 
+     * @throws {EventBridgeServiceError}
+     * @throws {InvalidSignatureError}
+     */
+    async putEvents(input: PutEventsInput) {
+        const parsedEvent = {
+            ...input,
+            Entries: input.Entries.map((entry) => ({
+                ...entry,
+                Detail: JSON.stringify(entry.Detail),
+            })),
+        }
+
+        const signedRequest = this.signature.sign(
+            {
+                method: this.method,
+                protocol: this.awsConfig.scheme,
+                hostname: this.host,
+                path: '/',
+                headers: {
+                    ...this.commonHeaders,
+                    [AMZ_TARGET_HEADER]: `AWSEvents.PutEvents`,
+                },
+                body: JSON.stringify(parsedEvent),
+            },
+            {}
+        )
+
+        const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
+            headers: signedRequest.headers,
+        })
+        this._handle_error(EventBridgeOperation.PutEvents, res)
     }
 
     _handle_error(
@@ -105,40 +109,42 @@ export class EventBridgeClient extends AWSClient {
             )
         }
     }
-
-    async putEvents(input: PutEventsInput) {
-        const parsedEvent = {
-            ...input,
-            Entries: input.Entries.map((entry) => ({
-                ...entry,
-                Detail: JSON.stringify(entry.Detail),
-            })),
-        }
-
-        const signedRequest = this.signature.sign(
-            {
-                method: this.method,
-                protocol: this.awsConfig.scheme,
-                hostname: this.host,
-                path: '/',
-                headers: {
-                    ...this.commonHeaders,
-                    [AMZ_TARGET_HEADER]: `AWSEvents.PutEvents`,
-                },
-                body: JSON.stringify(parsedEvent),
-            },
-            {}
-        )
-
-        const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
-            headers: signedRequest.headers,
-        })
-        this._handle_error(EventBridgeOperation.PutEvents, res)
-    }
 }
 
 enum EventBridgeOperation {
     PutEvents = 'PutEvents',
+}
+
+/**
+ * Represents an event to be submitted.
+ *
+ * @typedef {Object} PutEventEntry
+ *
+ * @property {string} Detail - A valid serialized JSON object. There is no other schema imposed. The JSON object may contain fields and nested sub-objects.
+ * @property {string} DetailType - Free-form string, with a maximum of 128 characters, used to decide what fields to expect in the event detail.
+ * @property {string} EventBusName - The name or ARN of the event bus to receive the event. Only the rules that are associated with this event bus are used to match the event. If you omit this, the default event bus is used.
+ * @property {string[]} Resources - AWS resources, identified by Amazon Resource Name (ARN), which the event primarily concerns. Any number, including zero, may be present.
+ * @property {string} Source - The source of the event.
+ */
+interface PutEventEntry {
+    Source: string
+    Detail: JSONObject
+    DetailType: string
+    EventBusName?: string
+    Resources?: [string]
+}
+
+/**
+ * Represents the input for a put events operation.
+ *
+ * @typedef {Object} PutEventsInput
+ *
+ * @property {string} [EndpointId] - The optional URL subdomain of the endpoint.
+ * @property {PutEventEntry[]} Entries - An array of entries that defines an event in your system.
+ */
+interface PutEventsInput {
+    EndpointId?: string
+    Entries: PutEventEntry[]
 }
 
 export class EventBridgeServiceError extends AWSError {
