@@ -16,7 +16,18 @@ type PutEventEntry = {
     Source: string
 }
 
-type PutEventsInput = {
+/**
+ * Represents the input for a put events operation.
+ *
+ * @typedef {Object} PutEventsInput
+ *
+ * @property {string} [EndpointId] - The optional URL subdomain of the endpoint.
+ * @property {Partial<PutEventEntry>[]} Entries - An array of entries that defines an event in your system.
+ */
+interface PutEventsInput {
+    EndpointId?: string
+    Entries: Partial<PutEventEntry>[]
+}
     EndpointId?: string
     Entries: PutEventEntry[]
 }
