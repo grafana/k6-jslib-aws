@@ -65,15 +65,14 @@ export class SQSClient extends AWSClient {
         }
 
         if (typeof options.messageAttributes !== 'undefined') {
-            const attributesPayload = Object.entries(options.messageAttributes).reduce((attributes, [name, attribute]) => {
-                return Object.assign(attributes, {
-                    [name]: {
-                        DataType: attribute.type,
-                        [attribute.type === 'Binary' ? 'BinaryValue' : 'StringValue']: attribute.value
-                    }
-                });
-            }, {} as Record<string, Record<string, string>>)
-            body = { ...body, MessageAttributes: attributesPayload };
+            const attributeParameters = Object.entries(options.messageAttributes).reduce((params, [name, attribute], i) => {
+                return Object.assign(params, {
+                    [`MessageAttribute.${i + 1}.Name`]: name,
+                    [`MessageAttribute.${i + 1}.Value.StringValue`]: attribute.value,
+                    [`MessageAttribute.${i + 1}.Value.DataType`]: attribute.type === 'Binary' ? 'BinaryValue' : 'StringValue'
+                })
+            }, {} as Record<string, string>)
+            body = { ...body, ...attributeParameters };
         }
 
         if (typeof options.delaySeconds !== 'undefined') {
