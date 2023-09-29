@@ -1,6 +1,6 @@
 import { AWSClient } from './client'
 import { AWSConfig } from './config'
-import { SignatureV4, InvalidSignatureError } from './signature'
+import { InvalidSignatureError, SignatureV4 } from './signature'
 import { HTTPHeaders, SignedHTTPRequest } from './http'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 import { toFormUrlEncoded } from './utils'
@@ -45,7 +45,7 @@ export class SQSClient extends AWSClient {
     async sendMessage(
         queueUrl: string,
         messageBody: string,
-        options: { messageDeduplicationId?: string; messageGroupId?: string } = {}
+        options: SendMessageOptions = {}
     ): Promise<Message> {
         const method = 'POST'
 
@@ -62,6 +62,22 @@ export class SQSClient extends AWSClient {
 
         if (typeof options.messageGroupId !== 'undefined') {
             body = { ...body, MessageGroupId: options.messageGroupId }
+        }
+
+        if (typeof options.messageAttributes !== 'undefined') {
+            const attributesPayload = Object.entries(options.messageAttributes).reduce((attributes, [name, attribute]) => {
+                return Object.assign(attributes, {
+                    [name]: {
+                        DataType: attribute.type,
+                        [attribute.type === 'Binary' ? 'BinaryValue' : 'StringValue']: attribute.value
+                    }
+                });
+            }, {} as Record<string, Record<string, string>>)
+            body = { ...body, MessageAttributes: attributesPayload };
+        }
+
+        if (typeof options.delaySeconds !== 'undefined') {
+            body = { ...body, DelaySeconds: options.delaySeconds };
         }
 
         const signedRequest: SignedHTTPRequest = this.signature.sign(
@@ -213,15 +229,27 @@ export class SQSServiceError extends AWSError {
 type SQSOperation = 'ListQueues' | 'SendMessage'
 
 export interface SendMessageOptions {
-    /*
+    /**
      * The message deduplication ID for FIFO queues
      */
     messageDeduplicationId?: string
 
-    /*
+    /**
      * The message group ID for FIFO queues
      */
     messageGroupId?: string
+
+    /**
+     * The message attributes
+     */
+    messageAttributes?: {
+        [name: string]: { type: 'String' | 'Number' | 'Binary', value: string }
+    }
+
+    /**
+     * The length of time, in seconds, for which to delay a specific message.
+     */
+    delaySeconds?: number
 }
 
 export interface ListQueuesRequestParameters {
