@@ -48,11 +48,6 @@ export class AWSClient {
         }
         return this._endpoint
     }
-  
-    // Validatiuon should be done by the type declaration 
-    public set scheme(scheme: HTTPScheme) {
-      this._scheme = scheme
-  }
 
     /**
      * Updates the endpoint URL of the AWS service.
