@@ -17,3 +17,4 @@ export {
 } from './internal/ssm'
 export { SQSClient } from './sqs'
 export { KinesisClient } from './internal/kinesis'
+export { EventBridgeClient } from './internal/event-bridge'
