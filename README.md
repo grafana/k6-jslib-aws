@@ -13,6 +13,8 @@ At the moment, this library provides the following:
 * `SQS`: allows to list queues and send messages from AWS SQS.
 * `KMS`: allows to list KMS keys and generate a unique symmetric data key for use outside of AWS KMS
 * `SSM`: allows to retrieve a parameter from AWS Systems Manager
+* `Kinesis`: allows to list streams, create streams, put records, list shards, get shard iterators, and get records from AWS Kinesis.
+* `EventBridge`: allows to put events to AWS EventBridge.
 * `V4 signature`: allows to sign requests to amazon AWS services
 * `KinesisClient`: allows all APIs for Kinesis available by AWS.
 
@@ -34,7 +36,7 @@ import { check } from 'k6';
 import exec from 'k6/execution';
 import http from 'k6/http';
 
-import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.9.0/s3.js';
+import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.10.0/s3.js';
 
 const awsConfig = new AWSConfig(
   __ENV.AWS_REGION,
@@ -93,7 +95,7 @@ Consult the `SecretsManagerClient` [dedicated k6 documentation page](https://k6.
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.9.0/secrets-manager.js'
+import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.10.0/secrets-manager.js'
 
 const awsConfig = new AWSConfig(
     __ENV.AWS_REGION,
@@ -145,7 +147,7 @@ import { check } from 'k6';
 import exec from 'k6/execution';
 import http from 'k6/http';
 
-import { AWSConfig, SQSClient } from 'https://jslib.k6.io/aws/0.9.0/sqs.js';
+import { AWSConfig, SQSClient } from 'https://jslib.k6.io/aws/0.10.0/sqs.js';
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -216,7 +218,7 @@ Consult the `SystemsManagerClient` [dedicated k6 documentation page](https://k6.
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SystemsManagerClient } from 'https://jslib.k6.io/aws/0.9.0/ssm.js';
+import { AWSConfig, SystemsManagerClient } from 'https://jslib.k6.io/aws/0.10.0/ssm.js';
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -263,7 +265,7 @@ import exec from 'k6/execution'
 import encoding from 'k6/encoding';
 import { fail } from 'k6';
 
-import { AWSConfig, KinesisClient } from 'https://jslib.k6.io/aws/0.9.0/kinesis.js'
+import { AWSConfig, KinesisClient } from 'https://jslib.k6.io/aws/0.10.0/kinesis.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -327,6 +329,41 @@ export default async function () {
 }
 ```
 
+### EventBridge
+
+Consult the `EventBridgeClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/eventbridgeclient) for more details on its methods and how to use it.
+
+```javascript
+import { AWSConfig, EventBridgeClient } from 'https://jslib.k6.io/aws/0.10.0/event-bridge.js';
+
+const awsConfig = new AWSConfig({
+  region: __ENV.AWS_REGION,
+  accessKeyId: __ENV.AWS_ACCESS_KEY_ID,
+  secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
+  sessionToken: __ENV.AWS_SESSION_TOKEN,
+});
+
+const eventBridge = new EventBridgeClient(awsConfig);
+
+export default async function () {
+  const eventDetails = {
+    Source: 'my.custom.source',
+    Detail: { key1: 'value1', key2: 'value2' },
+    DetailType: 'MyDetailType',
+    Resources: ['arn:aws:resource1'],
+  };
+
+  const input = {
+    Entries: [eventDetails]
+  };
+
+  try {
+    await eventBridge.putEvents(input);
+  } catch (error) {
+    console.error(`Failed to put events: ${error.message}`);
+  }
+}
+```
 
 
 ## Development
