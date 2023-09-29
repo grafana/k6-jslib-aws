@@ -8,16 +8,15 @@ This is an AWS client library for k6. It intends to allow interacting with a sub
 
 At the moment, this library provides the following:
 
-* `S3Client`: allows to list buckets and bucket's objects, as well as uploading, downloading, and deletion of objects.
-* `SecretsManager`: allows to list, get, create, update and delete secrets from the AWS secrets manager service.
-* `SQS`: allows to list queues and send messages from AWS SQS.
-* `KMS`: allows to list KMS keys and generate a unique symmetric data key for use outside of AWS KMS
-* `SSM`: allows to retrieve a parameter from AWS Systems Manager
-* `Kinesis`: allows to list streams, create streams, put records, list shards, get shard iterators, and get records from AWS Kinesis.
-* `EventBridge`: allows to put events to AWS EventBridge.
-* `V4 signature`: allows to sign requests to amazon AWS services
-* `KinesisClient`: allows all APIs for Kinesis available by AWS.
-
+-   `S3Client`: allows to list buckets and bucket's objects, as well as uploading, downloading, and deletion of objects.
+-   `SecretsManager`: allows to list, get, create, update and delete secrets from the AWS secrets manager service.
+-   `SQS`: allows to list queues and send messages from AWS SQS.
+-   `KMS`: allows to list KMS keys and generate a unique symmetric data key for use outside of AWS KMS
+-   `SSM`: allows to retrieve a parameter from AWS Systems Manager
+-   `Kinesis`: allows to list streams, create streams, put records, list shards, get shard iterators, and get records from AWS Kinesis.
+-   `EventBridge`: allows to put events to AWS EventBridge.
+-   `V4 signature`: allows to sign requests to amazon AWS services
+-   `KinesisClient`: allows all APIs for Kinesis available by AWS.
 
 ## Want to contribute?
 
@@ -32,59 +31,62 @@ Consult the `S3Client` [dedicated k6 documentation page](https://k6.io/docs/java
 ### Practical example
 
 ```javascript
-import { check } from 'k6';
-import exec from 'k6/execution';
-import http from 'k6/http';
+import { check } from 'k6'
+import exec from 'k6/execution'
+import http from 'k6/http'
 
-import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.10.0/s3.js';
+import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.10.0/s3.js'
 
 const awsConfig = new AWSConfig(
-  __ENV.AWS_REGION,
-  __ENV.AWS_ACCESS_KEY_ID,
-  __ENV.AWS_SECRET_ACCESS_KEY
-);
+    __ENV.AWS_REGION,
+    __ENV.AWS_ACCESS_KEY_ID,
+    __ENV.AWS_SECRET_ACCESS_KEY
+)
 
-const s3 = new S3Client(awsConfig);
-const testBucketName = 'test-jslib-aws';
-const testInputFileKey = 'productIDs.json';
-const testOutputFileKey = `results-${Date.now()}.json`;
+const s3 = new S3Client(awsConfig)
+const testBucketName = 'test-jslib-aws'
+const testInputFileKey = 'productIDs.json'
+const testOutputFileKey = `results-${Date.now()}.json`
 
 export async function setup() {
-  // If our test bucket does not exist, abort the execution.
-  const buckets = await s3.listBuckets();
-  if (buckets.filter((b) => b.name === testBucketName).length == 0) {
-    exec.test.abort();
-  }
+    // If our test bucket does not exist, abort the execution.
+    const buckets = await s3.listBuckets()
+    if (buckets.filter((b) => b.name === testBucketName).length == 0) {
+        exec.test.abort()
+    }
 
-  // If our test object does not exist, abort the execution.
-  const objects = await s3.listObjects(testBucketName);
-  if (objects.filter((o) => o.key === testInputFileKey).length == 0) {
-    exec.test.abort();
-  }
+    // If our test object does not exist, abort the execution.
+    const objects = await s3.listObjects(testBucketName)
+    if (objects.filter((o) => o.key === testInputFileKey).length == 0) {
+        exec.test.abort()
+    }
 
-  // Download the S3 object containing our test data
-  const inputObject = await s3.getObject(testBucketName, testInputFileKey);
+    // Download the S3 object containing our test data
+    const inputObject = await s3.getObject(testBucketName, testInputFileKey)
 
-  // Let's return the downloaded S3 object's data from the
-  // setup function to allow the default function to use it.
-  return {
-    productIDs: JSON.parse(inputObject.data),
-  };
+    // Let's return the downloaded S3 object's data from the
+    // setup function to allow the default function to use it.
+    return {
+        productIDs: JSON.parse(inputObject.data),
+    }
 }
 
 export default async function (data) {
-  // Pick a random product ID from our test data
-  const randomProductID = data.productIDs[Math.floor(Math.random() * data.productIDs.length)];
+    // Pick a random product ID from our test data
+    const randomProductID = data.productIDs[Math.floor(Math.random() * data.productIDs.length)]
 
-  // Query our ecommerce website's product page using the ID
-  const res = await http.asyncRequest("GET", `http://your.website.com/product/${randomProductID}/`);
-  check(res, { 'is status 200': res.status === 200 });
+    // Query our ecommerce website's product page using the ID
+    const res = await http.asyncRequest(
+        'GET',
+        `http://your.website.com/product/${randomProductID}/`
+    )
+    check(res, { 'is status 200': res.status === 200 })
 }
 
 export async function handleSummary(data) {
-  // Once the load test is over, let's upload the results to our
-  // S3 bucket. This is executed after teardown.
-  await s3.putObject(testBucketName, testOutputFileKey, JSON.stringify(data));
+    // Once the load test is over, let's upload the results to our
+    // S3 bucket. This is executed after teardown.
+    await s3.putObject(testBucketName, testOutputFileKey, JSON.stringify(data))
 }
 ```
 
@@ -141,23 +143,22 @@ export default async function () {
 
 Consult the `SQSClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/sqsclient) for more details on its methods and how to use it.
 
-
 ```javascript
-import { check } from 'k6';
-import exec from 'k6/execution';
-import http from 'k6/http';
+import { check } from 'k6'
+import exec from 'k6/execution'
+import http from 'k6/http'
 
-import { AWSConfig, SQSClient } from 'https://jslib.k6.io/aws/0.10.0/sqs.js';
+import { AWSConfig, SQSClient } from 'https://jslib.k6.io/aws/0.10.0/sqs.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
     accessKeyId: __ENV.AWS_ACCESS_KEY_ID,
     secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
     sessionToken: __ENV.AWS_SESSION_TOKEN,
-});
+})
 
-const sqs = new SQSClient(awsConfig);
-const testQueue = 'https://sqs.us-east-1.amazonaws.com/000000000/test-queue';
+const sqs = new SQSClient(awsConfig)
+const testQueue = 'https://sqs.us-east-1.amazonaws.com/000000000/test-queue'
 
 export default async function () {
     // If our test queue does not exist, abort the execution.
@@ -167,7 +168,7 @@ export default async function () {
     }
 
     // Send message to test queue
-    await sqs.sendMessage(testQueue, JSON.stringify({value: '123'}));
+    await sqs.sendMessage(testQueue, JSON.stringify({ value: '123' }))
 }
 ```
 
@@ -178,7 +179,7 @@ Consult the `KMS` [dedicated k6 documentation page](https://k6.io/docs/javascrip
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, KMSClient } from '../build/kms.js'
+import { AWSConfig, KMSClient } from '../dist/kms.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -218,7 +219,7 @@ Consult the `SystemsManagerClient` [dedicated k6 documentation page](https://k6.
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SystemsManagerClient } from 'https://jslib.k6.io/aws/0.10.0/ssm.js';
+import { AWSConfig, SystemsManagerClient } from 'https://jslib.k6.io/aws/0.10.0/ssm.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -255,15 +256,14 @@ export default async function () {
 }
 ```
 
-
 ### Kinesis
 
 Consult the `KinesisClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/kinesisclient) for more details on its methods and how to use it.
 
 ```javascript
 import exec from 'k6/execution'
-import encoding from 'k6/encoding';
-import { fail } from 'k6';
+import encoding from 'k6/encoding'
+import { fail } from 'k6'
 
 import { AWSConfig, KinesisClient } from 'https://jslib.k6.io/aws/0.10.0/kinesis.js'
 
@@ -334,37 +334,36 @@ export default async function () {
 Consult the `EventBridgeClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/eventbridgeclient) for more details on its methods and how to use it.
 
 ```javascript
-import { AWSConfig, EventBridgeClient } from 'https://jslib.k6.io/aws/0.10.0/event-bridge.js';
+import { AWSConfig, EventBridgeClient } from 'https://jslib.k6.io/aws/0.10.0/event-bridge.js'
 
 const awsConfig = new AWSConfig({
-  region: __ENV.AWS_REGION,
-  accessKeyId: __ENV.AWS_ACCESS_KEY_ID,
-  secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
-  sessionToken: __ENV.AWS_SESSION_TOKEN,
-});
+    region: __ENV.AWS_REGION,
+    accessKeyId: __ENV.AWS_ACCESS_KEY_ID,
+    secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
+    sessionToken: __ENV.AWS_SESSION_TOKEN,
+})
 
-const eventBridge = new EventBridgeClient(awsConfig);
+const eventBridge = new EventBridgeClient(awsConfig)
 
 export default async function () {
-  const eventDetails = {
-    Source: 'my.custom.source',
-    Detail: { key1: 'value1', key2: 'value2' },
-    DetailType: 'MyDetailType',
-    Resources: ['arn:aws:resource1'],
-  };
+    const eventDetails = {
+        Source: 'my.custom.source',
+        Detail: { key1: 'value1', key2: 'value2' },
+        DetailType: 'MyDetailType',
+        Resources: ['arn:aws:resource1'],
+    }
 
-  const input = {
-    Entries: [eventDetails]
-  };
+    const input = {
+        Entries: [eventDetails],
+    }
 
-  try {
-    await eventBridge.putEvents(input);
-  } catch (error) {
-    console.error(`Failed to put events: ${error.message}`);
-  }
+    try {
+        await eventBridge.putEvents(input)
+    } catch (error) {
+        console.error(`Failed to put events: ${error.message}`)
+    }
 }
 ```
-
 
 ## Development
 
@@ -388,10 +387,10 @@ npm test
 ### Deploying new versions
 
 1. Build.
-2. Use the `./build/aws.js` to make a PR to [jslib.k6.io](https://github.com/grafana/jslib.k6.io).
+2. Use the `./dist/aws.js` to make a PR to [jslib.k6.io](https://github.com/grafana/jslib.k6.io).
 
 ## Maintainers
 
 k6-jslib-aws is developped by the k6 core development team. Maintainers of this jslib specifically are the following:
 
-* Théo Crevon, core k6 developer [@oleiade](https://github.com/oleiade/)
+-   Théo Crevon, core k6 developer [@oleiade](https://github.com/oleiade/)
