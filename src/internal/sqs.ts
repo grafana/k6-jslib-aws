@@ -65,6 +65,12 @@ export class SQSClient extends AWSClient {
         }
 
         if (typeof options.messageAttributes !== 'undefined') {
+            /*
+             * A single message attribute is represented as 3 separate parameters: name, value, and type.
+             * The name of the value parameter varies based on the data type.
+             * See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SendMessage.html#SQS-SendMessage-request-MessageAttributes
+             * for more information.
+             */
             const attributeParameters = Object.entries(options.messageAttributes).reduce((params, [name, attribute], i) => {
                 const valueParameterSuffix = attribute.type === 'Binary' ? 'BinaryValue' : 'StringValue'
                 return Object.assign(params, {
