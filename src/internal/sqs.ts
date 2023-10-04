@@ -66,10 +66,11 @@ export class SQSClient extends AWSClient {
 
         if (typeof options.messageAttributes !== 'undefined') {
             const attributeParameters = Object.entries(options.messageAttributes).reduce((params, [name, attribute], i) => {
+                const valueParameterSuffix = attribute.type === 'Binary' ? 'BinaryValue' : 'StringValue'
                 return Object.assign(params, {
                     [`MessageAttribute.${i + 1}.Name`]: name,
-                    [`MessageAttribute.${i + 1}.Value.StringValue`]: attribute.value,
-                    [`MessageAttribute.${i + 1}.Value.DataType`]: attribute.type === 'Binary' ? 'BinaryValue' : 'StringValue'
+                    [`MessageAttribute.${i + 1}.Value.${valueParameterSuffix}`]: attribute.value,
+                    [`MessageAttribute.${i + 1}.Value.DataType`]: attribute.type
                 })
             }, {} as Record<string, string>)
             body = { ...body, ...attributeParameters };
