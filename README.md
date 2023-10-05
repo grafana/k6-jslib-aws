@@ -169,6 +169,16 @@ export default async function () {
 
     // Send message to test queue
     await sqs.sendMessage(testQueue, JSON.stringify({ value: '123' }))
+
+    // Send message with attributes to test queue
+    await sqs.sendMessage(testQueue, JSON.stringify({ value: '123' }), {
+        messageAttributes: {
+            'my-attribute': {
+                type: 'String',
+                value: 'my-attribute-value'
+            }
+        }
+    })
 }
 ```
 

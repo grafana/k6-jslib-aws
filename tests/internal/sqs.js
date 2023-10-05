@@ -1,13 +1,10 @@
 import { asyncDescribe } from './helpers.js'
+import { b64encode } from 'k6/encoding'
 import { SQSClient, SQSServiceError } from '../../build/sqs.js'
 
 export async function sqsTestSuite(data) {
     const sqsClient = new SQSClient(data.awsConfig)
     sqsClient.host = data.awsConfig.endpoint
-
-    // As initialized in the setup script
-    const queueUrl = 'test1'
-    const fifoQueueUrl = 'test-queue.fifo'
 
     await asyncDescribe('sqs.listQueues', async (expect) => {
         // Act
@@ -37,6 +34,33 @@ export async function sqsTestSuite(data) {
         expect(message.id).to.be.a('string')
         expect(message.bodyMD5).to.be.a('string')
         expect(message.bodyMD5).to.equal('098f6bcd4621d373cade4e832627b4f6')
+    })
+
+    await asyncDescribe('sqs.sendMessageWithAttributes', async (expect) => {
+        // Arrange
+        const queues = await sqsClient.listQueues()
+        const standardQueueUrl = queues.urls[0]
+
+        // Act
+        const message = await sqsClient.sendMessage(standardQueueUrl, 'test', {
+            messageAttributes: {
+                'test-string': {
+                    type: 'String',
+                    value: 'test'
+                },
+                'test-number': {
+                    type: 'Number',
+                    value: '23'
+                },
+                'test-binary': {
+                    type: 'Binary',
+                    value: b64encode('test')
+                }
+            }
+        })
+
+        // Assert
+        expect(message.id).to.be.a('string')
     })
 
     await asyncDescribe('sqs.sendFIFOMessage', async (expect) => {

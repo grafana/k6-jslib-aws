@@ -85,13 +85,13 @@ const testData = {
     },
 }
 
-export default async function testSuite(data) {
-    signatureV4TestSuite(data)
-    await s3TestSuite(data)
-    await secretsManagerTestSuite(data)
-    await kmsTestSuite(data)
-    await sqsTestSuite(data)
-    await ssmTestSuite(data)
-    await kinesisTestSuite(data)
-    await eventBridgeTestSuite(data)
+export default async function testSuite() {
+    signatureV4TestSuite()
+    await s3TestSuite(testData)
+    await secretsManagerTestSuite(testData)
+    await kmsTestSuite(testData)
+    await sqsTestSuite(testData)
+    await ssmTestSuite(testData)
+    await kinesisTestSuite(testData)
+    await eventBridgeTestSuite(testData)
 }

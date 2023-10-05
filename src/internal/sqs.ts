@@ -1,6 +1,6 @@
 import { AWSClient } from './client'
 import { AWSConfig } from './config'
-import { SignatureV4, InvalidSignatureError } from './signature'
+import { InvalidSignatureError, SignatureV4 } from './signature'
 import { HTTPHeaders, SignedHTTPRequest } from './http'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 import { toFormUrlEncoded } from './utils'
@@ -45,7 +45,7 @@ export class SQSClient extends AWSClient {
     async sendMessage(
         queueUrl: string,
         messageBody: string,
-        options: { messageDeduplicationId?: string; messageGroupId?: string } = {}
+        options: SendMessageOptions = {}
     ): Promise<Message> {
         const method = 'POST'
 
@@ -62,6 +62,28 @@ export class SQSClient extends AWSClient {
 
         if (typeof options.messageGroupId !== 'undefined') {
             body = { ...body, MessageGroupId: options.messageGroupId }
+        }
+
+        if (typeof options.messageAttributes !== 'undefined') {
+            /*
+             * A single message attribute is represented as 3 separate parameters: name, value, and type.
+             * The name of the value parameter varies based on the data type.
+             * See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SendMessage.html#SQS-SendMessage-request-MessageAttributes
+             * for more information.
+             */
+            const attributeParameters = Object.entries(options.messageAttributes).reduce((params, [name, attribute], i) => {
+                const valueParameterSuffix = attribute.type === 'Binary' ? 'BinaryValue' : 'StringValue'
+                return Object.assign(params, {
+                    [`MessageAttribute.${i + 1}.Name`]: name,
+                    [`MessageAttribute.${i + 1}.Value.${valueParameterSuffix}`]: attribute.value,
+                    [`MessageAttribute.${i + 1}.Value.DataType`]: attribute.type
+                })
+            }, {} as Record<string, string>)
+            body = { ...body, ...attributeParameters };
+        }
+
+        if (typeof options.delaySeconds !== 'undefined') {
+            body = { ...body, DelaySeconds: options.delaySeconds };
         }
 
         const signedRequest: SignedHTTPRequest = this.signature.sign(
@@ -213,15 +235,27 @@ export class SQSServiceError extends AWSError {
 type SQSOperation = 'ListQueues' | 'SendMessage'
 
 export interface SendMessageOptions {
-    /*
+    /**
      * The message deduplication ID for FIFO queues
      */
     messageDeduplicationId?: string
 
-    /*
+    /**
      * The message group ID for FIFO queues
      */
     messageGroupId?: string
+
+    /**
+     * The message attributes
+     */
+    messageAttributes?: {
+        [name: string]: { type: 'String' | 'Number' | 'Binary', value: string }
+    }
+
+    /**
+     * The length of time, in seconds, for which to delay a specific message.
+     */
+    delaySeconds?: number
 }
 
 export interface ListQueuesRequestParameters {
