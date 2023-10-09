@@ -71,7 +71,7 @@ export async function s3TestSuite(data) {
         expect(getNonExistingObjectError).to.be.an.instanceOf(S3ServiceError)
     })
 
-    asyncDescribe('s3.putObject', async (expect) => {
+    await asyncDescribe('s3.putObject', async (expect) => {
         // Act
         let putObectError
         try {
@@ -88,7 +88,7 @@ export async function s3TestSuite(data) {
         expect(putObectError).to.be.undefined
     })
 
-    asyncDescribe('s3.deleteObject', async (expect) => {
+    await asyncDescribe('s3.deleteObject', async (expect) => {
         // Act
         let deleteExistingObjectError
         try {
@@ -117,7 +117,7 @@ export async function s3TestSuite(data) {
         // expect(deleteNonExistingObjectError).to.not.be.undefined
     })
 
-    asyncDescribe('s3.copyObject', async (expect) => {
+    await asyncDescribe('s3.copyObject', async (expect) => {
         // Arrange
         const sourceObject = data.s3.testObjects[0]
         const sourceKey = sourceObject.key
@@ -134,7 +134,7 @@ export async function s3TestSuite(data) {
         expect(newObject.data).to.equal(sourceObject.body)
     })
 
-    asyncDescribe('s3.createMultipartUpload', async (expect) => {
+    await asyncDescribe('s3.createMultipartUpload', async (expect) => {
         // Arrange
         let createMultipartUploadError
         try {
@@ -147,7 +147,7 @@ export async function s3TestSuite(data) {
         expect(createMultipartUploadError).to.be.undefined
     })
 
-    asyncDescribe('s3.uploadPart', async (expect) => {
+    await asyncDescribe('s3.uploadPart', async (expect) => {
         // Arrange
         const multipartUpload = await s3Client.createMultipartUpload(
             data.s3.testBucketName,
