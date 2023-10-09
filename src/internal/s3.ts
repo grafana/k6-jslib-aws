@@ -209,7 +209,8 @@ export class S3Client extends AWSClient {
     async putObject(
         bucketName: string,
         objectKey: string,
-        data: string | ArrayBuffer
+        data: string | ArrayBuffer,
+        params?: PutObjectParams
     ): Promise<void> {
         // Prepare request
         const method = 'PUT'
@@ -221,6 +222,11 @@ export class S3Client extends AWSClient {
                 path: `/${bucketName}/${objectKey}`,
                 headers: {
                     Host: this.endpoint.host,
+                    ...(params?.contentDisposition && { 'Content-Disposition': params.contentDisposition }),
+                    ...(params?.contentEncoding && { 'Content-Encoding': params.contentEncoding }),
+                    ...(params?.contentLength && { 'Content-Length': params.contentLength }),
+                    ...(params?.contentMD5 && { 'Content-MD5': params.contentMD5 }),
+                    ...(params?.contentType && { 'Content-Type': params.contentType }),
                 },
                 body: data,
             },
@@ -641,3 +647,49 @@ type StorageClass =
     | 'OUTPOSTS'
     | 'GLACIER_IR'
     | undefined
+
+/**
+ * PutObjectParams describes the parameters that can be passed to the PutObject operation.
+ */
+export interface PutObjectParams {
+    /**
+     * Specifies presentational information for the object.
+     * 
+     * For more information, see https://www.rfc-editor.org/rfc/rfc6266#section-4.
+     */
+    contentDisposition?: string
+
+    /**
+     * Specifies what content encodings have been applied to the object and thus
+     * what decoding mechanisms must be applied to obtain the media-type referenced
+     * by the ContentType option.
+     * 
+     * For more information, see https://www.rfc-editor.org/rfc/rfc9110.html#field.content-encoding.
+     */
+    contentEncoding?: string
+
+    /**
+     * Size of the body in bytes. This parameter is useful when the size of the body cannot be
+     * determined automatically.
+     * 
+     * For more information, see https://www.rfc-editor.org/rfc/rfc9110.html#name-content-length.
+     */
+    contentLength?: string
+
+    /**
+     * The base64-encoded 128-bit MD5 digest of the message (without the headers) according to RFC 1864.
+     * This header can be used as a message integrity check to verify that the data is the same data that
+     * was originally sent.
+     * 
+     * Although it is optional, we recommend using the Content-MD5 mechanism as an end-to-end integrity
+     * check.
+     */
+    contentMD5?: string
+
+    /**
+     * A standard MIME type describing the format of the contents.
+     * 
+     * For more information, see https://www.rfc-editor.org/rfc/rfc9110.html#name-content-type.
+     */
+    contentType?: string
+}

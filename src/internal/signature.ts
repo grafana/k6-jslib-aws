@@ -510,7 +510,9 @@ export class SignatureV4 {
                 }
             }
 
-            canonicalHeaders[canonicalHeaderName] = headers[headerName].trim().replace(/\s+/g, ' ')
+            if (typeof headers[headerName] === 'string') {
+                canonicalHeaders[canonicalHeaderName] = headers[headerName] = headers[headerName].trim().replace(/\s+/g, ' ')
+            }
         }
 
         return canonicalHeaders
