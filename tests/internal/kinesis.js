@@ -14,9 +14,9 @@ export async function kinesisTestSuite(data) {
 
         try {
             await kinesis.createStream(dummyStream, {
-                ShardCount: 10,
-                StreamModeDetails: {
-                    StreamMode: 'PROVISIONED',
+                shardCount: 10,
+                streamModeDetails: {
+                    streamMode: 'PROVISIONED',
                 },
             })
         } catch (error) {
@@ -29,13 +29,13 @@ export async function kinesisTestSuite(data) {
     await asyncDescribe('kinesis.listStreams', async (expect) => {
         const res = await kinesis.listStreams()
 
-        expect(res.StreamNames.length, 'number of streams').to.equal(1)
+        expect(res.streamNames.length, 'number of streams').to.equal(1)
     })
 
     await asyncDescribe('kinesis.listStreams with arguments', async (expect) => {
         const res = await kinesis.listStreams({ limit: 1 })
 
-        expect(res.StreamNames.length, 'number of streams').to.equal(1)
+        expect(res.streamNames.length, 'number of streams').to.equal(1)
         sleep(2)
     })
 
@@ -53,22 +53,22 @@ export async function kinesisTestSuite(data) {
             ]
 
             const res = await kinesis.putRecords(records, { streamName: dummyStream })
-            expect(res.FailedRecordCount, `Failed Records to publish`).to.equal(0)
-            expect(res.Records.length, `Total Records`).to.equal(2)
+            expect(res.failedRecordCount, `Failed Records to publish`).to.equal(0)
+            expect(res.records.length, `Total Records`).to.equal(2)
         }
     })
 
     await asyncDescribe('kinesis.listShards and read all data from shards', async (expect) => {
         const shards = await kinesis.listShards(dummyStream)
-        for (let shard of shards.Shards) {
-            let iterator = (await kinesis.getShardIterator(dummyStream, shard.Id, `TRIM_HORIZON`))
-                .ShardIterator
+        for (let shard of shards.shards) {
+            let iterator = (await kinesis.getShardIterator(dummyStream, shard.id, `TRIM_HORIZON`))
+                .shardIterator
 
             while (true) {
                 const res = await kinesis.getRecords(iterator)
-                iterator = res.NextShardIterator
+                iterator = res.nextShardIterator
 
-                if (!res.MillisBehindLatest || res.MillisBehindLatest == `0`) {
+                if (!res.millisBehindLatest || res.millisBehindLatest == `0`) {
                     break
                 }
             }

@@ -381,22 +381,22 @@ export class ListStreamsResponse {
     /**
      * Indicates whether there are more streams available to list.
      */
-    HasMoreStreams: boolean
+    hasMoreStreams: boolean
 
     /**
      * The token that identifies which batch of results you can retrieve.
      */
-    NextToken?: string
+    nextToken?: string
 
     /**
      * The names of the streams that are associated with the AWS account making the ListStreams request.
      */
-    StreamNames: string[]
+    streamNames: string[]
 
     /**
      * A list of StreamSummary objects.
      */
-    StreamSummaries: StreamSummary[]
+    streamSummaries: StreamSummary[]
 
     constructor(
         HasMoreStreams: boolean,
@@ -404,10 +404,10 @@ export class ListStreamsResponse {
         StreamNames: string[],
         StreamSummaries: StreamSummary[]
     ) {
-        this.HasMoreStreams = HasMoreStreams
-        this.NextToken = NextToken
-        this.StreamNames = StreamNames
-        this.StreamSummaries = StreamSummaries
+        this.hasMoreStreams = HasMoreStreams
+        this.nextToken = NextToken
+        this.streamNames = StreamNames
+        this.streamSummaries = StreamSummaries
     }
 
     static fromJson(result: any): ListStreamsResponse {
@@ -434,27 +434,27 @@ export class StreamSummary {
     /**
      * The Amazon Resource Name (ARN) for the stream.
      */
-    StreamARN: string
+    streamARN: string
 
     /**
      * The time at which the stream was created.
      */
-    StreamCreationTimestamp: number
+    streamCreationTimestamp: number
 
     /**
      * Specify the capacity mode to which you want to set your data stream.
      */
-    StreamModeDetails: StreamModeDetails
+    streamModeDetails: StreamModeDetails
 
     /**
      * The name of the stream.
      */
-    StreamName: string
+    streamName: string
 
     /**
      * The current status of the stream being described.
      */
-    StreamStatus: StreamStatus
+    streamStatus: StreamStatus
 
     constructor(
         StreamARN: string,
@@ -463,11 +463,11 @@ export class StreamSummary {
         StreamName: string,
         StreamStatus: StreamStatus
     ) {
-        this.StreamARN = StreamARN
-        this.StreamCreationTimestamp = StreamCreationTimestamp
-        this.StreamModeDetails = StreamMode
-        this.StreamName = StreamName
-        this.StreamStatus = StreamStatus
+        this.streamARN = StreamARN
+        this.streamCreationTimestamp = StreamCreationTimestamp
+        this.streamModeDetails = StreamMode
+        this.streamName = StreamName
+        this.streamStatus = StreamStatus
     }
 
     static fromJson(summary: any): StreamSummary {
@@ -499,7 +499,7 @@ export interface PutRecordsRequestEntry {
     Data: string | ArrayBuffer
 
     /**
-     * Datemines which share in the stream the data record is assigned to.
+     * Determines which share in the stream the data record is assigned to.
      */
     PartitionKey: string
 }
@@ -511,26 +511,26 @@ export class PutRecordsResponse {
      *   - NONE: Do not encrypt the records.
      *   - KMS: Use server-side encryption on the records using a customer-managed AWS KMS key.
      */
-    EncryptionType: 'NONE' | 'KMS'
+    encryptionType: 'NONE' | 'KMS'
 
     /**
      * The number of unsuccessfully processed records in a PutRecords request.
      */
-    FailedRecordCount: number
+    failedRecordCount: number
 
     /**
-     * An array of succesffully and unsuccessfully processed record results.
+     * An array of successfully and unsuccessfully processed record results.
      */
-    Records: PutRecordsResultEntry[]
+    records: PutRecordsResultEntry[]
 
     constructor(
         encryptionType: 'NONE' | 'KMS',
         failedRecordCount: number,
         records: PutRecordsResultEntry[]
     ) {
-        this.EncryptionType = encryptionType
-        this.FailedRecordCount = failedRecordCount
-        this.Records = records
+        this.encryptionType = encryptionType
+        this.failedRecordCount = failedRecordCount
+        this.records = records
     }
 
     static fromJson(json: any): PutRecordsResponse {
@@ -548,16 +548,16 @@ export class PutRecordsResultEntry {
     /**
      * The sequence number for an individual record result.
      */
-    SequenceNumber: string
+    sequenceNumber: string
 
     /**
      * The shard ID for an individual record result.
      */
-    ShardId: string
+    shardId: string
 
     constructor(sequenceNumber: string, shardId: string) {
-        this.SequenceNumber = sequenceNumber
-        this.ShardId = shardId
+        this.sequenceNumber = sequenceNumber
+        this.shardId = shardId
     }
 
     static fromJson(json: any): PutRecordsResultEntry {
@@ -572,23 +572,34 @@ export class GetRecordsResponse {
     /**
      * The next position in the shard from which to start sequentially reading data records.
      */
-    NextShardIterator: string
+    nextShardIterator: string
 
     /**
      * The data records retrieved from the shard.
      */
-    Records: Record[]
+    records: Record[]
 
-    constructor(nextShardIterator: string, records: Record[]) {
-        this.NextShardIterator = nextShardIterator
-        this.Records = records
+    /**
+     * The number of milliseconds the GetRecords response is from the
+     * tip of the stream, indicating how far behind current time the
+     * consumer is.
+     * 
+     * A value of zero indicates that record processing is caught 
+     * up, and there are no new records to process at this moment.
+     */
+    millisBehindLatest: number
+
+    constructor(nextShardIterator: string, records: Record[], millisBehindLatest: number) {
+        this.nextShardIterator = nextShardIterator
+        this.records = records
+        this.millisBehindLatest = millisBehindLatest
     }
 
     static fromJson(json: any): GetRecordsResponse {
-        const { NextShardIterator = '', Records = [] } = json
+        const { NextShardIterator = '', Records = [], MillisBehindLatest = 0 } = json
         const records = Records.map((record: Record) => Record.fromJson(record))
 
-        return new GetRecordsResponse(NextShardIterator, records)
+        return new GetRecordsResponse(NextShardIterator, records, MillisBehindLatest)
     }
 }
 
@@ -600,22 +611,22 @@ class Record {
     /**
      * The data blob.
      */
-    Data: string | ArrayBuffer
+    data: string | ArrayBuffer
 
     /**
      * Identifies which shard in the stream the data record is assigned to.
      */
-    PartitionKey: string
+    partitionKey: string
 
     /**
      * The unique identifier of the record in the stream.
      */
-    SequenceNumber: string
+    sequenceNumber: string
 
     constructor(data: string | ArrayBuffer, partitionKey: string, sequenceNumber: string) {
-        this.Data = data
-        this.PartitionKey = partitionKey
-        this.SequenceNumber = sequenceNumber
+        this.data = data
+        this.partitionKey = partitionKey
+        this.sequenceNumber = sequenceNumber
     }
 
     static fromJson(json: any): Record {
@@ -631,7 +642,7 @@ export class ListShardsResponse {
      * Each object represents one shard and specifies the IDs of the shard, the
      * shard's parent, and the shard that's adjacent to the shard's parent.
      */
-    Shards: Shard[]
+    shards: Shard[]
 
     /**
      * When the number of shards in the data stream is greater than the
@@ -639,11 +650,11 @@ export class ListShardsResponse {
      * a value for MaxResults that is less than the number of shards in the data
      * stream, the response includes a pagination token named NextToken.
      */
-    NextToken?: string
+    nextToken?: string
 
     constructor(shards: Shard[], nextToken?: string) {
-        this.Shards = shards
-        this.NextToken = nextToken
+        this.shards = shards
+        this.nextToken = nextToken
     }
 
     static fromJson(json: any): ListShardsResponse {
@@ -661,24 +672,24 @@ export class Shard {
     /**
      * The unique identifier of the shard within the stream.
      */
-    Id: string
+    id: string
 
     /**
      * The shard ID of the shard's parent.
      */
-    ParentShardId?: string
+    parentShardId?: string
 
     /**
      * The shard ID of the shard adjacent to the shard's parent.
      */
-    AdjacentParentShardId?: string
+    adjacentParentShardId?: string
 
     /**
      * The range of possible hash key values for the shard, which is a set of ordered contiguous positive integers.
      */
-    HashKeyRange: HashKeyRange
+    hashKeyRange: HashKeyRange
 
-    SequenceNumberRange: SequenceNumberRange
+    sequenceNumberRange: SequenceNumberRange
 
     constructor(
         id: string,
@@ -687,11 +698,11 @@ export class Shard {
         parentShardId?: string,
         adjacentParentShardId?: string
     ) {
-        this.Id = id
-        this.ParentShardId = parentShardId
-        this.AdjacentParentShardId = adjacentParentShardId
-        this.HashKeyRange = hashKeyRange
-        this.SequenceNumberRange = sequenceNumberRange
+        this.id = id
+        this.parentShardId = parentShardId
+        this.adjacentParentShardId = adjacentParentShardId
+        this.hashKeyRange = hashKeyRange
+        this.sequenceNumberRange = sequenceNumberRange
     }
 
     static fromJson(json: any): Shard {
@@ -713,12 +724,12 @@ export interface HashKeyRange {
     /**
      * The starting hash key of the hash key range.
      */
-    StartingHashKey: string
+    startingHashKey: string
 
     /**
      * The ending hash key of the hash key range.
      */
-    EndingHashKey: string
+    endingHashKey: string
 }
 
 /**
@@ -730,12 +741,12 @@ export interface SequenceNumberRange {
      *
      * Shards that are in the OPEN state have an ending sequence number of null.
      */
-    EndingSequenceNumber?: string
+    endingSequenceNumber?: string
 
     /**
      * The starting sequence number for the range.
      */
-    StartingSequenceNumber: string
+    startingSequenceNumber: string
 }
 
 /**
@@ -745,10 +756,10 @@ class GetShardIteratorResponse {
     /**
      * The position in the shard from which to start reading data records sequentially.
      */
-    ShardIterator: string
+    shardIterator: string
 
     constructor(shardIterator: string) {
-        this.ShardIterator = shardIterator
+        this.shardIterator = shardIterator
     }
 
     static fromJson(json: any): GetShardIteratorResponse {
