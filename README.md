@@ -35,7 +35,7 @@ import { check } from 'k6'
 import exec from 'k6/execution'
 import http from 'k6/http'
 
-import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.10.0/s3.js'
+import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.11.0/s3.js'
 
 const awsConfig = new AWSConfig(
     __ENV.AWS_REGION,
@@ -97,7 +97,7 @@ Consult the `SecretsManagerClient` [dedicated k6 documentation page](https://k6.
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.10.0/secrets-manager.js'
+import { AWSConfig, SecretsManagerClient } from 'https://jslib.k6.io/aws/0.11.0/secrets-manager.js'
 
 const awsConfig = new AWSConfig(
     __ENV.AWS_REGION,
@@ -148,7 +148,7 @@ import { check } from 'k6'
 import exec from 'k6/execution'
 import http from 'k6/http'
 
-import { AWSConfig, SQSClient } from 'https://jslib.k6.io/aws/0.10.0/sqs.js'
+import { AWSConfig, SQSClient } from 'https://jslib.k6.io/aws/0.11.0/sqs.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -229,7 +229,7 @@ Consult the `SystemsManagerClient` [dedicated k6 documentation page](https://k6.
 ```javascript
 import exec from 'k6/execution'
 
-import { AWSConfig, SystemsManagerClient } from 'https://jslib.k6.io/aws/0.10.0/ssm.js'
+import { AWSConfig, SystemsManagerClient } from 'https://jslib.k6.io/aws/0.11.0/ssm.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -275,7 +275,7 @@ import exec from 'k6/execution'
 import encoding from 'k6/encoding'
 import { fail } from 'k6'
 
-import { AWSConfig, KinesisClient } from 'https://jslib.k6.io/aws/0.10.0/kinesis.js'
+import { AWSConfig, KinesisClient } from 'https://jslib.k6.io/aws/0.11.0/kinesis.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -290,52 +290,52 @@ export default async function () {
     // gives us access to.
     const streams = await kinesis.listStreams()
 
-    if (streams.StreamNames.filter((s) => s === dummyStream).length == 0) {
+    if (streams.streamNames.filter((s) => s === dummyStream).length == 0) {
         fail(`Stream ${dummyStream} does not exist`)
     }
 
     // Create our test stream
     await kinesis.createStream(dummyStream, {
-        ShardCount: 10,
-        StreamModeDetails: {
-            StreamMode: 'PROVISIONED',
+        shardCount: 10,
+        streamModeDetails: {
+            streamMode: 'PROVISIONED',
         },
     })
 
     // Put some records in it
     const records = await kinesis.putRecords({
-        StreamName: dummyStream,
+        streamName: dummyStream,
         Records: [
             {
-                Data: encoding.b64encode(JSON.stringify({ this: 'is', a: 'test' })),
-                PartitionKey: 'partitionKey1',
+                data: encoding.b64encode(JSON.stringify({ this: 'is', a: 'test' })),
+                partitionKey: 'partitionKey1',
             },
             {
-                Data: encoding.b64encode(JSON.stringify([{ this: 'is', second: 'test' }])),
-                PartitionKey: 'partitionKey2',
+                data: encoding.b64encode(JSON.stringify([{ this: 'is', second: 'test' }])),
+                partitionKey: 'partitionKey2',
             },
         ],
     })
 
     // List the streams' shards
-    const shards = await kinesis.listShards(dummyStream).Shards.map((shard) => shard.ShardId)
+    const shards = await kinesis.listShards(dummyStream).shards.map((shard) => shard.id)
 
     // For each shard, read all the data
     shards.map(async (shard) => {
         const iterator = await kinesis.getShardIterator(dummyStream, shardId, `TRIM_HORIZON`)
 
         while (true) {
-            const res = await kinesis.getRecords({ ShardIterator: iterator })
-            iterator = res.NextShardIterator
+            const res = await kinesis.getRecords({ shardIterator: iterator })
+            iterator = res.nextShardIterator
 
-            if (!res.MillisBehindLatest || res.MillisBehindLatest == `0`) {
+            if (!res.millisBehindLatest || res.millisBehindLatest == `0`) {
                 break
             }
         }
     })
 
     // Delete the stream
-    await kinesis.deleteStream({ StreamName: dummyStream })
+    await kinesis.deleteStream({ streamName: dummyStream })
 }
 ```
 
@@ -344,7 +344,7 @@ export default async function () {
 Consult the `EventBridgeClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/eventbridgeclient) for more details on its methods and how to use it.
 
 ```javascript
-import { AWSConfig, EventBridgeClient } from 'https://jslib.k6.io/aws/0.10.0/event-bridge.js'
+import { AWSConfig, EventBridgeClient } from 'https://jslib.k6.io/aws/0.11.0/event-bridge.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
