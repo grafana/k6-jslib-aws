@@ -19,6 +19,7 @@ module.exports = {
         kms: path.resolve(__dirname, 'src/kms.ts'),
         kinesis: path.resolve(__dirname, 'src/kinesis.ts'),
         'event-bridge': path.resolve(__dirname, 'src/event-bridge.ts'),
+        lambda: path.resolve(__dirname, 'src/lambda.ts'),
 
         // AWS signature v4
         signature: path.resolve(__dirname, 'src/signature.ts'),
