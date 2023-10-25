@@ -48,18 +48,23 @@ export class LambdaClient extends AWSClient {
      */
     async invoke(input: InvokeInput) {
         const qualifier = input.Qualifier ? `?Qualifier=${input.Qualifier}` : ''
+        const headers = {
+            ...this.commonHeaders,
+            [AMZ_TARGET_HEADER]: `AWSLambda.${input.InvocationType}`,
+            'X-Amz-Invocation-Type': input.InvocationType,
+            'X-Amz-Log-Type': input.LogType || 'None',
+        };
+
+        if (input.ClientContext) {
+            headers['X-Amz-Client-Context'] = input.ClientContext
+        }
+
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
                 endpoint: this.endpoint,
                 path: `/2015-03-31/functions/${input.FunctionName}/invocations${qualifier}`,
-                headers: {
-                    ...this.commonHeaders,
-                    [AMZ_TARGET_HEADER]: `AWSLambda.${input.InvocationType}`,
-                    'X-Amz-Invocation-Type': input.InvocationType,
-                    'X-Amz-Log-Type': input.LogType || 'None',
-                    'X-Amz-Client-Context': input.ClientContext || '',
-                },
+                headers,
                 body: JSON.stringify(input.Payload ?? ''),
             },
             {}
