@@ -126,10 +126,33 @@ enum LambdaOperation {
  * Represents the input for an Invoke operation.
  */
 interface InvokeInput {
+    /**
+     * The name of the Lambda function, version, or alias.
+     *
+     * Supported names formats:
+     *   - Function name: `my-function` (name-only), `my-function:v1` (with alias).
+     *   - Function ARM: `arn:aws:lambda:us-west-2:123456789012:function:my-function`.
+     *   - Partial ARN: `123456789012:function:my-function`.
+     */
     FunctionName: string
+    /**
+     * Defines whether the function is invoked synchronously or asynchronously.
+     * - `RequestResponse` (default): Invoke the function synchronously.
+     * - `Event`: Invoke the function asynchronously.
+     * - `DryRun`: Validate parameter values and verify that the user or role has permission to invoke the function.
+     */
     InvocationType: 'RequestResponse' | 'Event' | 'DryRun'
+    /**
+     * Set to `Tail` to include the execution log in the response. Applies to synchronously invoked functions only.
+     */
     LogType?: 'None' | 'Tail'
+    /**
+     * Up to 3,583 bytes of base64-encoded data about the invoking client to pass to the function in the context object.
+     */
     ClientContext?: string
+    /**
+     * Specify a version or alias to invoke a published version of the function.
+     */
     Qualifier?: string
     Payload?: string
 }
