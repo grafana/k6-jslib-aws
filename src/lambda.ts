@@ -2,6 +2,6 @@
 export { AWSConfig, InvalidAWSConfigError } from './internal/config'
 export { InvalidSignatureError } from './internal/signature'
 export {
-    LambdaServiceError,
+    LambdaInvocationError,
     LambdaClient
 } from './internal/lambda'

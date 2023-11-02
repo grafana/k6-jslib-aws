@@ -18,3 +18,4 @@ export {
 export { SQSClient } from './sqs'
 export { KinesisClient } from './internal/kinesis'
 export { EventBridgeClient } from './internal/event-bridge'
+export { LambdaClient, LambdaInvocationError } from './lambda'

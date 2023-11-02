@@ -15,6 +15,7 @@ At the moment, this library provides the following:
 -   `SSM`: allows to retrieve a parameter from AWS Systems Manager
 -   `Kinesis`: allows to list streams, create streams, put records, list shards, get shard iterators, and get records from AWS Kinesis.
 -   `EventBridge`: allows to put events to AWS EventBridge.
+-   `Lambda`: allows to invoke functions in AWS Lambda.
 -   `V4 signature`: allows to sign requests to amazon AWS services
 -   `KinesisClient`: allows all APIs for Kinesis available by AWS.
 
@@ -373,6 +374,34 @@ export default async function () {
         console.error(`Failed to put events: ${error.message}`)
     }
 }
+```
+
+### Lambda
+
+Consult the `LambdaClient` [dedicated k6 documentation page](https://k6.io/docs/javascript-api/jslib/aws/lambdaclient) for more details on its methods and how to use it.
+
+```javascript
+import { AWSConfig, LambdaClient } from 'https://jslib.k6.io/aws/0.11.0/lambda.js'
+import { check } from 'k6';
+
+const awsConfig = new AWSConfig({
+    region: __ENV.AWS_REGION,
+    accessKeyId: __ENV.AWS_ACCESS_KEY_ID,
+    secretAccessKey: __ENV.AWS_SECRET_ACCESS_KEY,
+    sessionToken: __ENV.AWS_SESSION_TOKEN,
+})
+
+const lambdaClient = new LambdaClient(awsConfig)
+
+export default async function () {
+    const response = await lambdaClient.invoke('add-numbers', JSON.stringify({x: 1, y: 2}))
+
+    check(response, {
+        'status is 200': (r) => r.statusCode === 200,
+        'payload is 3': (r) => r.payload === 3,
+    })
+}
+
 ```
 
 ## Development
