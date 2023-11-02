@@ -1,18 +1,18 @@
-version: "3.3"
+version: '3.3'
 
 services:
-  localstack:
-    container_name: "k6-jslib-aws-localstack"
-    image: "localstack/localstack:2.0.2"
-    ports:
-      - "127.0.0.1:4566:4566"            # LocalStack Gateway
-      - "127.0.0.1:4510-4559:4510-4559"  # external services port range
-    environment:
-      - SERVICES=s3,secretsmanager,sqs,kms,ssm,kinesis
-      - S3_SKIP_SIGNATURE_VALIDATION=0  # enable signature validation
-      - DEBUG=${DEBUG-}
-      - PERSISTENCE=${PERSISTENCE-}
-    volumes:
-      - "${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack"
-      - "./localstack/init:/etc/localstack/init"
-      - "/var/run/docker.sock:/var/run/docker.sock"
+    localstack:
+        container_name: 'k6-jslib-aws-localstack'
+        image: 'localstack/localstack:2.0.2'
+        ports:
+            - '127.0.0.1:4566:4566' # LocalStack Gateway
+            - '127.0.0.1:4510-4559:4510-4559' # external services port range
+        environment:
+            - SERVICES=s3,secretsmanager,sqs,kms,ssm,kinesis,lambda
+            - S3_SKIP_SIGNATURE_VALIDATION=0 # enable signature validation
+            - DEBUG=${DEBUG-}
+            - PERSISTENCE=${PERSISTENCE-}
+        volumes:
+            - '${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack'
+            - './localstack/init:/etc/localstack/init'
+            - '/var/run/docker.sock:/var/run/docker.sock'
