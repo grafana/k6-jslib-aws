@@ -32,6 +32,7 @@
     "scripts": {
         "webpack": "webpack",
         "test": "npm run webpack && docker-compose down && docker-compose up --build -d && sleep 15 && k6 run tests/index.js",
+        "lint": "npx eslint src/**/*.ts",
         "ci-test": "npm run webpack && k6 run tests/index.js"
     },
     "keywords": [
