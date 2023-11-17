@@ -1,43 +1,55 @@
 import { asyncDescribe } from './helpers.js'
-import { LambdaServiceError, LambdaClient } from '../../build/lambda.js'
-
-const functionName = 'test-jslib-aws-lambda';
+import { LambdaClient } from '../../build/lambda.js'
 
 export async function lambdaTestSuite(data) {
-    const lambda = new LambdaClient(data.awsConfig)
+    const lambdaClient = new LambdaClient(data.awsConfig)
 
     await asyncDescribe('lambda.invoke - RequestResponse', async (expect) => {
-        let lambdaError
+        // Act
+        const result = await lambdaClient.invoke('test-product', JSON.stringify({
+            a: 2,
+            b: 3,
+        }));
 
-        try {
-            const result = await lambda.invoke({
-                FunctionName: functionName,
-                InvocationType: 'RequestResponse',
-            })
+        // Assert
+        expect(result.payload).to.equal('6');
+    })
+    
+    await asyncDescribe('lambda.invoke - Event', async (expect) => {
+        // Act
+        const result = await lambdaClient.invoke('test-product', JSON.stringify({
+            a: 2,
+            b: 3,
+        }), {
+            invocationType: 'Event'
+        });
 
-            expect(result).to.be.string('Hello World!')
-        } catch (error) {
-            lambdaError = error
-        }
-
-        expect(lambdaError).to.be.undefined
+        // Assert
+        expect(result.statusCode).to.equal(202);
     })
 
-    await asyncDescribe('lambda.invoke - Event', async (expect) => {
-        let lambdaError
-
+    await asyncDescribe('lambda.invokeFail', async (expect) => {
+        let expectedError;
         try {
-            const result = await lambda.invoke({
-                FunctionName: functionName,
-                InvocationType: 'Event',
-                Payload: { foo: 'bar' },
-            })
-
-            expect(result).to.be.undefined
+            await lambdaClient.invoke('test-fail', 'my-failure');
         } catch (error) {
-            lambdaError = error
+            expectedError = error;
         }
 
-        expect(lambdaError).to.be.undefined
+        expect(expectedError).to.be.an('error');
+    })
+
+    await asyncDescribe('lambda.invoke - Log', async (expect) => {
+        // Act
+        const result = await lambdaClient.invoke('test-product', JSON.stringify({
+            a: 5,
+            b: 6,
+        }), {
+            logType: 'Tail'
+        });
+
+        // Assert
+        expect(result.payload).to.equal('30');
+        expect(result.logResult).to.contain('received event: {"a":5,"b":6}');
     })
 }

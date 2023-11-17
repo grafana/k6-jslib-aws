@@ -1,21 +1,18 @@
 #!/bin/bash
 
-FUNCTION_NAME="test-jslib-aws-lambda"
+testdata_folder="/etc/localstack/init/testdata/lambda"
+zip_dir=/tmp/lambda
+mkdir -p "$zip_dir"
 
-# Create a dummy lambda function responding with a static string "Hello World!"
-cat >index.js <<EOF
-exports.handler = async function(event, context) {
-    return "Hello World!";
-}
-EOF
+for file in "$testdata_folder"/*; do
+  function_name=$(basename "$file")
+  function_zip="$zip_dir/$function_name.zip"
+  (cd "$file" || exit; zip "$function_zip" ./*)
 
-# Create a zip file containing the lambda function
-zip lambda.zip index.js
-
-# Create a dummy lambda function responding with a static string "Hello World!"
-awslocal lambda create-function \
-    --function-name "$FUNCTION_NAME" \
-    --runtime nodejs18.x \
-    --handler index.handler \
-    --zip-file fileb://lambda.zip \
-    --role arn:aws:iam::123456789012:role/irrelevant
+  awslocal lambda create-function \
+      --function-name "$function_name" \
+      --runtime nodejs18.x \
+      --zip-file "fileb://$function_zip" \
+      --handler index.handler \
+      --role arn:aws:iam::000000000000:role/lambda-role
+done

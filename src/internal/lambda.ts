@@ -1,22 +1,21 @@
 import http, { RefinedResponse, ResponseType } from 'k6/http'
+import encoding from 'k6/encoding';
 
 import { AWSClient } from './client'
 import { AWSConfig } from './config'
 import { AWSError } from './error'
-import { JSONObject } from './json'
 import { InvalidSignatureError, SignatureV4 } from './signature'
 import { AMZ_TARGET_HEADER } from './constants'
-import { HTTPHeaders, HTTPMethod } from './http'
+import { HTTPHeaders, HTTPMethod, QueryParameterBag } from './http'
+
 
 /**
  * Class allowing to interact with Amazon AWS's Lambda service
  */
 export class LambdaClient extends AWSClient {
-    method: HTTPMethod
-
-    commonHeaders: HTTPHeaders
-
-    signature: SignatureV4
+    private readonly signature: SignatureV4
+    private readonly commonHeaders: HTTPHeaders
+    private readonly method: HTTPMethod
 
     constructor(awsConfig: AWSConfig) {
         super(awsConfig, 'lambda')
@@ -42,30 +41,40 @@ export class LambdaClient extends AWSClient {
     /**
      * Invoke an AWS Lambda function
      *
-     * @param {InvokeInput} input - The input for the PutEvents operation.
-     * @throws {LambdaServiceError}
-     * @throws {InvalidSignatureError}
+     * @param {string} name - The name of the function
+     * @param {string} payload - The payload to send to function
+     * @param {InvocationOptions} options - Additional options to customize invocation
+     *
+     * @throws {LambdaInvocationError}
      */
-    async invoke(input: InvokeInput) {
-        const qualifier = input.Qualifier ? `?Qualifier=${input.Qualifier}` : ''
+    async invoke(
+        name: string,
+        payload: string,
+        options: InvocationOptions = {}
+    ): Promise<InvocationResponse> {
+        const query: QueryParameterBag = {};
+        const invocationType = options.invocationType || 'RequestResponse'
         const headers = {
             ...this.commonHeaders,
-            [AMZ_TARGET_HEADER]: `AWSLambda.${input.InvocationType}`,
-            'X-Amz-Invocation-Type': input.InvocationType,
-            'X-Amz-Log-Type': input.LogType || 'None',
-        };
-
-        if (input.ClientContext) {
-            headers['X-Amz-Client-Context'] = input.ClientContext
+            [AMZ_TARGET_HEADER]: `AWSLambda.${invocationType}`,
+            'X-Amz-Invocation-Type': invocationType,
+            'X-Amz-Log-Type': options.logType || 'None'
+        }
+        if (options.clientContext) {
+            headers['X-Amz-Client-Context'] = options.clientContext
+        }
+        if (options.qualifier) {
+            query['Qualifier'] = options.qualifier;
         }
 
         const signedRequest = this.signature.sign(
             {
                 method: this.method,
                 endpoint: this.endpoint,
-                path: `/2015-03-31/functions/${input.FunctionName}/invocations${qualifier}`,
+                path: `/2015-03-31/functions/${name}/invocations`,
+                query,
                 headers,
-                body: JSON.stringify(input.Payload ?? ''),
+                body: payload || ''
             },
             {}
         )
@@ -73,103 +82,79 @@ export class LambdaClient extends AWSClient {
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(LambdaOperation.Invoke, res)
+        this._handle_error(res)
 
-        if(input.InvocationType === 'Event') {
-            return
+        const logResult = res.headers['X-Amz-Log-Result']
+        const response = {
+            executedVersion: res.headers['X-Amz-Executed-Version'],
+            logResult: logResult ? encoding.b64decode(logResult, 'std', 's') : undefined,
+            statusCode: res.status,
+            payload: res.body as string
         }
 
-        return res.json()
+        const functionError = res.headers['X-Amz-Function-Error']
+        if (functionError) {
+            throw new LambdaInvocationError(functionError, response)
+        } else {
+            return response
+        }
     }
 
-    _handle_error(
-        operation: LambdaOperation,
+    private _handle_error(
         response: RefinedResponse<ResponseType | undefined>
     ) {
-        const errorCode = response.error_code
-        if (errorCode === 0) {
+        const errorCode: number = response.error_code
+        const errorMessage: string = response.error
+
+        if (errorMessage == '' && errorCode === 0) {
             return
         }
 
-        const error = response.json() as JSONObject
-        if (errorCode >= 1400 && errorCode <= 1499) {
-            // In the event of certain errors, the message is not set.
-            // Also, note the inconsistency in casing...
-            const errorMessage: string =
-                (error.Message as string) || (error.message as string) || (error.__type as string)
-
-            // Handle specifically the case of an invalid signature
-            if (error.__type === 'InvalidSignatureException') {
-                throw new InvalidSignatureError(errorMessage, error.__type)
-            }
-
-            // Otherwise throw a standard service error
-            throw new LambdaServiceError(errorMessage, error.__type as string, operation)
-        }
-
-        if (errorCode === 1500) {
-            throw new LambdaServiceError(
-                'An error occured on the server side',
-                'InternalServiceError',
-                operation
-            )
+        const awsError = AWSError.parse(response)
+        switch (awsError.code) {
+            case 'AuthorizationHeaderMalformed':
+            case 'InvalidSignatureException':
+                throw new InvalidSignatureError(awsError.message, awsError.code)
+            default:
+                throw awsError
         }
     }
 }
 
-enum LambdaOperation {
-    Invoke = 'Invoke',
+export class LambdaInvocationError extends Error {
+    response: InvocationResponse
+
+    constructor(message: string, response: InvocationResponse) {
+        super(`${message}: ${response.payload}`)
+        this.response = response
+    }
 }
 
-
-/**
- * Represents the input for an Invoke operation.
- */
-interface InvokeInput {
-    /**
-     * The name of the Lambda function, version, or alias.
-     *
-     * Supported names formats:
-     *   - Function name: `my-function` (name-only), `my-function:v1` (with alias).
-     *   - Function ARM: `arn:aws:lambda:us-west-2:123456789012:function:my-function`.
-     *   - Partial ARN: `123456789012:function:my-function`.
-     */
-    FunctionName: string
+interface InvocationOptions {
     /**
      * Defines whether the function is invoked synchronously or asynchronously.
      * - `RequestResponse` (default): Invoke the function synchronously.
      * - `Event`: Invoke the function asynchronously.
      * - `DryRun`: Validate parameter values and verify that the user or role has permission to invoke the function.
      */
-    InvocationType: 'RequestResponse' | 'Event' | 'DryRun'
+    invocationType?: 'RequestResponse' | 'Event' | 'DryRun';
     /**
      * Set to `Tail` to include the execution log in the response. Applies to synchronously invoked functions only.
      */
-    LogType?: 'None' | 'Tail'
+    logType?: 'None' | 'Tail';
     /**
      * Up to 3,583 bytes of base64-encoded data about the invoking client to pass to the function in the context object.
      */
-    ClientContext?: string
+    clientContext?: string;
     /**
      * Specify a version or alias to invoke a published version of the function.
      */
-    Qualifier?: string
-    Payload?: string
+    qualifier?: string;
 }
 
-export class LambdaServiceError extends AWSError {
-    operation: LambdaOperation
-
-    /**
-     * Constructs a LambdaServiceError
-     *
-     * @param  {string} message - human readable error message
-     * @param  {string} code - A unique short code representing the error that was emitted
-     * @param  {string} operation - Name of the failed Operation
-     */
-    constructor(message: string, code: string, operation: LambdaOperation) {
-        super(message, code)
-        this.name = 'LambdaServiceError'
-        this.operation = operation
-    }
+interface InvocationResponse {
+    statusCode: number;
+    executedVersion?: string;
+    logResult?: string;
+    payload?: string;
 }

@@ -1,4 +1,5 @@
 import { parseHTML } from 'k6/html'
+import { Response } from 'k6/http'
 
 /**
  * Base class to derive errors from
@@ -34,5 +35,16 @@ export class AWSError extends Error {
     static parseXML(xmlDocument: string): AWSError {
         const doc = parseHTML(xmlDocument)
         return new AWSError(doc.find('Message').text(), doc.find('Code').text())
+    }
+
+    static parse(response: Response): AWSError {
+        if (response.headers['Content-Type'] === 'application/json') {
+            const error = response.json() as any;
+            const message = error.Message || error.message || error.__type || 'An error occurred on the server side';
+            const code = response.headers['X-Amzn-Errortype'] || error.__type
+            return new AWSError(message, code)
+        } else {
+            return AWSError.parseXML(response.body as string);
+        }
     }
 }
