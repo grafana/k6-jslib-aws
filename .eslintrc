@@ -1,0 +1,18 @@
+{
+    "root": true,
+    "extends": ["eslint:recommended"],
+    "plugins": ["@babel"],
+    "parser": "@babel/eslint-parser",
+    "parserOptions": {
+        "ecmaVersion": 6,
+        "requireConfigFile": false
+    },
+    "globals": {
+        // Allow specific global types present in the k6 JS runtime natively
+        "Uint8Array": "readonly",
+        "Set": "readonly",
+        "console": "readonly",
+        "__ENV": "readonly",
+        "open": "readonly"
+    }
+}
