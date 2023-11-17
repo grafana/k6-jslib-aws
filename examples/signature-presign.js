@@ -5,7 +5,6 @@ import {
     AWSConfig,
     SignatureV4,
     AMZ_CONTENT_SHA256_HEADER,
-    UNSIGNED_PAYLOAD,
 } from '../build/aws.js'
 
 const awsConfig = new AWSConfig({
