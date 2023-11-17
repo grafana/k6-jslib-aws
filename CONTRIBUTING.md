@@ -52,6 +52,8 @@ In a PR:
 1. Bump the version in the `package.json` file.
 2. Run the `npm update` command to update the `package-lock.json` file.
 3. Run the `npm run webpack` command to ensure the build system produces the latest distributable files.
+4. Search and replace every occurences of the previous version in the `README.md` file with the new version.
+5. Search and replace every occurences of the previous version in the `/examples` directory with the new version.
 
 ### Create a tag and GitHub version
 
