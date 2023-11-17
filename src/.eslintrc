@@ -1,0 +1,12 @@
+/**
+ * As per typescript-eslint docs, this is the configuration recommended
+ * by the k6 frontend team.
+ *
+ * See: https://typescript-eslint.io/getting-started/
+ */
+{
+    "extends": ["eslint:recommended", "plugin:@typescript-eslint/recommended"],
+    "parser": "@typescript-eslint/parser",
+    "plugins": ["@typescript-eslint"],
+    "root": true
+}

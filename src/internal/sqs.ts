@@ -49,7 +49,7 @@ export class SQSClient extends AWSClient {
     ): Promise<Message> {
         const method = 'POST'
 
-        let body: any = {
+        let body: object = {
             Action: 'SendMessage',
             Version: API_VERSION,
             QueueUrl: queueUrl,
@@ -71,19 +71,24 @@ export class SQSClient extends AWSClient {
              * See https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_SendMessage.html#SQS-SendMessage-request-MessageAttributes
              * for more information.
              */
-            const attributeParameters = Object.entries(options.messageAttributes).reduce((params, [name, attribute], i) => {
-                const valueParameterSuffix = attribute.type === 'Binary' ? 'BinaryValue' : 'StringValue'
-                return Object.assign(params, {
-                    [`MessageAttribute.${i + 1}.Name`]: name,
-                    [`MessageAttribute.${i + 1}.Value.${valueParameterSuffix}`]: attribute.value,
-                    [`MessageAttribute.${i + 1}.Value.DataType`]: attribute.type
-                })
-            }, {} as Record<string, string>)
-            body = { ...body, ...attributeParameters };
+            const attributeParameters = Object.entries(options.messageAttributes).reduce(
+                (params, [name, attribute], i) => {
+                    const valueParameterSuffix =
+                        attribute.type === 'Binary' ? 'BinaryValue' : 'StringValue'
+                    return Object.assign(params, {
+                        [`MessageAttribute.${i + 1}.Name`]: name,
+                        [`MessageAttribute.${i + 1}.Value.${valueParameterSuffix}`]:
+                            attribute.value,
+                        [`MessageAttribute.${i + 1}.Value.DataType`]: attribute.type,
+                    })
+                },
+                {} as Record<string, string>
+            )
+            body = { ...body, ...attributeParameters }
         }
 
         if (typeof options.delaySeconds !== 'undefined') {
-            body = { ...body, DelaySeconds: options.delaySeconds };
+            body = { ...body, DelaySeconds: options.delaySeconds }
         }
 
         const signedRequest: SignedHTTPRequest = this.signature.sign(
@@ -122,7 +127,7 @@ export class SQSClient extends AWSClient {
     async listQueues(parameters: ListQueuesRequestParameters = {}): Promise<ListQueuesResponse> {
         const method = 'POST'
 
-        let body: any = {
+        let body: object = {
             Action: 'ListQueues',
             Version: API_VERSION,
         }
@@ -158,7 +163,7 @@ export class SQSClient extends AWSClient {
         })
         this._handleError('ListQueues', res)
 
-        let parsed = res.html()
+        const parsed = res.html()
         return {
             urls: parsed
                 .find('QueueUrl')
@@ -249,7 +254,7 @@ export interface SendMessageOptions {
      * The message attributes
      */
     messageAttributes?: {
-        [name: string]: { type: 'String' | 'Number' | 'Binary', value: string }
+        [name: string]: { type: 'String' | 'Number' | 'Binary'; value: string }
     }
 
     /**
