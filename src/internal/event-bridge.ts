@@ -12,11 +12,9 @@ import { HTTPHeaders, HTTPMethod } from './http'
  * Class allowing to interact with Amazon AWS's Event Bridge service
  */
 export class EventBridgeClient extends AWSClient {
-    method: HTTPMethod
-
-    commonHeaders: HTTPHeaders
-
-    signature: SignatureV4
+    private readonly signature: SignatureV4
+    private readonly method: HTTPMethod
+    private readonly commonHeaders: HTTPHeaders
 
     constructor(awsConfig: AWSConfig) {
         super(awsConfig, 'events')
@@ -41,8 +39,8 @@ export class EventBridgeClient extends AWSClient {
 
     /**
      * Sends custom events to Amazon EventBridge so that they can be matched to rules.
-     *  
-     * @param {PutEventsInput} input - The input for the PutEvents operation. 
+     *
+     * @param {PutEventsInput} input - The input for the PutEvents operation.
      * @throws {EventBridgeServiceError}
      * @throws {InvalidSignatureError}
      */

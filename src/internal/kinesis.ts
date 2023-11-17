@@ -18,20 +18,9 @@ https://docs.aws.amazon.com/kinesis/latest/APIReference/API_Operations.html
  * Allows interacting with the Kinesis API.
  */
 export class KinesisClient extends AWSClient {
-    /**
-     * The SignatureV4 object used to sign requests.
-     */
-    signature: SignatureV4
-
-    /**
-     * The common headers that are used for all requests.
-     */
-    commonHeaders: HTTPHeaders
-
-    /**
-     * The version of the Kinesis API that is used for all requests.
-     */
-    serviceVersion: string
+    private readonly signature: SignatureV4
+    private readonly commonHeaders: HTTPHeaders
+    private readonly serviceVersion: string
 
     /**
      * A constructor function that creates a new instance of the Kinesis class.
@@ -583,8 +572,8 @@ export class GetRecordsResponse {
      * The number of milliseconds the GetRecords response is from the
      * tip of the stream, indicating how far behind current time the
      * consumer is.
-     * 
-     * A value of zero indicates that record processing is caught 
+     *
+     * A value of zero indicates that record processing is caught
      * up, and there are no new records to process at this moment.
      */
     millisBehindLatest: number

@@ -13,17 +13,9 @@ import { InvalidSignatureError, SignatureV4 } from './signature'
  * Class allowing to interact with Amazon AWS's SecretsManager service
  */
 export class SecretsManagerClient extends AWSClient {
-    /**
-     * HTTP Method to use when interacting with the Secrets Manager service.
-     */
-    method: HTTPMethod
-
-    /**
-     * HTTP headers to use accross all requests to the Secrets Manager service.
-     */
-    commonHeaders: HTTPHeaders
-
-    signature: SignatureV4
+    private readonly signature: SignatureV4
+    private readonly method: HTTPMethod
+    private readonly commonHeaders: HTTPHeaders
 
     /**
      * Create a SecretsManagerClient

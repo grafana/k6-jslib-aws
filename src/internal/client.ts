@@ -10,8 +10,8 @@ import { HTTPHeaders } from './http'
  * usage examples.
  */
 export class AWSClient {
-    awsConfig: AWSConfig
-    serviceName: string
+    readonly awsConfig: AWSConfig
+    readonly serviceName: string
 
     private _endpoint?: Endpoint
 
@@ -66,6 +66,6 @@ export class AWSClient {
  * Type alias representing the result of an AWSClient.buildRequest call
  */
 export interface AWSRequest {
-    url: string
-    headers: HTTPHeaders
+    readonly url: string
+    readonly headers: HTTPHeaders
 }
