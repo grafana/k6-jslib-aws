@@ -1,28 +1,38 @@
 name: Build and test the aws jslib against a Localstack instance
-on: push
+on:
+    # Enables running the workflow manually from the Actions tab
+    workflow_dispatch:
+
+    push:
+        branches:
+            - main
+        tags:
+            - v*
+
+    pull_request:
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+    test:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Install Go
-        uses: actions/setup-go@v2
-        with:
-          go-version: 1.x
+            - name: Install Go
+              uses: actions/setup-go@v4
+              with:
+                  go-version: 1.x
 
-      - name: Install k6
-        run: go install go.k6.io/k6@latest
+            - name: Install k6
+              run: go install go.k6.io/k6@latest
 
-      - name: Build the stack
-        run: docker-compose up -d
+            - name: Build the stack
+              run: docker-compose up -d
 
-      - name: Wait for the localstack scripts to have been applied
-        run: sleep 30
+            - name: Wait for the localstack scripts to have been applied
+              run: sleep 30
 
-      - name: Install npm packages
-        run: npm install
+            - name: Install npm packages
+              run: npm install
 
-      - name: Test
-        run: npm run webpack && npm run ci-test
+            - name: Test
+              run: npm run webpack && npm run ci-test
