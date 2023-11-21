@@ -38,6 +38,6 @@ export default async function () {
     }
 
     // Let's redownload it, verify it's correct, and delete it
-    const obj = await s3.getObject(testBucketName, testFileKey)
+    await s3.getObject(testBucketName, testFileKey)
     await s3.deleteObject(testBucketName, testFileKey)
 }

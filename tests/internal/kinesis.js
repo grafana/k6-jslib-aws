@@ -1,5 +1,5 @@
 import { asyncDescribe } from './helpers.js'
-import { AWSConfig, KinesisClient, KinesisServiceError } from '../../build/kinesis.js'
+import { KinesisClient } from '../../build/kinesis.js'
 import encoding from 'k6/encoding'
 import { sleep } from 'k6'
 
@@ -58,24 +58,25 @@ export async function kinesisTestSuite(data) {
         }
     })
 
-    await asyncDescribe('kinesis.listShards and read all data from shards', async (expect) => {
+    await asyncDescribe('kinesis.listShards and read all data from shards', async () => {
         const shards = await kinesis.listShards(dummyStream)
         for (let shard of shards.shards) {
             let iterator = (await kinesis.getShardIterator(dummyStream, shard.id, `TRIM_HORIZON`))
                 .shardIterator
 
-            while (true) {
+            let shouldBreak = false;
+            while (!shouldBreak) { // Use the variable in the condition
                 const res = await kinesis.getRecords(iterator)
                 iterator = res.nextShardIterator
 
                 if (!res.millisBehindLatest || res.millisBehindLatest == `0`) {
-                    break
+                    shouldBreak = true; // Set the variable to true to break the loop
                 }
             }
         }
     })
 
-    await asyncDescribe('kinesis.deleteStream', async (expect) => {
+    await asyncDescribe('kinesis.deleteStream', async () => {
         await kinesis.deleteStream(dummyStream)
     })
 }

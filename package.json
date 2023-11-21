@@ -6,6 +6,8 @@
     "main": "src/index.js",
     "devDependencies": {
         "@babel/core": "^7.4.4",
+        "@babel/eslint-parser": "^7.23.3",
+        "@babel/eslint-plugin": "^7.22.10",
         "@babel/plugin-proposal-class-properties": "^7.16.7",
         "@babel/plugin-proposal-object-rest-spread": "^7.17.3",
         "@babel/plugin-transform-block-scoping": "^7.14.1",
@@ -21,6 +23,7 @@
         "clean-webpack-plugin": "^4.0.0",
         "copy-webpack-plugin": "^10.2.4",
         "eslint": "^8.53.0",
+        "eslint-plugin-import": "^2.29.0",
         "terser-webpack-plugin": "^5.3.1",
         "typescript": "^4.9.5",
         "uuid": "^3.4.0",
@@ -32,7 +35,7 @@
     "scripts": {
         "webpack": "webpack",
         "test": "npm run webpack && docker-compose down && docker-compose up --build -d && sleep 15 && k6 run tests/index.js",
-        "lint": "npx eslint src/**/*.ts",
+        "lint": "npx eslint src tests examples",
         "ci-test": "npm run webpack && k6 run tests/index.js"
     },
     "keywords": [

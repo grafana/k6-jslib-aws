@@ -1,7 +1,5 @@
 import { asyncDescribe } from './helpers.js'
-import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js'
 import {
-    AWSConfig,
     SecretsManagerClient,
     SecretsManagerServiceError,
 } from '../../build/secrets-manager.js'

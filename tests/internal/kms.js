@@ -1,6 +1,5 @@
 import { asyncDescribe } from './helpers.js'
-import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js'
-import { AWSConfig, KMSClient, KMSServiceError } from '../../build/kms.js'
+import { KMSClient } from '../../build/kms.js'
 
 export async function kmsTestSuite(data) {
     const kmsClient = new KMSClient(data.awsConfig)
