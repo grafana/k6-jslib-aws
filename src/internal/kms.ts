@@ -12,10 +12,9 @@ import { InvalidSignatureError, SignatureV4 } from './signature'
  * Class allowing to interact with Amazon AWS's KMS service
  */
 export class KMSClient extends AWSClient {
-    method: HTTPMethod
-    commonHeaders: HTTPHeaders
-
-    signature: SignatureV4
+    private readonly signature: SignatureV4
+    private readonly method: HTTPMethod
+    private readonly commonHeaders: HTTPHeaders
 
     /**
      * Create a KMSClient

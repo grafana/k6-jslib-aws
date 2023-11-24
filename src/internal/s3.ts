@@ -10,7 +10,7 @@ import { InvalidSignatureError, SignatureV4 } from './signature'
 
 /** Class allowing to interact with Amazon AWS's S3 service */
 export class S3Client extends AWSClient {
-    signature: SignatureV4
+    private readonly signature: SignatureV4
 
     /**
      * Create a S3Client
@@ -222,7 +222,9 @@ export class S3Client extends AWSClient {
                 path: `/${bucketName}/${objectKey}`,
                 headers: {
                     Host: this.endpoint.host,
-                    ...(params?.contentDisposition && { 'Content-Disposition': params.contentDisposition }),
+                    ...(params?.contentDisposition && {
+                        'Content-Disposition': params.contentDisposition,
+                    }),
                     ...(params?.contentEncoding && { 'Content-Encoding': params.contentEncoding }),
                     ...(params?.contentLength && { 'Content-Length': params.contentLength }),
                     ...(params?.contentMD5 && { 'Content-MD5': params.contentMD5 }),
@@ -654,7 +656,7 @@ type StorageClass =
 export interface PutObjectParams {
     /**
      * Specifies presentational information for the object.
-     * 
+     *
      * For more information, see https://www.rfc-editor.org/rfc/rfc6266#section-4.
      */
     contentDisposition?: string
@@ -663,7 +665,7 @@ export interface PutObjectParams {
      * Specifies what content encodings have been applied to the object and thus
      * what decoding mechanisms must be applied to obtain the media-type referenced
      * by the ContentType option.
-     * 
+     *
      * For more information, see https://www.rfc-editor.org/rfc/rfc9110.html#field.content-encoding.
      */
     contentEncoding?: string
@@ -671,7 +673,7 @@ export interface PutObjectParams {
     /**
      * Size of the body in bytes. This parameter is useful when the size of the body cannot be
      * determined automatically.
-     * 
+     *
      * For more information, see https://www.rfc-editor.org/rfc/rfc9110.html#name-content-length.
      */
     contentLength?: string
@@ -680,7 +682,7 @@ export interface PutObjectParams {
      * The base64-encoded 128-bit MD5 digest of the message (without the headers) according to RFC 1864.
      * This header can be used as a message integrity check to verify that the data is the same data that
      * was originally sent.
-     * 
+     *
      * Although it is optional, we recommend using the Content-MD5 mechanism as an end-to-end integrity
      * check.
      */
@@ -688,7 +690,7 @@ export interface PutObjectParams {
 
     /**
      * A standard MIME type describing the format of the contents.
-     * 
+     *
      * For more information, see https://www.rfc-editor.org/rfc/rfc9110.html#name-content-type.
      */
     contentType?: string
