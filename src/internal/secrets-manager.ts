@@ -131,7 +131,7 @@ export class SecretsManagerClient extends AWSClient {
         secret: string,
         description: string,
         versionID?: string,
-        tags?: Array<Object>
+        tags?: Array<object>
     ): Promise<Secret> {
         versionID = versionID || uuidv4()
 

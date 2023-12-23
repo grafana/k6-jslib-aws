@@ -1,5 +1,5 @@
 import http, { RefinedResponse, ResponseType } from 'k6/http'
-import encoding from 'k6/encoding';
+import encoding from 'k6/encoding'
 
 import { AWSClient } from './client'
 import { AWSConfig } from './config'
@@ -7,7 +7,6 @@ import { AWSError } from './error'
 import { InvalidSignatureError, SignatureV4 } from './signature'
 import { AMZ_TARGET_HEADER } from './constants'
 import { HTTPHeaders, HTTPMethod, QueryParameterBag } from './http'
-
 
 /**
  * Class allowing to interact with Amazon AWS's Lambda service
@@ -52,19 +51,19 @@ export class LambdaClient extends AWSClient {
         payload: string,
         options: InvocationOptions = {}
     ): Promise<InvocationResponse> {
-        const query: QueryParameterBag = {};
+        const query: QueryParameterBag = {}
         const invocationType = options.invocationType || 'RequestResponse'
         const headers = {
             ...this.commonHeaders,
             [AMZ_TARGET_HEADER]: `AWSLambda.${invocationType}`,
             'X-Amz-Invocation-Type': invocationType,
-            'X-Amz-Log-Type': options.logType || 'None'
+            'X-Amz-Log-Type': options.logType || 'None',
         }
         if (options.clientContext) {
             headers['X-Amz-Client-Context'] = options.clientContext
         }
         if (options.qualifier) {
-            query['Qualifier'] = options.qualifier;
+            query['Qualifier'] = options.qualifier
         }
 
         const signedRequest = this.signature.sign(
@@ -74,7 +73,7 @@ export class LambdaClient extends AWSClient {
                 path: `/2015-03-31/functions/${name}/invocations`,
                 query,
                 headers,
-                body: payload || ''
+                body: payload || '',
             },
             {}
         )
@@ -89,7 +88,7 @@ export class LambdaClient extends AWSClient {
             executedVersion: res.headers['X-Amz-Executed-Version'],
             logResult: logResult ? encoding.b64decode(logResult, 'std', 's') : undefined,
             statusCode: res.status,
-            payload: res.body as string
+            payload: res.body as string,
         }
 
         const functionError = res.headers['X-Amz-Function-Error']
@@ -100,9 +99,7 @@ export class LambdaClient extends AWSClient {
         }
     }
 
-    private _handle_error(
-        response: RefinedResponse<ResponseType | undefined>
-    ) {
+    private _handle_error(response: RefinedResponse<ResponseType | undefined>) {
         const errorCode: number = response.error_code
         const errorMessage: string = response.error
 
@@ -137,24 +134,24 @@ interface InvocationOptions {
      * - `Event`: Invoke the function asynchronously.
      * - `DryRun`: Validate parameter values and verify that the user or role has permission to invoke the function.
      */
-    invocationType?: 'RequestResponse' | 'Event' | 'DryRun';
+    invocationType?: 'RequestResponse' | 'Event' | 'DryRun'
     /**
      * Set to `Tail` to include the execution log in the response. Applies to synchronously invoked functions only.
      */
-    logType?: 'None' | 'Tail';
+    logType?: 'None' | 'Tail'
     /**
      * Up to 3,583 bytes of base64-encoded data about the invoking client to pass to the function in the context object.
      */
-    clientContext?: string;
+    clientContext?: string
     /**
      * Specify a version or alias to invoke a published version of the function.
      */
-    qualifier?: string;
+    qualifier?: string
 }
 
 interface InvocationResponse {
-    statusCode: number;
-    executedVersion?: string;
-    logResult?: string;
-    payload?: string;
+    statusCode: number
+    executedVersion?: string
+    logResult?: string
+    payload?: string
 }

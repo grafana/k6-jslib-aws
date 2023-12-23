@@ -30,7 +30,7 @@ export default async function () {
 
     // Now that we know the secret exist, let's update its value
     const newTestSecretValue = 'new-test-value'
-    const u = await secretsManager.putSecretValue(testSecretName, newTestSecretValue)
+    await secretsManager.putSecretValue(testSecretName, newTestSecretValue)
 
     // Let's get its value and verify it was indeed updated
     const updatedSecret = await secretsManager.getSecret(testSecretName)

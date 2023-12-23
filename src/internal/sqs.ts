@@ -49,7 +49,7 @@ export class SQSClient extends AWSClient {
     ): Promise<Message> {
         const method = 'POST'
 
-        let body: any = {
+        let body: object = {
             Action: 'SendMessage',
             Version: API_VERSION,
             QueueUrl: queueUrl,
@@ -127,7 +127,7 @@ export class SQSClient extends AWSClient {
     async listQueues(parameters: ListQueuesRequestParameters = {}): Promise<ListQueuesResponse> {
         const method = 'POST'
 
-        let body: any = {
+        let body: object = {
             Action: 'ListQueues',
             Version: API_VERSION,
         }
@@ -163,7 +163,7 @@ export class SQSClient extends AWSClient {
         })
         this._handleError('ListQueues', res)
 
-        let parsed = res.html()
+        const parsed = res.html()
         return {
             urls: parsed
                 .find('QueueUrl')

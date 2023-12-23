@@ -1,3 +1,4 @@
+import { JSONObject } from './json'
 import { parseHTML } from 'k6/html'
 import { Response } from 'k6/http'
 
@@ -39,12 +40,16 @@ export class AWSError extends Error {
 
     static parse(response: Response): AWSError {
         if (response.headers['Content-Type'] === 'application/json') {
-            const error = response.json() as any;
-            const message = error.Message || error.message || error.__type || 'An error occurred on the server side';
+            const error = (response.json() as JSONObject) || {}
+            const message =
+                error.Message ||
+                error.message ||
+                error.__type ||
+                'An error occurred on the server side'
             const code = response.headers['X-Amzn-Errortype'] || error.__type
-            return new AWSError(message, code)
+            return new AWSError(message as string, code as string)
         } else {
-            return AWSError.parseXML(response.body as string);
+            return AWSError.parseXML(response.body as string)
         }
     }
 }

@@ -60,14 +60,14 @@ export class S3Client extends AWSClient {
         })
         this._handle_error('ListBuckets', res)
 
-        let buckets: Array<S3Bucket> = []
+        const buckets: Array<S3Bucket> = []
 
         const doc = parseHTML(res.body as string)
 
         doc.find('Buckets')
             .children()
             .each((_, bucketDefinition) => {
-                let bucket = {}
+                const bucket = {}
 
                 bucketDefinition.children().forEach((child) => {
                     switch (child.nodeName()) {
@@ -119,14 +119,14 @@ export class S3Client extends AWSClient {
         })
         this._handle_error('ListObjectsV2', res)
 
-        let objects: Array<S3Object> = []
+        const objects: Array<S3Object> = []
 
         // Extract the objects definition from
         // the XML response
         parseHTML(res.body as string)
             .find('Contents')
             .each((_, objectDefinition) => {
-                let obj = {}
+                const obj = {}
 
                 objectDefinition.children().forEach((child) => {
                     switch (child.nodeName()) {

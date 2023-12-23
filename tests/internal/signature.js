@@ -1,6 +1,5 @@
 import {
     SignatureV4,
-    HTTPRequest,
     Endpoint,
     AMZ_ALGORITHM_QUERY_PARAM,
     AMZ_CONTENT_SHA256_HEADER,
@@ -17,8 +16,7 @@ import {
     UNSIGNED_PAYLOAD,
 } from '../../build/signature.js'
 
-import { describe, expect, chai } from 'https://jslib.k6.io/k6chaijs/4.3.4.0/index.js'
-import { fail } from 'k6'
+import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.0/index.js'
 
 const credentials = {
     accessKeyId: 'foo',
@@ -516,16 +514,6 @@ export function signatureV4TestSuite() {
             })
 
             describe('should sign requests with binary bodies', () => {
-                const want = {
-                    [AMZ_ALGORITHM_QUERY_PARAM]: SIGNING_ALGORITHM_IDENTIFIER,
-                    [AMZ_CREDENTIAL_QUERY_PARAM]: 'foo/20000101/us-bar-1/foo/aws4_request',
-                    [AMZ_DATE_QUERY_PARAM]: '20000101T000000Z',
-                    [AMZ_EXPIRES_QUERY_PARAM]: presigningOptions.expiresIn.toString(),
-                    [AMZ_SIGNED_HEADERS_QUERY_PARAM]: HOST_HEADER,
-                    [AMZ_SIGNATURE_QUERY_PARAM]:
-                        'bd1427cfdc9a3b0a55609b0114d1dab4dfebca81a9496d6c47dedf65a3ec3bcb',
-                }
-
                 const { query } = signer.presign(
                     {
                         method: 'POST',

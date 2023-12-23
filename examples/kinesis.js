@@ -1,8 +1,5 @@
-import exec from 'k6/execution'
-
 import { AWSConfig, KinesisClient } from '../build/kinesis.js'
 import encoding from 'k6/encoding'
-import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.2/index.js'
 import { fail } from 'k6'
 
 const dummyStream = `kinesis-test-stream-provisioned`
@@ -15,11 +12,6 @@ const awsConfig = new AWSConfig({
 })
 
 const kinesis = new KinesisClient(awsConfig)
-
-const getShardIterator = async (shardId) => {
-    const res = await kinesis.getShardIterator(dummyStream, shardId, `TRIM_HORIZON`)
-    return res.ShardIterator
-}
 
 export default async function () {
     // List the streamds the AWS authentication configuration
@@ -39,7 +31,7 @@ export default async function () {
     })
 
     // Put some records in it
-    const records = await kinesis.putRecords({
+    await kinesis.putRecords({
         StreamName: dummyStream,
         Records: [
             {
@@ -58,14 +50,15 @@ export default async function () {
 
     // For each shard, read all the data
     shards.map(async (shard) => {
-        const iterator = await kinesis.getShardIterator(dummyStream, shardId, `TRIM_HORIZON`)
+        let iterator = await kinesis.getShardIterator(dummyStream, shard.id, `TRIM_HORIZON`)
 
-        while (true) {
+        let shouldBreak = false;
+        while (!shouldBreak) {
             const res = await kinesis.getRecords({ ShardIterator: iterator })
             iterator = res.NextShardIterator
 
             if (!res.MillisBehindLatest || res.MillisBehindLatest == `0`) {
-                break
+                shouldBreak = true
             }
         }
     })

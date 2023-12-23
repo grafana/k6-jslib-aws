@@ -1,4 +1,3 @@
-import { JSONObject } from 'k6'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
 import { AWSClient } from './client'
@@ -6,6 +5,7 @@ import { AWSClient } from './client'
 import { AWSConfig } from './config'
 import { AMZ_TARGET_HEADER } from './constants'
 import { AWSError } from './error'
+import { JSONObject } from './json'
 import { HTTPHeaders } from './http'
 import { InvalidSignatureError, SignatureV4 } from './signature'
 
@@ -71,7 +71,7 @@ export class KinesisClient extends AWSClient {
         streamName: string,
         options: { shardCount?: number; streamModeDetails?: { streamMode: StreamMode } } = {}
     ): Promise<void> {
-        const body: any = {
+        const body = {
             StreamName: streamName,
             ...(options.shardCount && { ShardCount: options.shardCount }),
             ...(options.streamModeDetails && { StreamMode: options.streamModeDetails.streamMode }),
@@ -98,7 +98,7 @@ export class KinesisClient extends AWSClient {
         streamName: string,
         parameters: { streamARN?: string; enforceConsumerDeletion?: boolean } = {}
     ): Promise<void> {
-        const body: any = {
+        const body = {
             StreamName: streamName,
             ...(parameters.streamARN && { StreamARN: parameters.streamARN }),
             ...(parameters.enforceConsumerDeletion && {
@@ -131,7 +131,7 @@ export class KinesisClient extends AWSClient {
             nextToken?: string
         } = {}
     ): Promise<ListStreamsResponse> {
-        const body: any = {
+        const body = {
             ...(parameters.exclusiveStartStreamName && {
                 ExclusiveStartStreamName: parameters.exclusiveStartStreamName,
             }),
@@ -140,7 +140,7 @@ export class KinesisClient extends AWSClient {
         }
 
         const res = await this._send_request('ListStreams', body)
-        return ListStreamsResponse.fromJson(res?.json())
+        return ListStreamsResponse.fromJson(res?.json() as JSONObject)
     }
 
     /**
@@ -160,14 +160,14 @@ export class KinesisClient extends AWSClient {
             throw new Error('Either streamName or streamARN must be provided')
         }
 
-        const body: any = {
+        const body = {
             Records: records,
             ...(parameters.streamName && { StreamName: parameters.streamName }),
             ...(parameters.streamARN && { StreamARN: parameters.streamARN }),
         }
 
         const res = await this._send_request('PutRecords', body)
-        return PutRecordsResponse.fromJson(res?.json())
+        return PutRecordsResponse.fromJson(res?.json() as JSONObject)
     }
 
     /**
@@ -183,14 +183,14 @@ export class KinesisClient extends AWSClient {
         shardIterator: string,
         parameters: { limit?: number; streamARN?: string } = {}
     ): Promise<GetRecordsResponse> {
-        const body: any = {
+        const body = {
             ShardIterator: shardIterator,
             ...(parameters.limit && { Limit: parameters.limit }),
             ...(parameters.streamARN && { StreamARN: parameters.streamARN }),
         }
 
         const res = await this._send_request('GetRecords', body)
-        return GetRecordsResponse.fromJson(res?.json())
+        return GetRecordsResponse.fromJson(res?.json() as JSONObject)
     }
 
     /**
@@ -211,7 +211,7 @@ export class KinesisClient extends AWSClient {
         streamName: string,
         parameters: { nextToken?: string; maxResults?: number } = {}
     ): Promise<ListShardsResponse> {
-        const body: any = {
+        const body = {
             StreamName: streamName,
             ...(parameters.nextToken && { NextToken: parameters.nextToken }),
             ...(parameters.maxResults && {
@@ -220,7 +220,7 @@ export class KinesisClient extends AWSClient {
         }
 
         const res = await this._send_request('ListShards', body)
-        return ListShardsResponse.fromJson(res?.json())
+        return ListShardsResponse.fromJson(res?.json() as JSONObject)
     }
 
     /**
@@ -245,7 +245,7 @@ export class KinesisClient extends AWSClient {
         shardIteratorType: ShardIteratorKind,
         parameters: { startingSequenceNumber?: string; timestamp?: number } = {}
     ): Promise<GetShardIteratorResponse> {
-        const body: any = {
+        const body = {
             StreamName: streamName,
             ShardId: shardId,
             ShardIteratorType: shardIteratorType,
@@ -256,10 +256,13 @@ export class KinesisClient extends AWSClient {
         }
 
         const res = await this._send_request('GetShardIterator', body)
-        return GetShardIteratorResponse.fromJson(res?.json())
+        return GetShardIteratorResponse.fromJson(res?.json() as JSONObject)
     }
 
-    private async _send_request(action: string, body: any): Promise<any> {
+    private async _send_request<R extends ResponseType>(
+        action: string,
+        body: unknown
+    ): Promise<RefinedResponse<R>> {
         const signedRequest = this.signature.sign(
             {
                 method: 'POST',
@@ -399,7 +402,7 @@ export class ListStreamsResponse {
         this.streamSummaries = StreamSummaries
     }
 
-    static fromJson(result: any): ListStreamsResponse {
+    static fromJson(result: JSONObject): ListStreamsResponse {
         const {
             HasMoreStreams = false,
             NextToken = '',
@@ -408,10 +411,10 @@ export class ListStreamsResponse {
         } = result
 
         return new ListStreamsResponse(
-            HasMoreStreams,
-            NextToken,
-            StreamNames.map((s: any) => String(s)),
-            StreamSummaries.map(StreamSummary.fromJson)
+            HasMoreStreams as boolean,
+            NextToken as string,
+            StreamNames as string[],
+            (StreamSummaries as JSONObject[])?.map(StreamSummary.fromJson) as StreamSummary[]
         )
     }
 }
@@ -459,7 +462,7 @@ export class StreamSummary {
         this.streamStatus = StreamStatus
     }
 
-    static fromJson(summary: any): StreamSummary {
+    static fromJson(summary: JSONObject): StreamSummary {
         const {
             StreamARN = '',
             StreamCreationTimestamp = 0,
@@ -469,11 +472,11 @@ export class StreamSummary {
         } = summary
 
         return new StreamSummary(
-            StreamARN,
-            StreamCreationTimestamp,
-            StreamModeDetails,
-            StreamName,
-            StreamStatus
+            StreamARN as string,
+            StreamCreationTimestamp as number,
+            StreamModeDetails as StreamModeDetails,
+            StreamName as string,
+            StreamStatus as StreamStatus
         )
     }
 }
@@ -500,7 +503,7 @@ export class PutRecordsResponse {
      *   - NONE: Do not encrypt the records.
      *   - KMS: Use server-side encryption on the records using a customer-managed AWS KMS key.
      */
-    encryptionType: 'NONE' | 'KMS'
+    encryptionType: EncryptionType
 
     /**
      * The number of unsuccessfully processed records in a PutRecords request.
@@ -522,13 +525,19 @@ export class PutRecordsResponse {
         this.records = records
     }
 
-    static fromJson(json: any): PutRecordsResponse {
+    static fromJson(json: JSONObject): PutRecordsResponse {
         const { EncryptionType = 'NONE', FailedRecordCount = 0, Records = [] } = json
-        const records = Records.map((record: any) => PutRecordsResultEntry.fromJson(record))
+        const records = (Records as JSONObject[]).map(PutRecordsResultEntry.fromJson)
 
-        return new PutRecordsResponse(EncryptionType, FailedRecordCount, records)
+        return new PutRecordsResponse(
+            EncryptionType as EncryptionType,
+            FailedRecordCount as number,
+            records
+        )
     }
 }
+
+type EncryptionType = 'NONE' | 'KMS'
 
 /**
  * Represents the result of an individual record from a PutRecords request.
@@ -549,8 +558,8 @@ export class PutRecordsResultEntry {
         this.shardId = shardId
     }
 
-    static fromJson(json: any): PutRecordsResultEntry {
-        return new PutRecordsResultEntry(json.SequenceNumber, json.ShardId)
+    static fromJson(json: JSONObject): PutRecordsResultEntry {
+        return new PutRecordsResultEntry(json.SequenceNumber as string, json.ShardId as string)
     }
 }
 
@@ -584,11 +593,15 @@ export class GetRecordsResponse {
         this.millisBehindLatest = millisBehindLatest
     }
 
-    static fromJson(json: any): GetRecordsResponse {
+    static fromJson(json: JSONObject): GetRecordsResponse {
         const { NextShardIterator = '', Records = [], MillisBehindLatest = 0 } = json
-        const records = Records.map((record: Record) => Record.fromJson(record))
+        const records = (Records as JSONObject[]).map(Record.fromJson)
 
-        return new GetRecordsResponse(NextShardIterator, records, MillisBehindLatest)
+        return new GetRecordsResponse(
+            NextShardIterator as string,
+            records as Record[],
+            MillisBehindLatest as number
+        )
     }
 }
 
@@ -618,8 +631,12 @@ class Record {
         this.sequenceNumber = sequenceNumber
     }
 
-    static fromJson(json: any): Record {
-        return new Record(json.Data, json.PartitionKey, json.SequenceNumber)
+    static fromJson(json: JSONObject): Record {
+        return new Record(
+            json.Data as string | ArrayBuffer,
+            json.PartitionKey as string,
+            json.SequenceNumber as string
+        )
     }
 }
 
@@ -646,11 +663,11 @@ export class ListShardsResponse {
         this.nextToken = nextToken
     }
 
-    static fromJson(json: any): ListShardsResponse {
+    static fromJson(json: JSONObject): ListShardsResponse {
         const { Shards = [], NextToken } = json
-        const shards = Shards.map((shard: Shard) => Shard.fromJson(shard))
+        const shards = (Shards as JSONObject[]).map(Shard.fromJson)
 
-        return new ListShardsResponse(shards, NextToken)
+        return new ListShardsResponse(shards, NextToken as string | undefined)
     }
 }
 
@@ -694,13 +711,13 @@ export class Shard {
         this.sequenceNumberRange = sequenceNumberRange
     }
 
-    static fromJson(json: any): Shard {
+    static fromJson(json: JSONObject): Shard {
         return new Shard(
-            json.ShardId,
-            json.HashKeyRange,
-            json.SequenceNumberRange,
-            json.ParentShardId,
-            json.AdjacentParentShardId
+            json.ShardId as string,
+            json.HashKeyRange as unknown as HashKeyRange,
+            json.SequenceNumberRange as unknown as SequenceNumberRange,
+            json.ParentShardId as string | undefined,
+            json.AdjacentParentShardId as string | undefined
         )
     }
 }
@@ -751,7 +768,7 @@ class GetShardIteratorResponse {
         this.shardIterator = shardIterator
     }
 
-    static fromJson(json: any): GetShardIteratorResponse {
-        return new GetShardIteratorResponse(json.ShardIterator)
+    static fromJson(json: JSONObject): GetShardIteratorResponse {
+        return new GetShardIteratorResponse(json.ShardIterator as string)
     }
 }

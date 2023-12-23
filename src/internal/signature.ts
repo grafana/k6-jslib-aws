@@ -126,7 +126,7 @@ export class SignatureV4 {
             request.body = ''
         }
 
-        let payloadHash = this.computePayloadHash(request)
+        const payloadHash = this.computePayloadHash(request)
         if (
             !hasHeader(constants.AMZ_CONTENT_SHA256_HEADER, request.headers) &&
             this.applyChecksum
@@ -380,10 +380,19 @@ export class SignatureV4 {
         shortDate: string
     ): Uint8Array {
         const kSecret: string = credentials.secretAccessKey
+        /**
+         * crypto.hmac returns a value of type `bytes`, which is an alias for
+         * number[]. However, the secret argument to hmac needs to either be
+         * a `string` or ArrayBuffer. The only way to get around this is to
+         * cast the return value of hmac to any, thus, we disable the no-explicit-any
+         * ESLint rule for this function.
+         */
+        /* eslint-disable @typescript-eslint/no-explicit-any */
         const kDate: any = crypto.hmac('sha256', 'AWS4' + kSecret, shortDate, 'binary')
         const kRegion: any = crypto.hmac('sha256', kDate, region, 'binary')
         const kService: any = crypto.hmac('sha256', kRegion, service, 'binary')
         const kSigning: any = crypto.hmac('sha256', kService, 'aws4_request', 'binary')
+        /* eslint-enable @typescript-eslint/no-explicit-any */
 
         return kSigning
     }
@@ -511,7 +520,9 @@ export class SignatureV4 {
             }
 
             if (typeof headers[headerName] === 'string') {
-                canonicalHeaders[canonicalHeaderName] = headers[headerName] = headers[headerName].trim().replace(/\s+/g, ' ')
+                canonicalHeaders[canonicalHeaderName] = headers[headerName] = headers[headerName]
+                    .trim()
+                    .replace(/\s+/g, ' ')
             }
         }
 
@@ -805,7 +816,7 @@ function escapeURI(URI: string): string {
  * @returns {DateInfo} The formatted date.
  */
 function formatDate(date: Date): DateInfo {
-    const longDate = iso8601(date).replace(/[\-:]/g, '')
+    const longDate = iso8601(date).replace(/[-:]/g, '')
     return {
         longDate,
         shortDate: longDate.slice(0, 8),
