@@ -30,7 +30,7 @@ If the jslib-aws does not support the service you need yet, the best way to get 
 8. If the tests depend on a specific pre-existing state of the localstack setup, you can add a dedicated script in the `tests/internal/localstack_init` folder. Localstack will execute all the commands present in this script during its setup phase.
 9. The `npm test` command runs the test suite. This command will build the project and run the tests against the spun-up localstack docker container. The `docker-compose.yml` file contains the configuration for the container.
 10. Once the tests pass, the `src/index.ts` file should export the service class in the `src/index.ts` file so the user can use it.
-11. To get the build system to produce a build of your new service, run `npm run webpack`. Make sure that you commit the new build-related files too.
+11. To get the build system to produce a build of your new service, run `npm run webpack`.
 
 ### Publishing a new version
 
@@ -51,21 +51,18 @@ In a PR:
 
 1. Bump the version in the `package.json` file.
 2. Run the `npm update` command to update the `package-lock.json` file.
-3. Run the `npm run webpack` command to ensure the build system produces the latest distributable files.
-4. Search and replace every occurences of the previous version in the `README.md` file with the new version.
-5. Search and replace every occurences of the previous version in the `/examples` directory with the new version.
+3. Search and replace every occurrence of the previous version in the `README.md` file with the new version.
+4. Search and replace every occurrence of the previous version in the `/examples` directory with the new version.
 
 ### Create a tag and GitHub version
 
 1. Tag the latest main branch's commit with the new version, following the [semantic versioning](https://semver.org/) convention, prefixed with a `v` character, as in: `v0.7.1`.
-2. Create a dedicated GitHub version:
-    1. Pointing to the tag created above
-    2. Using the same name as the tag created above
-    3. Including the build files included in the commit tagged above
+2. The [release.yml](.github/workflows/release.yml) workflow will automatically create a GitHub release with the new version.
 
 ### Publishing the new version
 
-1. Open a PR on the [jslib repository](https://github.com/grafana/jslib.k6.io) using the `build/` directory files following the [new version instructions](https://github.com/grafana/jslib.k6.io#updating-a-version-of-a-js-package-listed-in-packagejson-dependencies).
+1. Open a PR on the [jslib repository](https://github.com/grafana/jslib.k6.io) using the files from the [latest release](https://github.com/grafana/k6-jslib-aws/releases),
+and following the [new version instructions](https://github.com/grafana/jslib.k6.io#updating-a-version-of-a-js-package-listed-in-packagejson-dependencies).
 2. Make sure the k6 documentation website is updated to include the new version of the library:
     1. The documented API should reflect the new version.
     2. All the links to the library should point to the new version.
