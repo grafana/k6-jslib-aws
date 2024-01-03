@@ -36,6 +36,7 @@ export class SystemsManagerClient extends AWSClient {
             credentials: {
                 accessKeyId: awsConfig.accessKeyId,
                 secretAccessKey: awsConfig.secretAccessKey,
+                sessionToken: awsConfig.sessionToken,
             },
             uriEscapePath: true,
             applyChecksum: false,
