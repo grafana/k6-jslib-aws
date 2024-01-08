@@ -30,7 +30,7 @@ If the jslib-aws does not support the service you need yet, the best way to get 
 8. If the tests depend on a specific pre-existing state of the localstack setup, you can add a dedicated script in the `tests/internal/localstack_init` folder. Localstack will execute all the commands present in this script during its setup phase.
 9. The `npm test` command runs the test suite. This command will build the project and run the tests against the spun-up localstack docker container. The `docker-compose.yml` file contains the configuration for the container.
 10. Once the tests pass, the `src/index.ts` file should export the service class in the `src/index.ts` file so the user can use it.
-11. To get the build system to produce a build of your new service, run `npm run webpack`.
+11. To get the build system to produce a build of your new service, run `npm run webpack`. Make sure that you commit the new build-related files too.
 
 ### Publishing a new version
 
