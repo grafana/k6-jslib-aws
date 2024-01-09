@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - v*
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+      - name: Install dependencies
+        run: npm install
+      - name: Build & archive
+        run: |
+          set -x
+          VERSION="${GITHUB_REF##*/}"
+          npm run webpack && tar -zcf "k6-jslib-aws-${VERSION}.tar.gz" -C build .
+      - name: Create release with assets
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -x
+          VERSION="${GITHUB_REF##*/}"
+          gh release create "${VERSION}" "k6-jslib-aws-${VERSION}.tar.gz" "build/*" --target "${GITHUB_SHA}" --title "${VERSION}"
