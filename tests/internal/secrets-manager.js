@@ -2,7 +2,7 @@ import { asyncDescribe } from './helpers.js'
 import {
     SecretsManagerClient,
     SecretsManagerServiceError,
-} from '../../build/secrets-manager.js'
+} from '../../dist/secrets-manager.js'
 
 export async function secretsManagerTestSuite(data) {
     const secretsManagerClient = new SecretsManagerClient(data.awsConfig)

@@ -1,6 +1,6 @@
 import exec from 'k6/execution'
 
-import { AWSConfig, S3Client } from '../build/s3.js'
+import { AWSConfig, S3Client } from '../dist/s3.js'
 
 const testFile = open('./bonjour.txt', 'r')
 

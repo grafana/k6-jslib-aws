@@ -1,5 +1,5 @@
 import { asyncDescribe } from './helpers.js'
-import { KMSClient } from '../../build/kms.js'
+import { KMSClient } from '../../dist/kms.js'
 
 export async function kmsTestSuite(data) {
     const kmsClient = new KMSClient(data.awsConfig)

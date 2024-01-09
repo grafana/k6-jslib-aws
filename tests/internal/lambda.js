@@ -1,5 +1,5 @@
 import { asyncDescribe } from './helpers.js'
-import { LambdaClient } from '../../build/lambda.js'
+import { LambdaClient } from '../../dist/lambda.js'
 
 export async function lambdaTestSuite(data) {
     const lambdaClient = new LambdaClient(data.awsConfig)

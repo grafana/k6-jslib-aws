@@ -1,6 +1,6 @@
 import exec from 'k6/execution'
 
-import { AWSConfig, KMSClient } from '../build/kms.js'
+import { AWSConfig, KMSClient } from '../dist/kms.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,

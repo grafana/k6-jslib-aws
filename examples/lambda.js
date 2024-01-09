@@ -1,4 +1,4 @@
-import { AWSConfig, LambdaClient } from '../build/lambda.js'
+import { AWSConfig, LambdaClient } from '../dist/lambda.js'
 import { check } from 'k6';
 
 const awsConfig = new AWSConfig({

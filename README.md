@@ -417,16 +417,13 @@ The scope of this library has been kept minimal and limited to the use cases we,
 npm install
 
 # Bundle it in preparation for a publication
-npm run-script webpack
+npm run webpack
 
 # Run the tests
 npm test
 ```
 
-### Deploying new versions
-
-1. Build.
-2. Use the `./dist/aws.js` to make a PR to [jslib.k6.io](https://github.com/grafana/jslib.k6.io).
+For further details, take a look at [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Maintainers
 

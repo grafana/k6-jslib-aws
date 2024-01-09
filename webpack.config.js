@@ -25,7 +25,7 @@ module.exports = {
         signature: path.resolve(__dirname, 'src/signature.ts'),
     },
     output: {
-        path: path.resolve(__dirname, 'build'),
+        path: path.resolve(__dirname, 'dist'),
         libraryTarget: 'commonjs',
         filename: '[name].js',
     },

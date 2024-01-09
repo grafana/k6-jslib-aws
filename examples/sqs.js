@@ -1,6 +1,6 @@
 import exec from 'k6/execution'
 
-import { AWSConfig, SQSClient } from '../build/sqs.js'
+import { AWSConfig, SQSClient } from '../dist/sqs.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
