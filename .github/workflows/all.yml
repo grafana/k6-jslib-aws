@@ -23,7 +23,7 @@ jobs:
             - name: Verify the build is up to date
               run: |
                 npm run webpack -- --output-path="${RUNNER_TEMP}/dist"
-                if ! diff -r "${RUNNER_TEMP}/dist" dist; then
+                if ! diff -r "${RUNNER_TEMP}/dist" dist > /dev/null; then
                   echo "Build is out of date, please run 'npm run webpack' and commit the changes"
                   exit 1
                 fi
