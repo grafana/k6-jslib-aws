@@ -22,11 +22,11 @@ jobs:
         run: |
           set -x
           VERSION="${GITHUB_REF##*/}"
-          npm run webpack && tar -zcf "aws-${VERSION}.tar.gz" -C build .
+          npm run webpack && tar -zcf "k6-jslib-aws-${VERSION}.tar.gz" -C build .
       - name: Create release with assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -x
           VERSION="${GITHUB_REF##*/}"
-          gh release create "${VERSION}" "aws-${VERSION}.tar.gz" "build/*" --target "${GITHUB_SHA}" --title "${VERSION}"
+          gh release create "${VERSION}" "k6-jslib-aws-${VERSION}.tar.gz" "build/*" --target "${GITHUB_SHA}" --title "${VERSION}"
