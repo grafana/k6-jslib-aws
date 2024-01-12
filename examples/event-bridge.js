@@ -1,4 +1,4 @@
-import { AWSConfig, EventBridgeClient } from '../build/event-bridge.js';
+import { AWSConfig, EventBridgeClient } from '../dist/event-bridge.js';
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,

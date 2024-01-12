@@ -39,9 +39,9 @@ If the jslib-aws does not support the service you need yet, the best way to get 
 1. The service should have tests.
 2. The service should have documentation.
 3. The service should be re-exported in the `src/index.ts` file.
-4. The service should be exposed in the `aws.js` file in the `build` directory when running the `npm run webpack` command.
-5. The service should produce a dedicated `{service-name}.js` file in the `build` directory when running the `npm run webpack` command.
-6. The service should produce source map files for the dedicated `{service-name}.js` file and the `aws.js` file in the `build` directory when running the `npm run webpack` command.
+4. The service should be exposed in the `aws.js` file in the `dist` directory when running the `npm run webpack` command.
+5. The service should produce a dedicated `{service-name}.js` file in the `dist` directory when running the `npm run webpack` command.
+6. The service should produce source map files for the dedicated `{service-name}.js` file and the `aws.js` file in the `dist` directory when running the `npm run webpack` command.
 
 #### Steps
 

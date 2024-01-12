@@ -1,5 +1,5 @@
 import { asyncDescribe } from './helpers.js'
-import { KinesisClient } from '../../build/kinesis.js'
+import { KinesisClient } from '../../dist/kinesis.js'
 import encoding from 'k6/encoding'
 import { sleep } from 'k6'
 

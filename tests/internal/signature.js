@@ -14,7 +14,7 @@ import {
     HOST_HEADER,
     SIGNING_ALGORITHM_IDENTIFIER,
     UNSIGNED_PAYLOAD,
-} from '../../build/signature.js'
+} from '../../dist/signature.js'
 
 import { describe, expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.0/index.js'
 

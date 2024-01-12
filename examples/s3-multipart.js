@@ -1,7 +1,7 @@
 import crypto from 'k6/crypto'
 import exec from 'k6/execution'
 
-import { AWSConfig, S3Client } from '../build/s3.js'
+import { AWSConfig, S3Client } from '../dist/s3.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,

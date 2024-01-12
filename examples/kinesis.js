@@ -1,4 +1,4 @@
-import { AWSConfig, KinesisClient } from '../build/kinesis.js'
+import { AWSConfig, KinesisClient } from '../dist/kinesis.js'
 import encoding from 'k6/encoding'
 import { fail } from 'k6'
 

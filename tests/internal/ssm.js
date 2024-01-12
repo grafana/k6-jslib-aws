@@ -1,5 +1,5 @@
 import { asyncDescribe } from './helpers.js'
-import { SystemsManagerClient, SystemsManagerServiceError } from '../../build/ssm.js'
+import { SystemsManagerClient, SystemsManagerServiceError } from '../../dist/ssm.js'
 
 export async function ssmTestSuite(data) {
     const systemsManagerClient = new SystemsManagerClient(data.awsConfig)

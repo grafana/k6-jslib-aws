@@ -1,6 +1,6 @@
 import { asyncDescribe } from './helpers.js'
 
-import { S3Client, S3ServiceError } from '../../build/s3.js'
+import { S3Client, S3ServiceError } from '../../dist/s3.js'
 
 export async function s3TestSuite(data) {
     const s3Client = new S3Client(data.awsConfig)

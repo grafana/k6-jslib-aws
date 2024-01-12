@@ -1,6 +1,6 @@
 import { asyncDescribe } from './helpers.js'
 import { b64encode } from 'k6/encoding'
-import { SQSClient, SQSServiceError } from '../../build/sqs.js'
+import { SQSClient, SQSServiceError } from '../../dist/sqs.js'
 
 export async function sqsTestSuite(data) {
     const sqsClient = new SQSClient(data.awsConfig)

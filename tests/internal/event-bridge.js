@@ -1,5 +1,5 @@
 import { asyncDescribe } from './helpers.js'
-import { EventBridgeClient } from '../../build/event-bridge.js'
+import { EventBridgeClient } from '../../dist/event-bridge.js'
 
 export async function eventBridgeTestSuite(data) {
     const eventBridge = new EventBridgeClient(data.awsConfig)
