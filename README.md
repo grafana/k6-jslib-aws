@@ -1,8 +1,10 @@
 # k6-jslib-aws
 
-A library enabling users to interact with AWS resources for k6.io
+A library enabling users to interact with AWS resources within k6 scripts.
 
-This is an AWS client library for k6. It intends to allow interacting with a subset of AWS services in the context of k6 load test script.
+This AWS client library for k6 facilitates interactions with a subset of AWS services in the context of k6 load testing scripts.
+
+Extensive documentation and examples for each of these clients can be found in the [k6 documentation](https://grafana.com/docs/k6/latest/javascript-api/jslib/aws/). Please refer to the documentation for detailed information on how to use the library.
 
 ## Supported services and features
 
@@ -16,9 +18,6 @@ This is an AWS client library for k6. It intends to allow interacting with a sub
 -   [`SSM`](https://grafana.com/docs/k6/latest/javascript-api/jslib/aws/systemsmanagerclient/): allows to retrieve a parameter from AWS Systems Manager
 -   [`V4 signature`](https://grafana.com/docs/k6/latest/javascript-api/jslib/aws/signaturev4/): allows to sign requests to amazon AWS services
 
-## Want to contribute?
-
-We welcome contributions from the community! Please read our [contributing guide](CONTRIBUTING.md) and [code of conduct](CODE_OF_CONDUCT.md) before getting started.
 
 ## Demo
 
@@ -82,29 +81,21 @@ export async function handleSummary(data) {
 }
 ```
 
-## Development
+## Want to contribute?
 
-### Contributing
+The scope of this library is intentionally minimal, focusing on the use cases needed by us and our clients. If the library doesn't yet meet your needs, feel free to extend it and open a pull request. Contributions are welcome.
 
-The scope of this library has been kept minimal and limited to the use cases we, and our clients, need. If the library doesn't cater to your needs just yet, feel free to add it, and open a pull-request. We welcome contributions.
-
-### Build
+###Build
 
 ```bash
-# Install the local dependencies
+# Install local dependencies
 npm install
 
-# Bundle it in preparation for a publication
+# Bundle the library in preparation for publication
 npm run webpack
 
 # Run the tests
 npm test
 ```
 
-For further details, take a look at [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Maintainers
-
-k6-jslib-aws is developped by the k6 core development team. Maintainers of this jslib specifically are the following:
-
--   Théo Crevon, core k6 developer [@oleiade](https://github.com/oleiade/)
+For more details, refer to [CONTRIBUTING.md](./CONTRIBUTING.md).
