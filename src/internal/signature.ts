@@ -99,7 +99,9 @@ export class SignatureV4 {
         //   Standard headers like content-type are optional.
         //   For HTTP/2 requests, you must include the :authority header instead of
         //   the host header. Different services might require other headers."
-        request.headers[constants.HOST_HEADER] = request.endpoint.hostname
+        
+        // Change to accommodate for hostname to be different from host value in header 
+        request.headers[constants.HOST_HEADER] = request.headers.host
 
         // Filter out headers that will be generated and managed by the signing process.
         // If the user provide any of those as part of the HTTPRequest's headers, they
@@ -214,7 +216,9 @@ export class SignatureV4 {
         //   Standard headers like content-type are optional.
         //   For HTTP/2 requests, you must include the :authority header instead of
         //   the host header. Different services might require other headers."
-        request.headers[constants.HOST_HEADER] = originalRequest.endpoint.hostname
+        
+        // Change to accommodate for hostname to be different from host value in header 
+        request.headers[constants.HOST_HEADER] = originalRequest.headers.host
 
         // If the user provided a session token, include it in the signed url query string.
         if (this.credentials.sessionToken) {
