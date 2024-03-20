@@ -85,7 +85,7 @@ export async function handleSummary(data) {
 
 The scope of this library is intentionally minimal, focusing on the use cases needed by us and our clients. If the library doesn't yet meet your needs, feel free to extend it and open a pull request. Contributions are welcome.
 
-###Build
+### Build
 
 ```bash
 # Install local dependencies
