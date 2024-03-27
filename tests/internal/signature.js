@@ -63,6 +63,26 @@ export function signatureV4TestSuite() {
                 )
             })
 
+            describe('#sign should sign requests to target endpoint different from host (proxy use case)', () => {
+              const { headers } = signer.sign(
+                  {
+                      method: 'POST',
+                      endpoint: new Endpoint('https://target-foo.us-bar-1.amazonaws.com'),
+                      path: '/',
+                      headers: {
+                          host: 'foo.us-bar-1.amazonaws.com',
+                      },
+                  },
+                  {
+                      signingDate: new Date('2000-01-01T00:00:00Z'),
+                  }
+              )
+
+              expect(headers[AUTHORIZATION_HEADER]).to.equal(
+                  'AWS4-HMAC-SHA256 Credential=foo/20000101/us-bar-1/foo/aws4_request, SignedHeaders=host;x-amz-content-sha256;x-amz-date, Signature=1e3b24fcfd7655c0c245d99ba7b6b5ca6174eab903ebfbda09ce457af062ad30'
+              )
+          })
+
             describe('#sign should support overriding region and service in the signer instance', () => {
                 const signer = new SignatureV4({
                     credentials: credentials,
@@ -408,6 +428,30 @@ export function signatureV4TestSuite() {
                         '46f0091f3e84cbd4552a184f43830a4f8b42fd18ceaefcdc2c225be1efd9e00e',
                 })
             })
+
+            describe('should presign requests to target endpoint different from host (proxy use case)', () => {
+              const { query } = signer.presign(
+                  {
+                      method: 'POST',
+                      endpoint: new Endpoint('https://target-foo.us-bar-1.amazonaws.com'),
+                      path: '/',
+                      headers: {
+                          host: 'foo.us-bar-1.amazonaws.com',
+                      },
+                  },
+                  presigningOptions
+              )
+
+              expect(query).to.deep.equal({
+                  [AMZ_ALGORITHM_QUERY_PARAM]: SIGNING_ALGORITHM_IDENTIFIER,
+                  [AMZ_CREDENTIAL_QUERY_PARAM]: 'foo/20000101/us-bar-1/foo/aws4_request',
+                  [AMZ_DATE_QUERY_PARAM]: '20000101T000000Z',
+                  [AMZ_EXPIRES_QUERY_PARAM]: presigningOptions.expiresIn.toString(),
+                  [AMZ_SIGNED_HEADERS_QUERY_PARAM]: HOST_HEADER,
+                  [AMZ_SIGNATURE_QUERY_PARAM]:
+                      '46f0091f3e84cbd4552a184f43830a4f8b42fd18ceaefcdc2c225be1efd9e00e',
+              })
+          })
 
             describe('should sign request without hoisting some headers', () => {
                 const options = JSON.parse(JSON.stringify(presigningOptions))
