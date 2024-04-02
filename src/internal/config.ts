@@ -102,12 +102,6 @@ export class AWSConfig {
             )
         }
 
-        if (options.secretAccessKey.length < 16 || options.secretAccessKey.length > 128) {
-            throw new InvalidAWSConfigError(
-                `invalid AWS secret access key; reason: size should be between 16 and 128 characters, got ${options.secretAccessKey.length}`
-            )
-        }
-
         this.region = options.region
         this.accessKeyId = options.accessKeyId
         this.secretAccessKey = options.secretAccessKey
