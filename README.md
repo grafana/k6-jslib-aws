@@ -18,7 +18,6 @@ Extensive documentation and examples for each of these clients can be found in t
 -   [`SSM`](https://grafana.com/docs/k6/latest/javascript-api/jslib/aws/systemsmanagerclient/): allows to retrieve a parameter from AWS Systems Manager
 -   [`V4 signature`](https://grafana.com/docs/k6/latest/javascript-api/jslib/aws/signaturev4/): allows to sign requests to amazon AWS services
 
-
 ## Demo
 
 ```javascript
@@ -26,7 +25,7 @@ import { check } from 'k6'
 import exec from 'k6/execution'
 import http from 'k6/http'
 
-import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.11.0/s3.js'
+import { AWSConfig, S3Client } from 'https://jslib.k6.io/aws/0.11.2/s3.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
