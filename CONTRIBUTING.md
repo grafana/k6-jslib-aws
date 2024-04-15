@@ -1,4 +1,4 @@
-/docs.# Contributing
+# Contributing
 
 ## Adding a new service
 
