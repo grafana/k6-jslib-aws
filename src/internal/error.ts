@@ -53,3 +53,13 @@ export class AWSError extends Error {
         }
     }
 }
+
+export class NetworkError extends Error {
+    code: number;
+
+    constructor(message: string, code: number) {
+        super(message)
+        this.name = 'NetworkError'
+        this.code = code
+    }
+}
