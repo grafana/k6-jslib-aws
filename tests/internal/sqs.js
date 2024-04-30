@@ -103,7 +103,10 @@ export async function sqsTestSuite(data) {
         ]
 
         // Act
-        const messageBatchResponse = await sqsClient.sendMessageBatch(standardQueueUrl, messageBatch)
+        const messageBatchResponse = await sqsClient.sendMessageBatch(
+            standardQueueUrl,
+            messageBatch
+        )
 
         // Assert
         const test0Md5 = 'f6f4061a1bddc1c04d8109b39f581270'
