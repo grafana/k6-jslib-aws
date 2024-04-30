@@ -52,12 +52,18 @@ export class SQSClient extends AWSClient {
     ): Promise<MessageResponse> {
         const action = 'SendMessage'
 
-        const body = {QueueUrl: queueUrl, ...this._combineQueueMessageBodyAndOptions(messageBody, options)};
+        const body = {
+            QueueUrl: queueUrl,
+            ...this._combineQueueMessageBodyAndOptions(messageBody, options),
+        }
 
         const res = await this._sendRequest(action, body)
 
         const parsed = res.json() as JSONObject
-        return new MessageResponse(parsed['MessageId'] as string, parsed['MD5OfMessageBody'] as string)
+        return new MessageResponse(
+            parsed['MessageId'] as string,
+            parsed['MD5OfMessageBody'] as string
+        )
     }
 
     /**
@@ -74,22 +80,34 @@ export class SQSClient extends AWSClient {
         const action = 'SendMessageBatch'
 
         const requestMessageEntries = entries.map((entry) => {
-            let requestMessageEntry = this._combineQueueMessageBodyAndOptions(entry.messageBody, entry.messageOptions);
+            let requestMessageEntry = this._combineQueueMessageBodyAndOptions(
+                entry.messageBody,
+                entry.messageOptions
+            )
             requestMessageEntry = { ...requestMessageEntry, Id: entry.messageId }
             return requestMessageEntry
         })
 
-        const body = {QueueUrl: queueUrl, Entries: requestMessageEntries}
+        const body = { QueueUrl: queueUrl, Entries: requestMessageEntries }
 
         const res = await this._sendRequest(action, body)
-  
+
         const parsed = res.json() as JSONObject
-        const successful: JSONObject[] = parsed['Successful'] as JSONObject[] || []
-        const failed: JSONObject[] = parsed['Failed'] as JSONObject[] || []
+        const successful: JSONObject[] = (parsed['Successful'] as JSONObject[]) || []
+        const failed: JSONObject[] = (parsed['Failed'] as JSONObject[]) || []
 
         return {
-            successful: successful.map((entry) => new MessageResponse(entry['MessageId'] as string, entry['MD5OfMessageBody'] as string)),
-            failed: failed.map((entry) => new SQSServiceError(entry['Message'] as string, entry['Code'] as string, action)),
+            successful: successful.map(
+                (entry) =>
+                    new MessageResponse(
+                        entry['MessageId'] as string,
+                        entry['MD5OfMessageBody'] as string
+                    )
+            ),
+            failed: failed.map(
+                (entry) =>
+                    new SQSServiceError(entry['Message'] as string, entry['Code'] as string, action)
+            ),
         }
     }
 
@@ -130,7 +148,10 @@ export class SQSClient extends AWSClient {
         }
     }
 
-    private _combineQueueMessageBodyAndOptions(messageBody: string, options?: SendMessageOptions): object {
+    private _combineQueueMessageBodyAndOptions(
+        messageBody: string,
+        options?: SendMessageOptions
+    ): object {
         let body: object = { MessageBody: messageBody }
 
         if (options === undefined) {
@@ -151,13 +172,13 @@ export class SQSClient extends AWSClient {
             for (const [name, attribute] of Object.entries(options.messageAttributes)) {
                 const valueParameterSuffix =
                     attribute.type === 'Binary' ? 'BinaryValue' : 'StringValue'
-                    messageAttributes[name] = {
+                messageAttributes[name] = {
                     DataType: attribute.type,
                 }
                 messageAttributes[name][valueParameterSuffix] = attribute.value
             }
-                
-            body = { ...body, MessageAttributes: messageAttributes}
+
+            body = { ...body, MessageAttributes: messageAttributes }
         }
 
         if (typeof options.delaySeconds !== 'undefined') {
@@ -167,8 +188,10 @@ export class SQSClient extends AWSClient {
         return body
     }
 
-    private async _sendRequest(action: SQSOperation, body: object): Promise<RefinedResponse<ResponseType>>
-    {
+    private async _sendRequest(
+        action: SQSOperation,
+        body: object
+    ): Promise<RefinedResponse<ResponseType>> {
         const signedRequest = this.signature.sign(
             {
                 method: 'POST',
@@ -203,7 +226,8 @@ export class SQSClient extends AWSClient {
 
         const error = response.json() as JSONObject
 
-        const errorMessage: string = (error.Message as string) || (error.message as string) || (error.__type as string)
+        const errorMessage: string =
+            (error.Message as string) || (error.message as string) || (error.__type as string)
 
         switch (error.__type) {
             case 'InvalidSignatureException':
