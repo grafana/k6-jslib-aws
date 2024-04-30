@@ -46,17 +46,17 @@ export async function sqsTestSuite(data) {
             messageAttributes: {
                 'test-string': {
                     type: 'String',
-                    value: 'test'
+                    value: 'test',
                 },
                 'test-number': {
                     type: 'Number',
-                    value: '23'
+                    value: '23',
                 },
                 'test-binary': {
                     type: 'Binary',
-                    value: b64encode('test')
-                }
-            }
+                    value: b64encode('test'),
+                },
+            },
         })
 
         // Assert
@@ -91,5 +91,51 @@ export async function sqsTestSuite(data) {
         // Assert
         expect(sendMessageToNonExistentQueueError).to.not.be.undefined
         expect(sendMessageToNonExistentQueueError).to.be.an.instanceOf(SQSServiceError)
+    })
+
+    await asyncDescribe('sqs.sendMessageBatch successful', async (expect) => {
+        // Arrange
+        const queues = await sqsClient.listQueues()
+        const standardQueueUrl = queues.urls[0]
+        const messageBatch = [
+            { messageId: '0', messageBody: 'test0' },
+            { messageId: '1', messageBody: 'test1' },
+        ]
+
+        // Act
+        const messageBatchResponse = await sqsClient.sendMessageBatch(standardQueueUrl, messageBatch)
+
+        // Assert
+        const test0Md5 = 'f6f4061a1bddc1c04d8109b39f581270'
+        const test1Md5 = '5a105e8b9d40e1329780d62ea2265d8a'
+
+        expect(messageBatchResponse.successful).to.have.length(2)
+        expect(messageBatchResponse.successful[0].id).to.be.a('string')
+        expect(messageBatchResponse.successful[0].bodyMD5).to.equal(test0Md5)
+
+        expect(messageBatchResponse.successful[1].id).to.be.a('string')
+        expect(messageBatchResponse.successful[1].bodyMD5).to.equal(test1Md5)
+    })
+
+    await asyncDescribe('sqs.sendMessageBatch ids not distinct', async (expect) => {
+        // Arrange
+        const queues = await sqsClient.listQueues()
+        const standardQueueUrl = queues.urls[0]
+        const messageBatch = [
+            { messageId: '0', messageBody: 'test0' },
+            { messageId: '0', messageBody: 'test0' },
+        ]
+
+        let batchEntryIdsNotDistinctError
+        try {
+            // Act
+            await sqsClient.sendMessageBatch(standardQueueUrl, messageBatch)
+        } catch (error) {
+            batchEntryIdsNotDistinctError = error
+        }
+
+        // Assert
+        expect(batchEntryIdsNotDistinctError).to.not.be.undefined
+        expect(batchEntryIdsNotDistinctError).to.be.an.instanceOf(SQSServiceError)
     })
 }
