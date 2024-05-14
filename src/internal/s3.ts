@@ -28,7 +28,12 @@ export class S3Client extends AWSClient {
                 secretAccessKey: this.awsConfig.secretAccessKey,
                 sessionToken: this.awsConfig.sessionToken,
             },
-            uriEscapePath: false,
+
+            // S3 requires the URI path to be escaped
+            uriEscapePath: true,
+
+            // Signing S3 requests requires the payload to be hashed
+            // and the checksum to be included in the request headers.
             applyChecksum: true,
         })
     }
