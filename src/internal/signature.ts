@@ -163,6 +163,11 @@ export class SignatureV4 {
         // If a request path was provided, add it to the URL
         let url = request.endpoint.href
         if (request.path) {
+            // Ensure there is a trailing slash at the end of the URL
+            // so that appending the path does not result in a malformed URL.
+            url = url.endsWith('/') ? url : url + '/'
+
+            // Append the path to the URL
             url += request.path
         }
 
@@ -266,6 +271,11 @@ export class SignatureV4 {
         // If a request path was provided, add it to the URL
         let url = request.endpoint.href
         if (request.path) {
+            // Ensure there is a trailing slash at the end of the URL
+            // so that appending the path does not result in a malformed URL.
+            url = url.endsWith('/') ? url : url + '/'
+
+            // Append the path to the URL
             url += request.path
         }
 
