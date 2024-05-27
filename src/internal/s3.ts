@@ -30,7 +30,7 @@ export class S3Client extends AWSClient {
             },
 
             // S3 requires the URI path to be escaped
-            uriEscapePath: true,
+            uriEscapePath: false,
 
             // Signing S3 requests requires the payload to be hashed
             // and the checksum to be included in the request headers.
