@@ -1,11 +1,7 @@
 import http from 'k6/http'
 import { check } from 'k6'
 
-import {
-    AWSConfig,
-    SignatureV4,
-    AMZ_CONTENT_SHA256_HEADER,
-} from '../dist/aws.js'
+import { AWSConfig, Endpoint, SignatureV4, AMZ_CONTENT_SHA256_HEADER } from '../dist/aws.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
@@ -39,19 +35,16 @@ export default function () {
             method: 'GET',
 
             /**
-             * The network protocol we will use to make the request.
+             * The endpoint of the service we will be making the request to.
+             *
+             * The endpoint is instantiated from a URL string, of the format: `{scheme}://{hostname}[:{port}]`
              */
-            protocol: 'https',
-
-            /**
-             * The hostname of the service we will be making the request to.
-             */
-            hostname: 'test-jslib-aws.s3.us-east-1.amazonaws.com',
+            endpoint: new Endpoint('https://s3.us-east-1.amazonaws.com'),
 
             /**
              * The path of the request.
              */
-            path: '/bonjour.txt',
+            path: '/my-bucket/bonjour.txt',
 
             /**
              * The headers we will be sending in the request.
@@ -64,7 +57,8 @@ export default function () {
             headers: { [AMZ_CONTENT_SHA256_HEADER]: 'UNSIGNED-PAYLOAD' },
 
             /**
-             * Whether the URI should be escaped or not.
+             * Whether the path should be escaped or not (consult the AWS signature V4
+             * documentation for more details).
              */
             uriEscapePath: false,
 
