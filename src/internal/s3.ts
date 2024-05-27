@@ -109,7 +109,7 @@ export class S3Client extends AWSClient {
             {
                 method: method,
                 endpoint: this.endpoint,
-                path: `/${bucketName}/`,
+                path: encodeURI(`/${bucketName}/`),
                 query: {
                     'list-type': '2',
                     prefix: prefix || '',
@@ -176,13 +176,13 @@ export class S3Client extends AWSClient {
             {
                 method: method,
                 endpoint: this.endpoint,
-                path: `/${bucketName}/${objectKey}`,
+                path: encodeURI(`/${bucketName}/${objectKey}`),
                 headers: {},
             },
             {}
         )
 
-        const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
+        const res = await http.asyncRequest(method, signedRequest.url, null, {
             headers: signedRequest.headers,
         })
         this._handle_error('GetObject', res)
@@ -224,7 +224,7 @@ export class S3Client extends AWSClient {
             {
                 method: method,
                 endpoint: this.endpoint,
-                path: `/${bucketName}/${objectKey}`,
+                path: encodeURI(`/${bucketName}/${objectKey}`),
                 headers: {
                     Host: this.endpoint.host,
                     ...(params?.contentDisposition && {
@@ -263,7 +263,7 @@ export class S3Client extends AWSClient {
             {
                 method: method,
                 endpoint: this.endpoint,
-                path: `/${bucketName}/${objectKey}`,
+                path: encodeURI(`/${bucketName}/${objectKey}`),
                 headers: {},
             },
             {}
@@ -300,7 +300,7 @@ export class S3Client extends AWSClient {
             {
                 method: method,
                 endpoint: bucketEndpoint,
-                path: `/${destinationKey}`,
+                path: encodeURI(`/${destinationKey}`),
                 headers: {
                     'x-amz-copy-source': `${sourceBucket}/${sourceKey}`,
                 },
@@ -335,7 +335,7 @@ export class S3Client extends AWSClient {
             {
                 method: method,
                 endpoint: bucketEndpoint,
-                path: `/${objectKey}`,
+                path: encodeURI(`/${objectKey}`),
                 headers: {},
                 query: { uploads: '' },
             },
@@ -381,7 +381,7 @@ export class S3Client extends AWSClient {
             {
                 method: method,
                 endpoint: bucketEndpoint,
-                path: `/${objectKey}`,
+                path: encodeURI(`/${objectKey}`),
                 headers: {},
                 body: data,
                 query: {
@@ -432,7 +432,7 @@ export class S3Client extends AWSClient {
             {
                 method: method,
                 endpoint: bucketEndpoint,
-                path: `/${objectKey}`,
+                path: encodeURI(`/${objectKey}`),
                 headers: {},
                 body: body,
                 query: {
@@ -468,7 +468,7 @@ export class S3Client extends AWSClient {
             {
                 method: method,
                 endpoint: bucketEndpoint,
-                path: `/${objectKey}`,
+                path: encodeURI(`/${objectKey}`),
                 headers: {},
                 query: {
                     uploadId: `${uploadId}`,
