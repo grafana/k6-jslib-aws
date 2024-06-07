@@ -58,6 +58,10 @@ const testData = {
                 key: 'delete.txt',
                 body: 'Delete me in a test!',
             },
+            {
+                key: 'mandrill.tiff',
+                body: open('../localstack/init/testdata/s3/mandrill.tiff', 'b'),
+            },
         ],
     },
 
