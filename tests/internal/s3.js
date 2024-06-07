@@ -11,7 +11,7 @@ export async function s3TestSuite(data) {
     s3Client.endpoint = s3Endpoint
 
     await asyncDescribe('s3.listBuckets', async (expect) => {
-        let buckets;
+        let buckets
         // Act
         buckets = await s3Client.listBuckets()
 

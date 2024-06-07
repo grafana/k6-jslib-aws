@@ -171,7 +171,11 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    async getObject(bucketName: string, objectKey: string, responseType: string = 'text'): Promise<S3Object> {
+    async getObject(
+        bucketName: string,
+        objectKey: string,
+        responseType: string = 'text'
+    ): Promise<S3Object> {
         // Prepare request
         const method = 'GET'
 
