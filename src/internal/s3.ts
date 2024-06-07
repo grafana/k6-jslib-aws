@@ -62,6 +62,7 @@ export class S3Client extends AWSClient {
 
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
+            responseType: 'text',
         })
         this._handle_error('ListBuckets', res)
 
@@ -121,6 +122,7 @@ export class S3Client extends AWSClient {
 
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
+            responseType: 'text',
         })
         this._handle_error('ListObjectsV2', res)
 
@@ -164,11 +166,12 @@ export class S3Client extends AWSClient {
      *
      * @param  {string} bucketName - The bucket name containing the object.
      * @param  {string} objectKey - Key of the object to get.
+     * @param  {string} responseType - The desired interpretation of the response body ('text' or 'binary')
      * @return {S3Object} - returns the content of the fetched S3 Object.
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    async getObject(bucketName: string, objectKey: string): Promise<S3Object> {
+    async getObject(bucketName: string, objectKey: string, responseType: string = 'text'): Promise<S3Object> {
         // Prepare request
         const method = 'GET'
 
@@ -184,6 +187,7 @@ export class S3Client extends AWSClient {
 
         const res = await http.asyncRequest(method, signedRequest.url, null, {
             headers: signedRequest.headers,
+            responseType: responseType,
         })
         this._handle_error('GetObject', res)
 
@@ -344,6 +348,7 @@ export class S3Client extends AWSClient {
 
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
+            responseType: 'text',
         })
         this._handle_error('CreateMultipartUpload', res)
 
