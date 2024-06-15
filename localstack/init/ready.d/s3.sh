@@ -5,7 +5,7 @@ BUCKET="test-jslib-aws"
 # The localstack exposes its init script in the `/etc/localstack/init` folder.
 # For convinience we've setup a `testdata` folder in the same directory.
 testdata_folder="/etc/localstack/init/testdata/s3"
-testdata_files="bonjour.txt tschuss.txt delete.txt mandrill.tiff"
+testdata_files="bonjour.txt tschuss.txt delete.txt z-load-impact.png"
 
 # Create the test-jslib-aws bucket
 awslocal s3api create-bucket \

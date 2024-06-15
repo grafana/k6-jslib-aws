@@ -1,4 +1,3 @@
-import { bytes } from 'k6'
 import { parseHTML } from 'k6/html'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
@@ -166,7 +165,7 @@ export class S3Client extends AWSClient {
      *
      * @param  {string} bucketName - The bucket name containing the object.
      * @param  {string} objectKey - Key of the object to get.
-     * @param  {string} responseType - The desired interpretation of the response body ('text' or 'binary')
+     * @param  {string} responseType - The desired interpretation of the response body ('text' or 'binary').
      * @return {S3Object} - returns the content of the fetched S3 Object.
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
@@ -191,7 +190,7 @@ export class S3Client extends AWSClient {
 
         const res = await http.asyncRequest(method, signedRequest.url, null, {
             headers: signedRequest.headers,
-            responseType: responseType,
+            responseType: responseType as ResponseType,
         })
         this._handle_error('GetObject', res)
 
@@ -546,7 +545,7 @@ export class S3Object {
     etag: string
     size: number
     storageClass: StorageClass
-    data?: string | bytes | null
+    data?: string | ArrayBuffer | null
 
     /**
      * Create an S3 Object
@@ -556,7 +555,7 @@ export class S3Object {
      * @param  {string} etag - S3 object's etag
      * @param  {number} size - S3 object's size
      * @param  {StorageClass} storageClass - S3 object's storage class
-     * @param  {string | bytes | null} data=null - S3 Object's data
+     * @param  {string | ArrayBuffer | null} data=null - S3 Object's data
      */
     constructor(
         key: string,
@@ -564,7 +563,7 @@ export class S3Object {
         etag: string,
         size: number,
         storageClass: StorageClass,
-        data?: string | bytes | null
+        data?: string | ArrayBuffer | null
     ) {
         this.key = key
         this.lastModified = lastModified

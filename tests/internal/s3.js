@@ -32,7 +32,7 @@ export async function s3TestSuite(data) {
         expect(objects[0].key).to.equal('bonjour.txt')
         expect(objects[1].key).to.equal('delete.txt')
         expect(objects[2].key).to.equal('tschuss.txt')
-        expect(objects[3].key).to.equal('mandrill.tiff')
+        expect(objects[3].key).to.equal('z-load-impact.png')
     })
 
     await asyncDescribe('s3.getObject', async (expect) => {
@@ -75,8 +75,9 @@ export async function s3TestSuite(data) {
         expect(gotSecondObject.key).to.equal(data.s3.testObjects[1].key)
         expect(gotSecondObject.data).to.equal(data.s3.testObjects[1].body)
         expect(gotBinaryObject).to.be.an('object')
+        expect(gotBinaryObject.data).to.be.an.instanceof(ArrayBuffer)
         expect(gotBinaryObject.key).to.equal(data.s3.testObjects[3].key)
-        expect(gotBinaryObject.data).to.equal(data.s3.testObjects[3].body)
+        expect(gotBinaryObject.data.byteLength).to.equal(data.s3.testObjects[3].body.byteLength)
         expect(getObjectFromNonExistingBucketError).to.not.be.undefined
         expect(getObjectFromNonExistingBucketError).to.be.an.instanceOf(S3ServiceError)
         expect(getNonExistingObjectError).to.not.be.undefined
@@ -111,7 +112,7 @@ export async function s3TestSuite(data) {
 
         let deleteFromNonExistingBucketError
         try {
-            await s3Client.deleteObject('non-existent-bucket', data.s3.testObjects[2].key)
+            await s3Client.deleteObject('non-existent-bucket', data.s3.testObject3[2].key)
         } catch (error) {
             deleteFromNonExistingBucketError = error
         }

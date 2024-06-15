@@ -59,8 +59,8 @@ const testData = {
                 body: 'Delete me in a test!',
             },
             {
-                key: 'mandrill.tiff',
-                body: open('../localstack/init/testdata/s3/mandrill.tiff', 'b'),
+                key: 'z-load-impact.png',
+                body: open('../localstack/init/testdata/s3/z-load-impact.png', 'b'),
             },
         ],
     },

@@ -13,7 +13,7 @@
         "@babel/plugin-transform-block-scoping": "^7.14.1",
         "@babel/preset-env": "^7.4.4",
         "@babel/preset-typescript": "^7.16.7",
-        "@types/k6": "^0.45.0",
+        "@types/k6": "^0.51.0",
         "@types/uuid": "^3.4.0",
         "@types/webpack": "^5.28.0",
         "@typescript-eslint/eslint-plugin": "^6.11.0",
