@@ -112,7 +112,7 @@ export async function s3TestSuite(data) {
 
         let deleteFromNonExistingBucketError
         try {
-            await s3Client.deleteObject('non-existent-bucket', data.s3.testObject3[2].key)
+            await s3Client.deleteObject('non-existent-bucket', data.s3.testObjects[2].key)
         } catch (error) {
             deleteFromNonExistingBucketError = error
         }
