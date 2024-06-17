@@ -9,6 +9,7 @@
     },
     "globals": {
         // Allow specific global types present in the k6 JS runtime natively
+        "ArrayBuffer": "readonly",
         "Uint8Array": "readonly",
         "Set": "readonly",
         "console": "readonly",

@@ -58,6 +58,10 @@ const testData = {
                 key: 'delete.txt',
                 body: 'Delete me in a test!',
             },
+            {
+                key: 'z-load-impact.png',
+                body: open('../localstack/init/testdata/s3/z-load-impact.png', 'b'),
+            },
         ],
     },
 
