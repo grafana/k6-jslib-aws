@@ -81,7 +81,7 @@ export class LambdaClient extends AWSClient {
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(res)
+        this.handleError(res)
 
         const logResult = res.headers['X-Amz-Log-Result']
         const response = {
@@ -99,12 +99,11 @@ export class LambdaClient extends AWSClient {
         }
     }
 
-    private _handle_error(response: RefinedResponse<ResponseType | undefined>) {
-        const errorCode: number = response.error_code
-        const errorMessage: string = response.error
 
-        if (errorMessage == '' && errorCode === 0) {
-            return
+    protected handleError(response: RefinedResponse<ResponseType | undefined>, operation?: string): boolean {
+        const errored = super.handleError(response, operation);
+        if (!errored) {
+            return false;
         }
 
         const awsError = AWSError.parse(response)
@@ -115,6 +114,8 @@ export class LambdaClient extends AWSClient {
             default:
                 throw awsError
         }
+
+        return true
     }
 }
 

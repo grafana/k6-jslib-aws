@@ -69,7 +69,7 @@ export class KMSClient extends AWSClient {
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(KMSOperation.ListKeys, res)
+        this.handleError(res, KMSOperation.ListKeys)
 
         const json: JSONArray = res.json('Keys') as JSONArray
         return json.map((k) => KMSKey.fromJSON(k as JSONObject))
@@ -114,17 +114,18 @@ export class KMSClient extends AWSClient {
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(KMSOperation.GenerateDataKey, res)
+        this.handleError(res, KMSOperation.GenerateDataKey)
 
         return KMSDataKey.fromJSON(res.json() as JSONObject)
     }
 
-    _handle_error(operation: KMSOperation, response: RefinedResponse<ResponseType | undefined>) {
-        const errorCode = response.error_code
-        if (errorCode === 0) {
-            return
+    protected handleError(response: RefinedResponse<ResponseType | undefined>, operation?: string): boolean {
+        const errored = super.handleError(response, operation);
+        if (!errored) {
+            return false
         }
 
+        const errorCode = response.error_code
         const error = response.json() as JSONObject
         if (errorCode >= 1400 && errorCode <= 1499) {
             // In the event of certain errors, the message is not set.
@@ -138,16 +139,18 @@ export class KMSClient extends AWSClient {
             }
 
             // Otherwise throw a standard service error
-            throw new KMSServiceError(errorMessage, error.__type as string, operation)
+            throw new KMSServiceError(errorMessage, error.__type as string, operation as KMSOperation)
         }
 
         if (errorCode === 1500) {
             throw new KMSServiceError(
                 'An error occured on the server side',
                 'InternalServiceError',
-                operation
+                operation as KMSOperation
             )
         }
+
+        return true
     }
 }
 

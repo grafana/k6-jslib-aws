@@ -70,7 +70,7 @@ export class SecretsManagerClient extends AWSClient {
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(SecretsManagerOperation.ListSecrets, res)
+        this.handleError(res, SecretsManagerOperation.ListSecrets)
         const json: JSONArray = res.json('SecretList') as JSONArray
 
         return json.map((s) => Secret.fromJSON(s as JSONObject))
@@ -103,7 +103,7 @@ export class SecretsManagerClient extends AWSClient {
             headers: signedRequest.headers,
         })
 
-        this._handle_error(SecretsManagerOperation.GetSecretValue, res)
+        this.handleError(res, SecretsManagerOperation.GetSecretValue)
 
         return Secret.fromJSON(res.json() as JSONObject)
     }
@@ -162,7 +162,7 @@ export class SecretsManagerClient extends AWSClient {
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(SecretsManagerOperation.CreateSecret, res)
+        this.handleError(res, SecretsManagerOperation.CreateSecret)
 
         return Secret.fromJSON(res.json() as JSONObject)
     }
@@ -202,7 +202,7 @@ export class SecretsManagerClient extends AWSClient {
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(SecretsManagerOperation.PutSecretValue, res)
+        this.handleError(res, SecretsManagerOperation.PutSecretValue)
 
         return Secret.fromJSON(res.json() as JSONObject)
     }
@@ -251,18 +251,17 @@ export class SecretsManagerClient extends AWSClient {
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(SecretsManagerOperation.DeleteSecret, res)
+        this.handleError(res, SecretsManagerOperation.DeleteSecret)
     }
 
-    _handle_error(
-        operation: SecretsManagerOperation,
-        response: RefinedResponse<ResponseType | undefined>
-    ) {
-        const errorCode = response.error_code
-        if (errorCode === 0) {
-            return
+
+    protected handleError(response: RefinedResponse<ResponseType | undefined>, operation?: string): boolean {
+        const errored = super.handleError(response, operation)
+        if (!errored) {
+            return false
         }
 
+        const errorCode = response.error_code
         const error = response.json() as JSONObject
         if (errorCode >= 1400 && errorCode <= 1499) {
             // In the event of certain errors, the message is not set.
@@ -276,16 +275,18 @@ export class SecretsManagerClient extends AWSClient {
             }
 
             // Otherwise throw a standard service error
-            throw new SecretsManagerServiceError(errorMessage, error.__type as string, operation)
+            throw new SecretsManagerServiceError(errorMessage, error.__type as string, operation as SecretsManagerOperation)
         }
 
         if (errorCode === 1500) {
             throw new SecretsManagerServiceError(
                 'An error occured on the server side',
                 'InternalServiceError',
-                operation
+                operation as SecretsManagerOperation
             )
         }
+
+        return true
     }
 }
 
