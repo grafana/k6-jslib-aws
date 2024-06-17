@@ -5,3 +5,4 @@ export {
     LambdaInvocationError,
     LambdaClient
 } from './internal/lambda'
+export { AWSError, NetworkError} from './internal/error'

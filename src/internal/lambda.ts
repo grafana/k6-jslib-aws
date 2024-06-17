@@ -3,7 +3,7 @@ import encoding from 'k6/encoding'
 
 import { AWSClient } from './client'
 import { AWSConfig } from './config'
-import { AWSError } from './error'
+import { AWSError, NetworkError } from './error'
 import { InvalidSignatureError, SignatureV4 } from './signature'
 import { AMZ_TARGET_HEADER } from './constants'
 import { HTTPHeaders, HTTPMethod, QueryParameterBag } from './http'
@@ -107,6 +107,10 @@ export class LambdaClient extends AWSClient {
             return
         }
 
+        if (errorCode < 1400 || errorCode >= 1600 ) {
+            throw new NetworkError(errorMessage, errorCode)
+        }
+        
         const awsError = AWSError.parse(response)
         switch (awsError.code) {
             case 'AuthorizationHeaderMalformed':
