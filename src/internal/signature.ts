@@ -100,9 +100,8 @@ export class SignatureV4 {
         //   For HTTP/2 requests, you must include the :authority header instead of
         //   the host header. Different services might require other headers."
         if (!request.headers[constants.HOST_HEADER]) {
-          request.headers[constants.HOST_HEADER] = request.endpoint.hostname
-      }
-        
+            request.headers[constants.HOST_HEADER] = request.endpoint.hostname
+        }
 
         // Filter out headers that will be generated and managed by the signing process.
         // If the user provide any of those as part of the HTTPRequest's headers, they
@@ -163,6 +162,13 @@ export class SignatureV4 {
         // If a request path was provided, add it to the URL
         let url = request.endpoint.href
         if (request.path) {
+            // Ensure the URI and the request path are properly concatenated
+            // by adding a trailing slash to the URI if it's missing.
+            if (!url.endsWith('/') && !request.path.startsWith('/')) {
+                url += '/'
+            }
+
+            // Append the path to the URL
             url += request.path
         }
 
@@ -218,8 +224,8 @@ export class SignatureV4 {
         //   For HTTP/2 requests, you must include the :authority header instead of
         //   the host header. Different services might require other headers."
         if (!request.headers[constants.HOST_HEADER]) {
-          request.headers[constants.HOST_HEADER] = originalRequest.endpoint.hostname
-      }
+            request.headers[constants.HOST_HEADER] = originalRequest.endpoint.hostname
+        }
 
         // If the user provided a session token, include it in the signed url query string.
         if (this.credentials.sessionToken) {
@@ -266,6 +272,11 @@ export class SignatureV4 {
         // If a request path was provided, add it to the URL
         let url = request.endpoint.href
         if (request.path) {
+            // Ensure there is a trailing slash at the end of the URL
+            // so that appending the path does not result in a malformed URL.
+            url = url.endsWith('/') ? url : url + '/'
+
+            // Append the path to the URL
             url += request.path
         }
 
