@@ -107,7 +107,7 @@ export class SQSClient extends AWSClient {
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
-        this._handleError('SendMessage', res)
+        this.handleError(res, 'SendMessage')
 
         const parsed = res.html('SendMessageResponse > SendMessageResult')
         return new Message(parsed.find('MessageId').text(), parsed.find('MD5OfMessageBody').text())
@@ -161,7 +161,7 @@ export class SQSClient extends AWSClient {
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || '', {
             headers: signedRequest.headers,
         })
-        this._handleError('ListQueues', res)
+        this.handleError(res, 'ListQueues')
 
         const parsed = res.html()
         return {
@@ -173,15 +173,11 @@ export class SQSClient extends AWSClient {
         }
     }
 
-    private _handleError(
-        operation: SQSOperation,
-        response: RefinedResponse<ResponseType | undefined>
-    ) {
-        const errorCode: number = response.error_code
-        const errorMessage: string = response.error
 
-        if (errorMessage == '' && errorCode === 0) {
-            return
+    protected handleError(response: RefinedResponse<ResponseType | undefined>, operation?: string): boolean {
+        const errored = super.handleError(response, operation);
+        if (!errored) {
+            return false
         }
 
         const awsError = AWSError.parseXML(response.body as string)
@@ -189,8 +185,10 @@ export class SQSClient extends AWSClient {
             case 'AuthorizationHeaderMalformed':
                 throw new InvalidSignatureError(awsError.message, awsError.code)
             default:
-                throw new SQSServiceError(awsError.message, awsError.code || 'unknown', operation)
+                throw new SQSServiceError(awsError.message, awsError.code || 'unknown', operation as SQSOperation)
         }
+
+        return true
     }
 }
 
