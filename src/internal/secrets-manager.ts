@@ -1,13 +1,24 @@
 import { JSONArray, JSONObject } from 'k6'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
-import { v4 as uuidv4 } from 'uuid'
 import { AWSClient } from './client'
 import { AWSConfig } from './config'
 import { AMZ_TARGET_HEADER } from './constants'
 import { AWSError } from './error'
 import { HTTPHeaders, HTTPMethod } from './http'
 import { InvalidSignatureError, SignatureV4 } from './signature'
+
+const fakeUuid = function () {
+    let result = ''
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    const charactersLength = characters.length
+    let counter = 0
+    while (counter < 32) {
+        result += characters.charAt(Math.floor(Math.random() * charactersLength))
+        counter += 1
+    }
+    return result
+}
 
 /**
  * Class allowing to interact with Amazon AWS's SecretsManager service
@@ -133,7 +144,7 @@ export class SecretsManagerClient extends AWSClient {
         versionID?: string,
         tags?: Array<object>
     ): Promise<Secret> {
-        versionID = versionID || uuidv4()
+        versionID = versionID || fakeUuid()
 
         const signedRequest = this.signature.sign(
             {
@@ -179,7 +190,7 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {InvalidSignatureError}
      */
     async putSecretValue(id: string, secret: string, versionID?: string): Promise<Secret> {
-        versionID = versionID || uuidv4()
+        versionID = versionID || fakeUuid()
 
         const signedRequest = this.signature.sign(
             {
