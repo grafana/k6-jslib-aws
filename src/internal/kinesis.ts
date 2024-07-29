@@ -281,23 +281,18 @@ export class KinesisClient extends AWSClient {
             headers: signedRequest.headers,
         })
 
-        this._handle_error(action, res)
+        this.handleError(res, action)
         return res
     }
 
-    /**
-     * If the response is an error, throw an error
-     *
-     * @param {string} operation - The name of the operation that was called.
-     * @param response - RefinedResponse<ResponseType | undefined>
-     * @returns The response is being returned.
-     */
-    _handle_error(operation: string, response: RefinedResponse<ResponseType | undefined>) {
-        const errorCode = response.error_code
-        if (errorCode === 0) {
-            return
+
+    protected handleError(response: RefinedResponse<ResponseType | undefined>, operation?: string): boolean {
+        const errored = super.handleError(response, operation);
+        if (!errored) {
+            return false
         }
 
+        const errorCode = response.error_code
         const error = response.json() as JSONObject
         if (errorCode >= 1400 && errorCode <= 1499) {
             // In the event of certain errors, the message is not set.
@@ -311,16 +306,18 @@ export class KinesisClient extends AWSClient {
             }
 
             // Otherwise throw a standard service error
-            throw new KinesisServiceError(errorMessage, error.__type as string, operation)
+            throw new KinesisServiceError(errorMessage, error.__type as string, operation || 'Unknown')
         }
 
         if (errorCode === 1500) {
             throw new KinesisServiceError(
                 'An error occured on the server side',
                 'InternalServiceError',
-                operation
+                operation || 'Unknown'
             )
         }
+
+        return true
     }
 }
 

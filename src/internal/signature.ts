@@ -231,7 +231,6 @@ export class SignatureV4 {
         if (this.credentials.sessionToken) {
             request.query[constants.AMZ_TOKEN_QUERY_PARAM] = this.credentials.sessionToken
         }
-
         // Add base signing query parameters to the request, as described in the documentation
         // @see https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
         request.query[constants.AMZ_ALGORITHM_QUERY_PARAM] = constants.SIGNING_ALGORITHM_IDENTIFIER
@@ -270,7 +269,7 @@ export class SignatureV4 {
         )
 
         // If a request path was provided, add it to the URL
-        let url = request.endpoint.href
+        let url = originalRequest.endpoint.href
         if (request.path) {
             // Ensure there is a trailing slash at the end of the URL
             // so that appending the path does not result in a malformed URL.

@@ -73,20 +73,18 @@ export class SystemsManagerClient extends AWSClient {
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
-        this._handle_error(SystemsManagerOperation.GetParameter, res)
+        this.handleError(res, SystemsManagerOperation.GetParameter)
 
         return SystemsManagerParameter.fromJSON(res.json() as JSONObject)
     }
 
-    _handle_error(
-        operation: SystemsManagerOperation,
-        response: RefinedResponse<ResponseType | undefined>
-    ) {
-        const errorCode = response.error_code
-        if (errorCode === 0) {
-            return
+    protected handleError(response: RefinedResponse<ResponseType | undefined>, operation?: string): boolean {
+        const errored = super.handleError(response, operation);
+        if (!errored) {
+            return false
         }
 
+        const errorCode = response.error_code
         const error = response.json() as JSONObject
         if (errorCode >= 1400 && errorCode <= 1499) {
             // In the event of certain errors, the message is not set.
@@ -100,16 +98,18 @@ export class SystemsManagerClient extends AWSClient {
             }
 
             // Otherwise throw a standard service error
-            throw new SystemsManagerServiceError(errorMessage, error.__type as string, operation)
+            throw new SystemsManagerServiceError(errorMessage, error.__type as string, operation as SystemsManagerOperation)
         }
 
         if (errorCode === 1500) {
             throw new SystemsManagerServiceError(
                 'An error occured on the server side',
                 'InternalServiceError',
-                operation
+                operation as SystemsManagerOperation
             )
         }
+
+        return true
     }
 }
 
