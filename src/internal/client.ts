@@ -1,6 +1,21 @@
+import { RefinedResponse, ResponseType } from 'k6/http'
+
 import { AWSConfig } from './config'
 import { Endpoint } from './endpoint'
 import { HTTPHeaders } from './http'
+import {
+    // AWSError,
+    GeneralErrorKind,
+    DNSErrorKind,
+    TCPErrorKind,
+    TLSErrorKind,
+    HTTP2ErrorKind,
+    GeneralError,
+    DNSError,
+    TCPError,
+    TLSError,
+    HTTP2Error,
+} from './error'
 
 /**
  * Class allowing to build requests targeting AWS APIs
@@ -59,6 +74,64 @@ export class AWSClient {
      */
     public set endpoint(endpoint: Endpoint) {
         this._endpoint = endpoint
+    }
+
+    /**
+     * Handles the k6 http response potential errors produced when making a
+     * request to an AWS service.
+     *
+     * Importantly, this method only handles errors that emerge from the k6 http client itself, and
+     * won't handle AWS specific errors. To handle AWS specific errors, client classes are
+     * expected to implement their own error handling logic by overriding this method.
+     *
+     * @param response {RefinedResponse<ResponseType | undefined>} the response received by the k6 http client
+     * @param operation {string | undefined } the name of the operation that was attempted when the error occurred
+     * @param {boolean} returns true if an error was handled, false otherwise
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    protected handleError(response: RefinedResponse<ResponseType | undefined>, operation?: string): boolean {
+        const status: number = response.status
+        const errorCode: number = response.error_code
+        const errorMessage: string = response.error
+
+        // We consider codes 200-299 as success.
+        //
+        // We do not consider 3xx as success as some services such as S3 can use
+        // 301 to indicate a bucket not found
+        if (status >= 200 && status < 300 && errorMessage == '' && errorCode === 0) {
+            return false
+        }
+
+        switch (errorCode) {
+            case GeneralErrorKind.GenericError:
+            case GeneralErrorKind.NonTCPNetworkError:
+            case GeneralErrorKind.InvalidURL:
+            case GeneralErrorKind.HTTPRequestTimeout:
+                throw new GeneralError(errorCode);
+            case DNSErrorKind.GenericDNSError:
+            case DNSErrorKind.NoIPFound:
+            case DNSErrorKind.BlacklistedIP:
+            case DNSErrorKind.BlacklistedHostname:
+                throw new DNSError(errorCode);
+            case TCPErrorKind.GenericTCPError:
+            case TCPErrorKind.BrokenPipeOnWrite:
+            case TCPErrorKind.UnknownTCPError:
+            case TCPErrorKind.GeneralTCPDialError:
+            case TCPErrorKind.DialTimeoutError:
+            case TCPErrorKind.DialConnectionRefused:
+            case TCPErrorKind.DialUnknownError:
+            case TCPErrorKind.ResetByPeer:
+                throw new TCPError(errorCode);
+            case TLSErrorKind.GeneralTLSError:
+            case TLSErrorKind.UnknownAuthority:
+            case TLSErrorKind.CertificateHostnameMismatch:
+                throw new TLSError(errorCode);
+            case HTTP2ErrorKind.GenericHTTP2Error:
+            case HTTP2ErrorKind.GeneralHTTP2GoAwayError:
+                throw new HTTP2Error(errorCode);
+        }
+
+        return true
     }
 }
 
