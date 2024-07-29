@@ -11,14 +11,14 @@ export async function s3TestSuite(data) {
     s3Client.endpoint = s3Endpoint
 
     await asyncDescribe('s3.listBuckets', async (expect) => {
-        let buckets;
+        let buckets
         // Act
         buckets = await s3Client.listBuckets()
 
         // Assert
         expect(buckets).to.be.an('array')
         // Because other tests may have created buckets, we can't assume there is only one bucket.
-        expect(buckets).to.have.lengthOf.above(1)
+        expect(buckets).to.have.lengthOf.least(1)
         expect(buckets.map((b) => b.name)).to.contain(data.s3.testBucketName)
     })
 
