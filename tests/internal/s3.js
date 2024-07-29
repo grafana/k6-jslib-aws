@@ -73,6 +73,21 @@ export async function s3TestSuite(data) {
         expect(getNonExistingObjectError).to.be.an.instanceOf(S3ServiceError)
     })
 
+    await asyncDescribe('s3.getObject [binary]', async (expect) => {
+        // Act
+        const gotBinaryObject = await s3Client.getObject(
+            data.s3.testBucketName,
+            data.s3.testObjects[0].key,
+            { Accept: 'application/octet-stream' }
+        )
+
+        // Assert
+        expect(gotBinaryObject).to.be.an('object')
+        expect(gotBinaryObject.key).to.equal(data.s3.testObjects[0].key)
+        expect(gotBinaryObject.data).to.be.an('ArrayBuffer')
+        expect(gotBinaryObject.data.byteLength).to.equal(data.s3.testObjects[0].body.length)
+    })
+
     await asyncDescribe('s3.putObject', async (expect) => {
         // Act
         let putObectError
