@@ -1,7 +1,7 @@
 import { JSONArray, JSONObject } from 'k6'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
+import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js'
 
-import { v4 as uuidv4 } from 'uuid'
 import { AWSClient } from './client'
 import { AWSConfig } from './config'
 import { AMZ_TARGET_HEADER } from './constants'
@@ -133,7 +133,7 @@ export class SecretsManagerClient extends AWSClient {
         versionID?: string,
         tags?: Array<object>
     ): Promise<Secret> {
-        versionID = versionID || uuidv4()
+        versionID = versionID ?? uuidv4(true)
 
         const signedRequest = this.signature.sign(
             {
@@ -179,7 +179,7 @@ export class SecretsManagerClient extends AWSClient {
      * @throws {InvalidSignatureError}
      */
     async putSecretValue(id: string, secret: string, versionID?: string): Promise<Secret> {
-        versionID = versionID || uuidv4()
+        versionID = versionID ?? uuidv4(true)
 
         const signedRequest = this.signature.sign(
             {
