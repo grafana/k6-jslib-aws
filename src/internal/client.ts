@@ -4,7 +4,6 @@ import { AWSConfig } from './config'
 import { Endpoint } from './endpoint'
 import { HTTPHeaders } from './http'
 import {
-    // AWSError,
     GeneralErrorKind,
     DNSErrorKind,
     TCPErrorKind,
