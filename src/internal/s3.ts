@@ -1,4 +1,3 @@
-import { bytes } from 'k6'
 import { parseHTML } from 'k6/html'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
