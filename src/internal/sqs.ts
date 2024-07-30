@@ -235,6 +235,40 @@ export class SQSClient extends AWSClient {
             default:
                 throw new SQSServiceError(errorMessage, error.__type as string, operation)
         }
+
+        return true
+    }
+
+    protected handleError(
+        response: RefinedResponse<ResponseType | undefined>,
+        operation?: string
+    ): boolean {
+        const errored = super.handleError(response)
+        if (!errored) {
+            return false
+        }
+
+        const errorCode: number = response.error_code
+
+        if (errorCode === 0) {
+            return false
+        }
+
+        const error = response.json() as JSONObject
+
+        const errorMessage: string =
+            (error.Message as string) || (error.message as string) || (error.__type as string)
+
+        switch (error.__type) {
+            case 'InvalidSignatureException':
+                throw new InvalidSignatureError(errorMessage, error.__type)
+            default:
+                throw new SQSServiceError(
+                    errorMessage,
+                    error.__type as string,
+                    operation as SQSOperation
+                )
+        }
     }
 }
 

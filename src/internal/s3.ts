@@ -63,7 +63,7 @@ export class S3Client extends AWSClient {
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
-        this._handle_error('ListBuckets', res)
+        this.handleError(res, 'ListBuckets')
 
         const buckets: Array<S3Bucket> = []
 
@@ -122,7 +122,7 @@ export class S3Client extends AWSClient {
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
-        this._handle_error('ListObjectsV2', res)
+        this.handleError(res, 'ListObjectsV2')
 
         const objects: Array<S3Object> = []
 
@@ -185,7 +185,7 @@ export class S3Client extends AWSClient {
         const res = await http.asyncRequest(method, signedRequest.url, null, {
             headers: signedRequest.headers,
         })
-        this._handle_error('GetObject', res)
+        this.handleError(res, 'GetObject')
 
         return new S3Object(
             objectKey,
@@ -243,7 +243,7 @@ export class S3Client extends AWSClient {
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body, {
             headers: signedRequest.headers,
         })
-        this._handle_error('PutObject', res)
+        this.handleError(res, 'PutObject')
     }
 
     /**
@@ -272,7 +272,7 @@ export class S3Client extends AWSClient {
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
-        this._handle_error('DeleteObject', res)
+        this.handleError(res, 'DeleteObject')
     }
 
     /**
@@ -312,7 +312,7 @@ export class S3Client extends AWSClient {
             headers: signedRequest.headers,
         })
 
-        this._handle_error('CopyObject', res)
+        this.handleError(res, 'CopyObject')
     }
 
     /**
@@ -345,7 +345,7 @@ export class S3Client extends AWSClient {
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
-        this._handle_error('CreateMultipartUpload', res)
+        this.handleError(res, 'CreateMultipartUpload')
 
         return new S3MultipartUpload(
             objectKey,
@@ -395,7 +395,7 @@ export class S3Client extends AWSClient {
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
-        this._handle_error('UploadPart', res)
+        this.handleError(res, 'UploadPart')
 
         return new S3Part(partNumber, res.headers['Etag'])
     }
@@ -445,8 +445,7 @@ export class S3Client extends AWSClient {
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
-
-        this._handle_error('CompleteMultipartUpload', res)
+        this.handleError(res, 'CompleteMultipartUpload')
     }
 
     /**
@@ -480,18 +479,15 @@ export class S3Client extends AWSClient {
         const res = await http.asyncRequest(method, signedRequest.url, signedRequest.body || null, {
             headers: signedRequest.headers,
         })
-        this._handle_error('AbortMultipartUpload', res)
+        this.handleError(res, 'AbortMultipartUpload')
     }
 
-    _handle_error(operation: S3Operation, response: RefinedResponse<ResponseType | undefined>) {
-        const status: number = response.status
-        const errorCode: number = response.error_code
-        const errorMessage: string = response.error
-
-        // We consider codes 200-299 as success
-        if (status >= 200 && status < 300 && errorMessage == '' && errorCode === 0) {
-            return
-        }
+     handleError(response: RefinedResponse<ResponseType | undefined>, operation?: string): boolean {
+        // As we are overriding the AWSClient method: call the parent class handleError method
+         const errored = super.handleError(response);
+         if (!errored) {
+             return false;
+         }
 
         // A 301 response is returned when the bucket is not found.
         // Generally meaning that either the bucket name is wrong or the
@@ -499,8 +495,9 @@ export class S3Client extends AWSClient {
         //
         // See: https://github.com/grafana/k6/issues/2474
         // See: https://github.com/golang/go/issues/49281
-        if (status == 301 || (errorMessage && errorMessage.startsWith('301'))) {
-            throw new S3ServiceError('Resource not found', 'ResourceNotFound', operation)
+        const errorMessage: string = response.error
+        if (response.status == 301 || (errorMessage && errorMessage.startsWith('301'))) {
+            throw new S3ServiceError('Resource not found', 'ResourceNotFound', operation as S3Operation)
         }
 
         const awsError = AWSError.parseXML(response.body as string)
@@ -508,7 +505,7 @@ export class S3Client extends AWSClient {
             case 'AuthorizationHeaderMalformed':
                 throw new InvalidSignatureError(awsError.message, awsError.code)
             default:
-                throw new S3ServiceError(awsError.message, awsError.code || 'unknown', operation)
+                throw new S3ServiceError(awsError.message, awsError.code || 'unknown', operation as S3Operation)
         }
     }
 }
