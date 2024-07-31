@@ -1,4 +1,3 @@
-import { bytes } from 'k6'
 import { parseHTML } from 'k6/html'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 
@@ -168,7 +167,11 @@ export class S3Client extends AWSClient {
      * @throws  {S3ServiceError}
      * @throws  {InvalidSignatureError}
      */
-    async getObject(bucketName: string, objectKey: string): Promise<S3Object> {
+    async getObject(
+        bucketName: string,
+        objectKey: string,
+        additionalHeaders: object = {}
+    ): Promise<S3Object> {
         // Prepare request
         const method = 'GET'
 
@@ -177,13 +180,27 @@ export class S3Client extends AWSClient {
                 method: method,
                 endpoint: this.endpoint,
                 path: encodeURI(`/${bucketName}/${objectKey}`),
-                headers: {},
+                headers: {
+                    ...additionalHeaders,
+                },
             },
             {}
         )
 
+        // If the Accept header is set to 'application/octet-stream', we want to
+        // return the response as binary data.
+        let responseType: ResponseType = 'text'
+        if (
+            'Accept' in additionalHeaders &&
+            additionalHeaders['Accept'] !== undefined &&
+            additionalHeaders['Accept'] === 'application/octet-stream'
+        ) {
+            responseType = 'binary'
+        }
+
         const res = await http.asyncRequest(method, signedRequest.url, null, {
             headers: signedRequest.headers,
+            responseType: responseType as ResponseType,
         })
         this.handleError(res, 'GetObject')
 
@@ -534,7 +551,7 @@ export class S3Object {
     etag: string
     size: number
     storageClass: StorageClass
-    data?: string | bytes | null
+    data?: string | ArrayBuffer | null
 
     /**
      * Create an S3 Object
@@ -544,7 +561,7 @@ export class S3Object {
      * @param  {string} etag - S3 object's etag
      * @param  {number} size - S3 object's size
      * @param  {StorageClass} storageClass - S3 object's storage class
-     * @param  {string | bytes | null} data=null - S3 Object's data
+     * @param  {string | ArrayBuffer | null} data=null - S3 Object's data
      */
     constructor(
         key: string,
@@ -552,7 +569,7 @@ export class S3Object {
         etag: string,
         size: number,
         storageClass: StorageClass,
-        data?: string | bytes | null
+        data?: string | ArrayBuffer | null
     ) {
         this.key = key
         this.lastModified = lastModified
