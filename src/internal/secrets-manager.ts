@@ -68,6 +68,7 @@ export class SecretsManagerClient extends AWSClient {
         )
 
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
+            ...this.baseRequestParams,
             headers: signedRequest.headers,
         })
         this.handleError(res, SecretsManagerOperation.ListSecrets)
@@ -100,6 +101,7 @@ export class SecretsManagerClient extends AWSClient {
         )
 
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
+            ...this.baseRequestParams,
             headers: signedRequest.headers,
         })
 
@@ -160,6 +162,7 @@ export class SecretsManagerClient extends AWSClient {
         // headers['X-Amz-Target'] = `${this.serviceName}.CreateSecret`
 
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
+            ...this.baseRequestParams,
             headers: signedRequest.headers,
         })
         this.handleError(res, SecretsManagerOperation.CreateSecret)
@@ -200,6 +203,7 @@ export class SecretsManagerClient extends AWSClient {
         )
 
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
+            ...this.baseRequestParams,
             headers: signedRequest.headers,
         })
         this.handleError(res, SecretsManagerOperation.PutSecretValue)
@@ -249,6 +253,7 @@ export class SecretsManagerClient extends AWSClient {
         )
 
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
+            ...this.baseRequestParams,
             headers: signedRequest.headers,
         })
         this.handleError(res, SecretsManagerOperation.DeleteSecret)

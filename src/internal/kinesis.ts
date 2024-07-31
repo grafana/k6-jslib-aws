@@ -278,6 +278,7 @@ export class KinesisClient extends AWSClient {
         )
 
         const res = await http.asyncRequest('POST', signedRequest.url, signedRequest.body, {
+            ...this.baseRequestParams,
             headers: signedRequest.headers,
         })
 

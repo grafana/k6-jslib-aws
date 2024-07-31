@@ -68,6 +68,7 @@ export class EventBridgeClient extends AWSClient {
         )
 
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
+            ...this.baseRequestParams,
             headers: signedRequest.headers,
         })
         this.handleError(res, EventBridgeOperation.PutEvents)
