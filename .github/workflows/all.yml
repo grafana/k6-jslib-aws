@@ -23,16 +23,19 @@ jobs:
             - name: Install Go
               uses: actions/setup-go@v4
               with:
-                  go-version: 1.x
+                  go-version: 1.22.x
 
             - name: Install k6
               run: go install go.k6.io/k6@latest
 
-            - name: Build the stack
-              run: docker-compose up -d
+            - name: Build the docker-compose stack
+              uses: hoverkraft-tech/compose-action@v2.0.1
+              with:
+                up-flags: "-d"
+                down-flags: "-v"
 
             - name: Wait for the localstack scripts to have been applied
               run: sleep 30
 
             - name: Test
-              run: npm run ci-test
+              run: npm run test:ci
