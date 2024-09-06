@@ -32,9 +32,9 @@
     "engines": {},
     "scripts": {
         "webpack": "./node_modules/.bin/webpack",
-        "test": "npm run webpack && docker-compose down && docker-compose up --build -d && sleep 15 && k6 run tests/index.js",
-        "lint": "npx eslint src tests examples",
-        "ci-test": "npm run webpack && k6 run tests/index.js"
+        "test": "npm run webpack && docker-compose down -v && docker-compose up --build -d && sleep 15 && k6 run -q tests/index.js",
+        "test:ci": "npm run webpack && k6 run -q tests/index.js",
+        "lint": "npx eslint src tests examples"
     },
     "keywords": [
         "k6",

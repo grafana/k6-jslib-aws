@@ -86,7 +86,15 @@ const testData = {
     },
 }
 
-export default async function testSuite() {
+export const options = {
+    thresholds: {
+        // As we're essentially unit testing here, we want to make sure that
+        // the rate of successful checks is 100%
+        checks: ['rate>=1'],
+    }
+}
+
+export default async function() {
     signatureV4TestSuite()
     await s3TestSuite(testData)
     await secretsManagerTestSuite(testData)
