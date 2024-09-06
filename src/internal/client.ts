@@ -38,7 +38,7 @@ export class AWSClient {
     // AWS Client classes can override this value if they want to receive the response body
     // as a different type ('binary' for instance, e.g. S3Client.getObject).
     //
-    // See #45: import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js'
+    // See #45: https://github.com/grafana/k6-jslib-aws/issues/45
     readonly baseRequestParams: Params = {
         responseType: 'text',
     }
