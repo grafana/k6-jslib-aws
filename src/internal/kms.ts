@@ -67,6 +67,7 @@ export class KMSClient extends AWSClient {
         )
 
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
+            ...this.baseRequestParams,
             headers: signedRequest.headers,
         })
         this.handleError(res, KMSOperation.ListKeys)
@@ -112,6 +113,7 @@ export class KMSClient extends AWSClient {
         )
 
         const res = await http.asyncRequest(this.method, signedRequest.url, signedRequest.body, {
+            ...this.baseRequestParams,
             headers: signedRequest.headers,
         })
         this.handleError(res, KMSOperation.GenerateDataKey)

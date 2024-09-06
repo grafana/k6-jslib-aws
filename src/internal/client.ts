@@ -1,4 +1,4 @@
-import { RefinedResponse, ResponseType } from 'k6/http'
+import { RefinedResponse, ResponseType, Params } from 'k6/http'
 
 import { AWSConfig } from './config'
 import { Endpoint } from './endpoint'
@@ -26,6 +26,22 @@ import {
 export class AWSClient {
     readonly awsConfig: AWSConfig
     readonly serviceName: string
+
+    // Because jslib-aws is mostly used as a way to setup or feed k6 tests, and
+    // we want the jslib-aws to be able to disregard k6's discardResponseBodies: meaning
+    // that for instance, even when setting discardResponseBodies to true in the k6 options, using
+    // s3.getObject still receives the underlying response body and returns data to the user.
+    //
+    // To achieve this, we set the responseType to 'text' in the baseRequestParams, as it
+    // will lead the http module to ignore the discardResponseBodies option.
+    //
+    // AWS Client classes can override this value if they want to receive the response body
+    // as a different type ('binary' for instance, e.g. S3Client.getObject).
+    //
+    // See #45: https://github.com/grafana/k6-jslib-aws/issues/45
+    readonly baseRequestParams: Params = {
+        responseType: 'text',
+    }
 
     private _endpoint?: Endpoint
 
