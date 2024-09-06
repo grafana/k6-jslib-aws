@@ -1,6 +1,6 @@
 import { randomIntBetween } from 'https://jslib.k6.io/k6-utils/1.2.0/index.js'
 
-import { AWSConfig } from '../dist/aws.js'
+import { AWSConfig } from '../dist/index.js'
 
 import { s3TestSuite } from './internal/s3.js'
 import { secretsManagerTestSuite } from './internal/secrets-manager.js'
