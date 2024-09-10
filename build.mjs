@@ -38,7 +38,7 @@ const buildOptions = {
     external: [
         'k6', // Mark the 'k6' package as external
         'k6/*',       // Mark all submodules of 'k6' as external
-        "/^https?://" // Regex to mark all HTTP imports as external
+        "/^https:\\/\\/jslib\\.k6\\.io\\/.*" // Regex to mark all jslib imports as external
     ],
 
     // By default, no minification is applied
