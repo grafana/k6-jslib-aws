@@ -1,7 +1,13 @@
 // Re-Export public symbols
 export { AWSConfig, InvalidAWSConfigError } from './internal/config'
-export { InvalidSignatureError } from './internal/signature'
 export {
-    LambdaInvocationError,
-    LambdaClient
-} from './internal/lambda'
+    AWSError,
+    NetworkError,
+    GeneralError,
+    DNSError,
+    TCPError,
+    TLSError,
+    HTTP2Error,
+} from './internal/error'
+export { InvalidSignatureError } from './internal/signature'
+export { LambdaInvocationError, LambdaClient } from './internal/lambda'

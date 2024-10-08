@@ -1,4 +1,13 @@
 // Re-Export public symbols
+export {
+    AWSError,
+    NetworkError,
+    GeneralError,
+    DNSError,
+    TCPError,
+    TLSError,
+    HTTP2Error,
+} from './internal/error'
 export { InvalidSignatureError } from './internal/signature'
 export { AWSConfig, InvalidAWSConfigError } from './internal/config'
 export { AMZ_CONTENT_SHA256_HEADER, UNSIGNED_PAYLOAD } from './internal/constants'

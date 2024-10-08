@@ -1,15 +1,12 @@
-// Import only symbols we wish to re-export publicly
-import { AWSConfig, InvalidAWSConfigError } from './internal/config'
-import { InvalidSignatureError } from './internal/signature'
-import { KinesisClient, KinesisServiceError } from './internal/kinesis'
-
-// Re-Export public symbols
+export { AWSConfig, InvalidAWSConfigError } from './internal/config'
 export {
-    InvalidSignatureError,
-    // Aws Config
-    AWSConfig,
-    InvalidAWSConfigError,
-    // Kinesis
-    KinesisClient,
-    KinesisServiceError,
-}
+    AWSError,
+    NetworkError,
+    GeneralError,
+    DNSError,
+    TCPError,
+    TLSError,
+    HTTP2Error,
+} from './internal/error'
+export { InvalidSignatureError } from './internal/signature'
+export { KinesisClient, KinesisServiceError } from './internal/kinesis'
