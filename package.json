@@ -31,9 +31,11 @@
     },
     "engines": {},
     "scripts": {
-        "webpack": "./node_modules/.bin/webpack",
-        "test": "npm run webpack && docker-compose down -v && docker-compose up --build -d && sleep 15 && k6 run -q tests/index.js",
-        "test:ci": "npm run webpack && k6 run -q tests/index.js",
+        "build": "npm run build:js && npm run build:types",
+        "build:js": "./node_modules/.bin/webpack",
+        "build:types": "tsc --project tsconfig.build.json --emitDeclarationOnly",
+        "test": "npm run build:js && docker-compose down -v && docker-compose up --build -d && sleep 15 && k6 run -q tests/index.js",
+        "test:ci": "npm run build && k6 run -q tests/index.js",
         "lint": "npx eslint src tests examples"
     },
     "keywords": [

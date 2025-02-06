@@ -30,7 +30,7 @@ If the jslib-aws does not support the service you need yet, the best way to get 
 8. If the tests depend on a specific pre-existing state of the localstack setup, you can add a dedicated script in the `tests/internal/localstack_init` folder. Localstack will execute all the commands present in this script during its setup phase.
 9. The `npm test` command runs the test suite. This command will build the project and run the tests against the spun-up localstack docker container. The `docker-compose.yml` file contains the configuration for the container.
 10. Once the tests pass, the `src/index.ts` file should export the service class in the `src/index.ts` file so the user can use it.
-11. To get the build system to produce a build of your new service, run `npm run webpack`. Make sure that you commit the new build-related files too.
+11. To get the build system to produce a build of your new service, run `npm run build`. Make sure that you commit the new build-related files too.
 
 ### Publishing a new version
 
@@ -39,9 +39,9 @@ If the jslib-aws does not support the service you need yet, the best way to get 
 1. The service should have tests.
 2. The service should have documentation.
 3. The service should be re-exported in the `src/index.ts` file.
-4. The service should be exposed in the `aws.js` file in the `dist` directory when running the `npm run webpack` command.
-5. The service should produce a dedicated `{service-name}.js` file in the `dist` directory when running the `npm run webpack` command.
-6. The service should produce source map files for the dedicated `{service-name}.js` file and the `aws.js` file in the `dist` directory when running the `npm run webpack` command.
+4. The service should be exposed in the `aws.js` file in the `dist` directory when running the `npm run build` command.
+5. The service should produce a dedicated `{service-name}.js` file in the `dist` directory when running the `npm run build` command.
+6. The service should produce source map files for the dedicated `{service-name}.js` file and the `aws.js` file in the `dist` directory when running the `npm run build` command.
 
 #### Steps
 
@@ -51,7 +51,7 @@ In a PR:
 
 1. Bump the version in the `package.json` file.
 2. Run the `npm update` command to update the `package-lock.json` file.
-3. Run the `npm run webpack` command to ensure the build system produces the latest distributable files.
+3. Run the `npm run build` command to ensure the build system produces the latest distributable files.
 4. Search and replace every occurrence of the previous version in the `README.md` file with the new version.
 5. Search and replace every occurrence of the previous version in the `/examples` directory with the new version.
 
