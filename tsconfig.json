@@ -1,5 +1,7 @@
 {
     "compilerOptions": {
+      "outDir": "dist/",
+        
       "target": "es5",
       "moduleResolution": "node",
       "module": "commonjs",
@@ -12,7 +14,6 @@
       "noImplicitThis": true,
   
       "noUnusedLocals": true,
-      "noUnusedParameters": true,
       "noImplicitReturns": true,
       "noFallthroughCasesInSwitch": true,
   

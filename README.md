@@ -91,7 +91,7 @@ The scope of this library is intentionally minimal, focusing on the use cases ne
 npm install
 
 # Bundle the library in preparation for publication
-npm run webpack
+npm run build
 
 # Run the tests
 npm test

@@ -1,5 +1,6 @@
 import { JSONArray, JSONObject } from 'k6'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
+// @ts-expect-error k6-utils doesn't have types yet
 import { uuidv4 } from 'https://jslib.k6.io/k6-utils/1.4.0/index.js'
 
 import { AWSClient } from './client'
