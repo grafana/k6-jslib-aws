@@ -273,8 +273,10 @@ export class SignatureV4 {
         if (request.path) {
             // Ensure there is a trailing slash at the end of the URL
             // so that appending the path does not result in a malformed URL.
-            url = url?.endsWith('/') ? url : url + '/'
-
+            if (!url.endsWith('/') && !request.path.startsWith('/')) { 
+                url += '/'
+            }
+            
             // Append the path to the URL
             url += request.path
         }
