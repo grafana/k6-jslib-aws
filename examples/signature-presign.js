@@ -1,7 +1,7 @@
 import http from 'k6/http'
 import { check } from 'k6'
 
-import { AWSConfig, Endpoint, SignatureV4, AMZ_CONTENT_SHA256_HEADER } from '../dist/aws.js'
+import { AWSConfig, Endpoint, SignatureV4, AMZ_CONTENT_SHA256_HEADER } from '../dist/index.js'
 
 const awsConfig = new AWSConfig({
     region: __ENV.AWS_REGION,
