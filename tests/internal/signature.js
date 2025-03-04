@@ -405,7 +405,40 @@ export function signatureV4TestSuite() {
                 signingDate: new Date('2000-01-01T00:00:00Z'),
             }
 
-            describe('should sign requests without bodies', () => {
+            describe('should pre-sign requests without doubling encoding the url terminal slash', () => {
+                const { query, url } = signer.presign(
+                    {
+                        method: 'POST',
+                        endpoint: new Endpoint('https://foo.us-bar-1.amazonaws.com/'),
+                        path: '/foo.txt',
+                        headers: {},
+                    },
+                    presigningOptions
+                )
+
+                const expectedURL =                     'https://foo.us-bar-1.amazonaws.com/foo.txt'+
+                    '?X-Amz-Algorithm=AWS4-HMAC-SHA256'+
+                    '&X-Amz-Credential=foo%2F20000101%2Fus-bar-1%2Ffoo%2Faws4_request'+
+                    '&X-Amz-Date=20000101T000000Z'+
+                    '&X-Amz-Expires=1800'+
+                    '&X-Amz-Signature=c910d7bc4a4f9d5f3db5b0c266d78ddf2c61d0a77628d3adc342e2159ce19895'+
+                    '&X-Amz-SignedHeaders=host'
+
+                console.log(`url: ${url}`)
+                console.log(`expected url: ${expectedURL}`)
+                expect(url).to.equal(expectedURL)
+                expect(query).to.deep.equal({
+                    [AMZ_ALGORITHM_QUERY_PARAM]: SIGNING_ALGORITHM_IDENTIFIER,
+                    [AMZ_CREDENTIAL_QUERY_PARAM]: 'foo/20000101/us-bar-1/foo/aws4_request',
+                    [AMZ_DATE_QUERY_PARAM]: '20000101T000000Z',
+                    [AMZ_EXPIRES_QUERY_PARAM]: presigningOptions.expiresIn.toString(),
+                    [AMZ_SIGNED_HEADERS_QUERY_PARAM]: HOST_HEADER,
+                    [AMZ_SIGNATURE_QUERY_PARAM]:
+                        'c910d7bc4a4f9d5f3db5b0c266d78ddf2c61d0a77628d3adc342e2159ce19895'
+                })
+            })
+
+            describe('should presign requests without bodies', () => {
                 const { query } = signer.presign(
                     {
                         method: 'POST',
