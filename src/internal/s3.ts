@@ -236,7 +236,7 @@ export class S3Client extends AWSClient {
         objectKey: string,
         data: string | ArrayBuffer,
         params?: PutObjectParams
-    ): Promise<void> {
+    ): Promise<S3UploadedObject> {
         // Prepare request
         const method = 'PUT'
 
@@ -264,7 +264,10 @@ export class S3Client extends AWSClient {
             ...this.baseRequestParams,
             headers: signedRequest.headers,
         })
+
         this.handleError(res, 'PutObject')
+
+        return S3UploadedObject.fromResponse(res, objectKey)
     }
 
     /**
@@ -590,6 +593,139 @@ export class S3Object {
     }
 }
 
+/**
+ * Class representing an uploaded S3 Object, resulting from putObject operation.
+ */
+export class S3UploadedObject {
+    key: string
+
+    /**
+     * Entity tag for the uploaded object.
+     *
+     * General purpose buckets - To ensure that data is not corrupted traversing the network, for objects where the ETag is the MD5 digest of the object, you can calculate the MD5 while putting an object to Amazon S3 and compare the returned ETag to the calculated MD5 value.
+     *
+     * Directory buckets - The ETag for the object in a directory bucket isn't the MD5 digest of the object.
+     */
+    etag: string
+
+    /**
+     * The Base64 encoded, 32-bit CRC32C checksum of the object. This checksum is only present if the checksum was uploaded with the object.
+     */
+    crc32?: string
+
+    /** 
+     * The Base64 encoded, 32-bit CRC32C checksum of the object. This checksum is only present if the checksum was uploaded with the object.
+     */
+    crc32c?: string
+
+    /**
+     * The Base64 encoded, 64-bit CRC64NVME checksum of the object.
+     * 
+     * This header is present if the object was uploaded with the CRC64NVME checksum algorithm, or if it was uploaded without a checksum.
+     */
+    crc64nvme?: string
+
+    /**
+     * The Base64 encoded, 160-bit SHA1 digest of the object. This will only be present if the object was uploaded with the SHA1 checksum algorithm.
+     */
+    sha1?: string
+
+    /**
+     * The Base64 encoded, 256-bit SHA256 digest of the object. This will only be present if the object was uploaded with the SHA256 checksum algorithm.
+     */
+    sha256?: string
+
+    /**
+     * The type of checksum used to upload the object.
+     */
+    checksumType: S3ChecksumType
+
+    /**
+     * The size of the object in bytes. The value is only present if you append to an object.
+     */
+    size?: number
+
+
+    constructor(
+        key: string,
+        etag: string,
+        options?: {
+            crc32?: string;
+            crc32c?: string;
+            crc64nvme?: string;
+            sha1?: string;
+            sha256?: string;
+            checksumType?: S3ChecksumType;
+            size?: number;
+        }
+    ) {
+        this.key = key;
+        this.etag = etag;
+        this.crc32 = options?.crc32;
+        this.crc32c = options?.crc32c;
+        this.crc64nvme = options?.crc64nvme;
+        this.sha1 = options?.sha1;
+        this.sha256 = options?.sha256;
+        this.checksumType = options?.checksumType || 'FULL_OBJECT';
+        this.size = options?.size;
+    }
+
+    /**
+     * Creates an S3UploadedObject from a k6 HTTP response
+     * 
+     * @param {RefinedResponse<ResponseType>} response - The HTTP response from a PutObject operation
+     * @param {string} key - The key of the uploaded object
+     * @returns {S3UploadedObject} A new S3UploadedObject instance
+     */
+    static fromResponse(response: RefinedResponse<ResponseType>, key: string): S3UploadedObject {
+        const options: {
+            crc32?: string;
+            crc32c?: string;
+            crc64nvme?: string;
+            sha1?: string;
+            sha256?: string;
+            checksumType?: S3ChecksumType;
+            size?: number;
+        } = {};
+
+        // Extract checksum values from headers
+        if (response.headers['x-amz-checksum-crc32']) {
+            options.crc32 = response.headers['x-amz-checksum-crc32'];
+        }
+        
+        if (response.headers['x-amz-checksum-crc32c']) {
+            options.crc32c = response.headers['x-amz-checksum-crc32c'];
+        }
+        
+        if (response.headers['x-amz-checksum-crc64nvme']) {
+            options.crc64nvme = response.headers['x-amz-checksum-crc64nvme'];
+        }
+        
+        if (response.headers['x-amz-checksum-sha1']) {
+            options.sha1 = response.headers['x-amz-checksum-sha1'];
+        }
+        
+        if (response.headers['x-amz-checksum-sha256']) {
+            options.sha256 = response.headers['x-amz-checksum-sha256'];
+        }
+
+        // Extract checksum algorithm type
+        if (response.headers['x-amz-checksum-algorithm']) {
+            options.checksumType = response.headers['x-amz-checksum-algorithm'] === 'COMPOSITE' ? 'COMPOSITE' : 'FULL_OBJECT';
+        }
+
+        // Extract content length if available
+        if (response.headers['x-amz-object-size']) {
+            options.size = parseInt(response.headers['x-amz-object-size']);
+        }
+
+        // Get ETag from response headers
+        const etag = response.headers['ETag'] || '';
+
+        return new S3UploadedObject(key, etag, options);
+    }
+}
+
 /** Class representing a S3 Multipart Upload */
 export class S3MultipartUpload {
     key: string
@@ -664,6 +800,11 @@ type S3Operation =
     | 'CompleteMultipartUpload'
     | 'UploadPart'
     | 'AbortMultipartUpload'
+
+/**
+ * The type of checksum used to upload the object.
+ */
+type S3ChecksumType = 'COMPOSITE' | 'FULL_OBJECT'
 
 /**
  * Describes the class of storage used to store a S3 object.
