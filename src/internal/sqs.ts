@@ -36,6 +36,27 @@ export class SQSClient extends AWSClient {
     }
 
     /**
+     * Deletes a specific AWS SQS message with a unique, most-recent receipt handle for the message.
+     *
+     * @see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_DeleteMessage.html
+     * @param {string} queueUrl - The URL of the Amazon SQS queue from which the message should be deleted from.
+     * @param {string} receiptHandle The unique, most-recent receipt handle for the message to delete
+     */
+    async deleteMessage(
+        queueUrl: string,
+        receiptHandle: string
+    ) {
+        const action = 'DeleteMessage'
+
+        const body = {
+            QueueUrl: queueUrl,
+            ReceiptHandle: receiptHandle
+        }
+
+        await this._sendRequest(action, body)
+    }
+
+    /**
      * Receives messages from the specified AWS SQS queue.
      *
      * @param {string} queueUrl - The URL of the Amazon SQS queue from which messages should be received. Queue URLs and names are case-sensitive.
@@ -59,14 +80,10 @@ export class SQSClient extends AWSClient {
 
         const parsed = res.json() as JSONObject
         const messagesArray = parsed["Messages"] as JSONArray;
+
         const messages = [] as ReceivedMessage[];
-
-        for (let i = 0; i < messagesArray.length; i++) {
-            const receivedMessage = messagesArray[i] as JSONObject;
-
-            const messageResponseObject = new ReceivedMessage(receivedMessage);
-
-            messages.push(messageResponseObject);
+        for (const r of messagesArray || []) {
+            messages.push(new ReceivedMessage(r as JSONObject));
         }
 
         return messages;
@@ -487,7 +504,7 @@ export class SQSServiceError extends AWSError {
 /**
  * SQSOperation describes possible SQS operations.
  */
-type SQSOperation = 'ListQueues' | 'ReceiveMessage' | 'SendMessage' | 'SendMessageBatch'
+type SQSOperation = 'DeleteMessage' | 'ListQueues' | 'ReceiveMessage' | 'SendMessage' | 'SendMessageBatch'
 
 export interface SendMessageOptions {
     /**
