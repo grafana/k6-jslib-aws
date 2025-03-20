@@ -73,6 +73,17 @@ const testData = {
         ],
     },
 
+    // Simple Queue Service tests specific data
+    sqs: {
+        testQueues: {
+            fifoQueueSend:'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/fifo-test-queue.fifo',
+            fifo: 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/responding-test-queue.fifo',
+            standard: 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/responding-test-standard-queue',
+            emptyQueue: 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/fifo-test-queue.fifo',
+            deleteQueue: 'http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/message-deletion-test-queue'
+        }
+    },
+
     // Systems Manager tests specific data
     systemsManager: {
         testParameter: {

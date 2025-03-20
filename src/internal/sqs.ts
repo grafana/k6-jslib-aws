@@ -59,21 +59,35 @@ export class SQSClient extends AWSClient {
     /**
      * Receives messages from the specified AWS SQS queue.
      *
+     * @see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html
      * @param {string} queueUrl - The URL of the Amazon SQS queue from which messages should be received. Queue URLs and names are case-sensitive.
+     * @param {string[]} messageAttributeNames - List of message attributes to receive.
+     * @param {string[]} messageSystemAttributeNames - List of attributes that must be returned with each message.
+     * @param {number} maxNumberOfMessages - The maximum number of messages to receive from the Amazon SQS queue.
+     * @param {number} visibilityTimeout - Number of seconds to "hide" the received messages from subsequent ReceiveMessage requests.
+     * @param {number} waitTimeSeconds - Number of seconds to wait for messages from the Amazon SQS queue.
+     * @param {string | undefined} receiveRequestAttemptId - Value to use for ReceiveMessage deduplication on FIFO queues.
      * @returns {ReceivedMessage[]} - The list of received messages.
      */
-    async receiveMessage(
-        queueUrl: string
+    async receiveMessages(
+        queueUrl: string,
+        messageAttributeNames: string[] = ["All"],
+        messageSystemAttributeNames: string[] = ["All"],
+        maxNumberOfMessages: number = 1,
+        visibilityTimeout: number = 30,
+        waitTimeSeconds: number = 10,
+        receiveRequestAttemptId: string | undefined
     ): Promise<ReceivedMessage[]> {
         const action = 'ReceiveMessage'
 
         const body = {
-            MaxNumberOfMessages: 10,
-            MessageAttributeNames: [ "All" ],
-            MessageSystemAttributeNames: [ "All" ],
+            MaxNumberOfMessages: maxNumberOfMessages,
+            MessageAttributeNames: messageAttributeNames,
+            MessageSystemAttributeNames: messageSystemAttributeNames,
             QueueUrl: queueUrl,
-            VisibilityTimeout: 10,
-            WaitTimeSeconds: 10,
+            VisibilityTimeout: visibilityTimeout,
+            WaitTimeSeconds: waitTimeSeconds,
+            ReceiveRequestAttemptId: receiveRequestAttemptId
         }
 
         const res = await this._sendRequest(action, body)
@@ -82,9 +96,7 @@ export class SQSClient extends AWSClient {
         const messagesArray = parsed["Messages"] as JSONArray;
 
         const messages = [] as ReceivedMessage[];
-        for (const r of messagesArray || []) {
-            messages.push(new ReceivedMessage(r as JSONObject));
-        }
+        messagesArray?.forEach( (msg) => messages.push(new ReceivedMessage(msg as JSONObject)));
 
         return messages;
     }
@@ -378,14 +390,14 @@ export class ReceivedMessageAttributes {
      * @param capturedMessageAttributes
      */
     constructor(capturedMessageAttributes: JSONObject) {
-        this.MessageGroupId = capturedMessageAttributes['MessageGroupId'] as string
-        this.AWSTraceHeader = capturedMessageAttributes['AWSTraceHeader'] as string
-        this.SenderId = capturedMessageAttributes['SenderId'] as string
-        this.ApproximateFirstReceiveTimestamp = capturedMessageAttributes['ApproximateFirstReceiveTimestamp'] as string
-        this.ApproximateReceiveCount = capturedMessageAttributes['ApproximateReceiveCount'] as string
-        this.SentTimestamp = capturedMessageAttributes['SentTimestamp'] as string
-        this.SequenceNumber = capturedMessageAttributes['SequenceNumber'] as string
-        this.MessageDeduplicationId = capturedMessageAttributes['MessageDeduplicationId'] as string
+        this.MessageGroupId = capturedMessageAttributes?.['MessageGroupId'] as string
+        this.AWSTraceHeader = capturedMessageAttributes?.['AWSTraceHeader'] as string
+        this.SenderId = capturedMessageAttributes?.['SenderId'] as string
+        this.ApproximateFirstReceiveTimestamp = capturedMessageAttributes?.['ApproximateFirstReceiveTimestamp'] as string
+        this.ApproximateReceiveCount = capturedMessageAttributes?.['ApproximateReceiveCount'] as string
+        this.SentTimestamp = capturedMessageAttributes?.['SentTimestamp'] as string
+        this.SequenceNumber = capturedMessageAttributes?.['SequenceNumber'] as string
+        this.MessageDeduplicationId = capturedMessageAttributes?.['MessageDeduplicationId'] as string
     }
 }
 
@@ -393,6 +405,11 @@ export class ReceivedMessageAttributes {
  * A received message while monitoring an Amazon SQS queue.
  */
 export class ReceivedMessage {
+    /**
+     * Tag to identify the class
+     */
+    toStringTag: string = "ReceivedMessage"
+
     /**
      * A unique identifier for the message.
      * A MessageId is considered unique across all AWS accounts for an extended period of time.
@@ -431,7 +448,7 @@ export class ReceivedMessage {
         this.BodyMD5 = capturedMessage['BodyMD5'] as string;
         this.ReceiptHandle = capturedMessage['ReceiptHandle'] as string;
         this.Body = capturedMessage['Body'] as string;
-        this.Attributes = new ReceivedMessageAttributes(capturedMessage['Attributes'] as JSONObject)
+        this.Attributes = new ReceivedMessageAttributes(capturedMessage['Attributes']! as JSONObject)
     }
 }
 

@@ -10,4 +10,4 @@ export {
     HTTP2Error,
 } from './internal/error'
 export { InvalidSignatureError } from './internal/signature'
-export { SQSClient, SQSServiceError } from './internal/sqs'
+export { SQSClient, SQSServiceError, ReceivedMessage } from './internal/sqs'
