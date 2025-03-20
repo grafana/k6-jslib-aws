@@ -25,7 +25,7 @@ export {
     SystemsManagerParameter,
     SystemsManagerServiceError,
 } from './internal/ssm'
-export { SQSClient } from './sqs'
+export { SQSClient, ReceivedMessage } from './sqs'
 export { KinesisClient } from './internal/kinesis'
 export { EventBridgeClient } from './internal/event-bridge'
 export { LambdaClient, LambdaInvocationError } from './lambda'
