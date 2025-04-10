@@ -5,7 +5,7 @@ import { HTTPHeaders } from './http'
 import http, { RefinedResponse, ResponseType } from 'k6/http'
 import { AWSError } from './error'
 import { AMZ_TARGET_HEADER } from './constants'
-import { JSONObject } from './json'
+import { JSONObject, JSONArray } from './json'
 
 export class SQSClient extends AWSClient {
     private readonly signature: SignatureV4
@@ -33,6 +33,69 @@ export class SQSClient extends AWSClient {
         this.commonHeaders = {
             'Content-Type': 'application/x-amz-json-1.0',
         }
+    }
+
+    /**
+     * Deletes a specific AWS SQS message with a unique, most-recent receipt handle for the message.
+     *
+     * @see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_DeleteMessage.html
+     * @param {string} queueUrl - The URL of the Amazon SQS queue from which the message should be deleted from.
+     * @param {string} receiptHandle The unique, most-recent receipt handle for the message to delete
+     */
+    async deleteMessage(queueUrl: string, receiptHandle: string) {
+        const action = 'DeleteMessage'
+
+        const body = {
+            QueueUrl: queueUrl,
+            ReceiptHandle: receiptHandle,
+        }
+
+        await this._sendRequest(action, body)
+    }
+
+    /**
+     * Receives messages from the specified AWS SQS queue.
+     *
+     * @see https://docs.aws.amazon.com/AWSSimpleQueueService/latest/APIReference/API_ReceiveMessage.html
+     * @param {string} queueUrl - The URL of the Amazon SQS queue from which messages should be received. Queue URLs and names are case-sensitive.
+     * @param {string[]} messageAttributeNames - List of message attributes to receive.
+     * @param {string[]} messageSystemAttributeNames - List of attributes that must be returned with each message.
+     * @param {number} maxNumberOfMessages - The maximum number of messages to receive from the Amazon SQS queue.
+     * @param {number} visibilityTimeout - Number of seconds to "hide" the received messages from subsequent ReceiveMessage requests.
+     * @param {number} waitTimeSeconds - Number of seconds to wait for messages from the Amazon SQS queue.
+     * @param {string | undefined} receiveRequestAttemptId - Value to use for ReceiveMessage deduplication on FIFO queues.
+     * @returns {ReceivedMessage[]} - The list of received messages.
+     */
+    async receiveMessages(
+        queueUrl: string,
+        messageAttributeNames: string[] = ['All'],
+        messageSystemAttributeNames: string[] = ['All'],
+        maxNumberOfMessages: number = 1,
+        visibilityTimeout: number = 30,
+        waitTimeSeconds: number = 10,
+        receiveRequestAttemptId: string | undefined
+    ): Promise<ReceivedMessage[]> {
+        const action = 'ReceiveMessage'
+
+        const body = {
+            MaxNumberOfMessages: maxNumberOfMessages,
+            MessageAttributeNames: messageAttributeNames,
+            MessageSystemAttributeNames: messageSystemAttributeNames,
+            QueueUrl: queueUrl,
+            VisibilityTimeout: visibilityTimeout,
+            WaitTimeSeconds: waitTimeSeconds,
+            ReceiveRequestAttemptId: receiveRequestAttemptId,
+        }
+
+        const res = await this._sendRequest(action, body)
+
+        const parsed = res.json() as JSONObject
+        const messagesArray = parsed['Messages'] as JSONArray
+
+        const messages = [] as ReceivedMessage[]
+        messagesArray?.forEach((msg) => messages.push(new ReceivedMessage(msg as JSONObject)))
+
+        return messages
     }
 
     /**
@@ -274,12 +337,133 @@ export class SQSClient extends AWSClient {
 }
 
 /**
+ * Attributes of a {@link ReceivedMessage} object from an Amazon SQS queue.
+ */
+export class ReceivedMessageAttributes {
+    /**
+     * A tag that specifies which specific message group the message belongs to.
+     */
+    MessageGroupId: string
+
+    /**
+     * The AWS X-Ray trace header string.
+     */
+    AWSTraceHeader: string
+
+    /**
+     * The user ID or IAM role which sent the message.
+     */
+    SenderId: string
+
+    /**
+     * The approximate epoch time (in milliseconds) the message was first received from the queue.
+     */
+    ApproximateFirstReceiveTimestamp: string
+
+    /**
+     * The approximate number of times the message has been received across all queues but not deleted.
+     */
+    ApproximateReceiveCount: string
+
+    /**
+     * The epoch time (in milliseconds) the message was sent to the AWS SQS queue.
+     */
+    SentTimestamp: string
+
+    /**
+     * The value provided by Amazon SQS.
+     */
+    SequenceNumber: string
+
+    /**
+     * The token used for deduplication of sent messages.
+     * This field only applies to FIFO queues.
+     */
+    MessageDeduplicationId: string
+
+    /**
+     * Instantiates a new ReceivedMessageAttributes object.
+     *
+     * @param capturedMessageAttributes
+     */
+    constructor(capturedMessageAttributes: JSONObject) {
+        this.MessageGroupId = capturedMessageAttributes?.['MessageGroupId'] as string
+        this.AWSTraceHeader = capturedMessageAttributes?.['AWSTraceHeader'] as string
+        this.SenderId = capturedMessageAttributes?.['SenderId'] as string
+        this.ApproximateFirstReceiveTimestamp = capturedMessageAttributes?.[
+            'ApproximateFirstReceiveTimestamp'
+        ] as string
+        this.ApproximateReceiveCount = capturedMessageAttributes?.[
+            'ApproximateReceiveCount'
+        ] as string
+        this.SentTimestamp = capturedMessageAttributes?.['SentTimestamp'] as string
+        this.SequenceNumber = capturedMessageAttributes?.['SequenceNumber'] as string
+        this.MessageDeduplicationId = capturedMessageAttributes?.[
+            'MessageDeduplicationId'
+        ] as string
+    }
+}
+
+/**
+ * A received message while monitoring an Amazon SQS queue.
+ */
+export class ReceivedMessage {
+    /**
+     * Tag to identify the class
+     */
+    toStringTag: string = 'ReceivedMessage'
+
+    /**
+     * A unique identifier for the message.
+     * A MessageId is considered unique across all AWS accounts for an extended period of time.
+     */
+    id: string
+
+    /**
+     * An MD5 digest of the non-URL-encoded message body string.
+     */
+    BodyMD5: string
+
+    /**
+     * An identifier associated with the act of receiving the message.
+     * A new receipt handle is returned every time you receive a message.
+     * When deleting a message, you provide the last received receipt handle to delete the message.
+     */
+    ReceiptHandle: string
+
+    /**
+     * The message's contents (not URL-encoded).
+     */
+    Body: string
+
+    /**
+     * A map of the requested attributes to their respective values.
+     */
+    Attributes: ReceivedMessageAttributes
+
+    /**
+     * Instantiates a new Message object.
+     *
+     * @param capturedMessage
+     */
+    constructor(capturedMessage: JSONObject) {
+        this.id = capturedMessage['MessageId'] as string
+        this.BodyMD5 = capturedMessage['BodyMD5'] as string
+        this.ReceiptHandle = capturedMessage['ReceiptHandle'] as string
+        this.Body = capturedMessage['Body'] as string
+        this.Attributes = new ReceivedMessageAttributes(
+            capturedMessage['Attributes']! as JSONObject
+        )
+    }
+}
+
+/**
  * An Amazon SQS message.
  */
 export class MessageResponse {
     /**
      * A unique identifier for the message.
-     * A MessageIdis considered unique across all AWS accounts for an extended period of time.
+     * A MessageId is considered unique across all AWS accounts for an extended period of time.
      */
     id: string
 
@@ -342,7 +526,12 @@ export class SQSServiceError extends AWSError {
 /**
  * SQSOperation describes possible SQS operations.
  */
-type SQSOperation = 'ListQueues' | 'SendMessage' | 'SendMessageBatch'
+type SQSOperation =
+    | 'DeleteMessage'
+    | 'ListQueues'
+    | 'ReceiveMessage'
+    | 'SendMessage'
+    | 'SendMessageBatch'
 
 export interface SendMessageOptions {
     /**
