@@ -15,6 +15,7 @@ export {
     S3Client,
     S3MultipartUpload,
     S3Object,
+    S3UploadedObject,
     S3Part,
     S3ServiceError,
 } from './internal/s3'
