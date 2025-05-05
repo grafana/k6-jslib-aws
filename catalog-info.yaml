@@ -1,0 +1,13 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: k6-jslib-aws
+  title: k6-jslib-aws
+  description: |
+    Javascript Library allowing to interact with AWS resources from k6 scripts
+  annotations:
+    github.com/project-slug: grafana/k6-jslib-aws
+spec:
+  type: library
+  owner: group:default/k6-core
+  lifecycle: production
