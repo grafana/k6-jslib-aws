@@ -27,7 +27,7 @@
     "scripts": {
         "build": "node build.mjs",
         "release": "NODE_ENV=production npm run build",
-        "test": "npm run build && docker-compose down -v && docker-compose up --build -d && sleep 15 && k6 run -q tests/index.js",
+        "test": "npm run build && docker compose down -v && docker compose up --build -d && sleep 15 && k6 run -q tests/index.js",
         "test:ci": "npm run build && k6 run -q tests/index.js",
         "lint": "npx eslint src tests examples"
     },
