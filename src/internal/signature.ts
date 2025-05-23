@@ -399,24 +399,6 @@ export class SignatureV4 {
     ): Uint8Array {
         const kSecret: string = credentials.secretAccessKey
         
-        /**
-         * Helper function to convert k6's bytes (number[]) to Uint8Array for proper typing.
-         * k6's crypto.hmac with 'binary' encoding returns bytes (number[]), but subsequent
-         * HMAC operations need ArrayBuffer input, and our function signature requires Uint8Array.
-         */
-        const bytesToUint8Array = (bytes: bytes): Uint8Array => {
-            return new Uint8Array(bytes)
-        }
-        
-        /**
-         * Helper function to convert Uint8Array to ArrayBuffer for HMAC secret parameter.
-         * k6's crypto.hmac accepts string | ArrayBuffer as secret, so we convert our Uint8Array
-         * to ArrayBuffer for chained HMAC operations.
-         */
-        const uint8ArrayToArrayBuffer = (uint8Array: Uint8Array): ArrayBuffer => {
-            return uint8Array.buffer.slice(uint8Array.byteOffset, uint8Array.byteOffset + uint8Array.byteLength)
-        }
-        
         // First HMAC: string secret -> bytes
         const kDateBytes: bytes = crypto.hmac('sha256', 'AWS4' + kSecret, shortDate, 'binary')
         const kDate = bytesToUint8Array(kDateBytes)
@@ -831,6 +813,30 @@ export interface DateInfo {
      * String in the format YYYYMMDD
      */
     shortDate: string
+}
+
+/**
+ * Converts k6's bytes (number[]) to Uint8Array for proper typing.
+ * k6's crypto.hmac with 'binary' encoding returns bytes (number[]), but subsequent
+ * HMAC operations need ArrayBuffer input, and our function signature requires Uint8Array.
+ *
+ * @param bytes {bytes} The bytes array from k6's crypto operations.
+ * @returns {Uint8Array} The converted Uint8Array.
+ */
+function bytesToUint8Array(bytes: bytes): Uint8Array {
+    return new Uint8Array(bytes)
+}
+
+/**
+ * Converts Uint8Array to ArrayBuffer for HMAC secret parameter.
+ * k6's crypto.hmac accepts string | ArrayBuffer as secret, so we convert our Uint8Array
+ * to ArrayBuffer for chained HMAC operations.
+ *
+ * @param uint8Array {Uint8Array} The Uint8Array to convert.
+ * @returns {ArrayBuffer} The converted ArrayBuffer.
+ */
+function uint8ArrayToArrayBuffer(uint8Array: Uint8Array): ArrayBuffer {
+    return uint8Array.buffer.slice(uint8Array.byteOffset, uint8Array.byteOffset + uint8Array.byteLength)
 }
 
 /**
