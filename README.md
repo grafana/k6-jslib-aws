@@ -87,14 +87,11 @@ The scope of this library is intentionally minimal, focusing on the use cases ne
 ### Build
 
 ```bash
-# Install local dependencies
-npm install
-
 # Bundle the library in preparation for publication
-npm run build
+deno task build
 
 # Run the tests
-npm test
+deno task test
 ```
 
 For more details, refer to [CONTRIBUTING.md](./CONTRIBUTING.md).
