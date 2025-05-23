@@ -1,4 +1,5 @@
 import crypto from 'k6/crypto'
+import { bytes } from 'k6'
 
 import * as constants from './constants'
 import { AWSError } from './error'
@@ -397,19 +398,22 @@ export class SignatureV4 {
         shortDate: string
     ): Uint8Array {
         const kSecret: string = credentials.secretAccessKey
-        /**
-         * crypto.hmac returns a value of type `bytes`, which is an alias for
-         * number[]. However, the secret argument to hmac needs to either be
-         * a `string` or ArrayBuffer. The only way to get around this is to
-         * cast the return value of hmac to any, thus, we disable the no-explicit-any
-         * ESLint rule for this function.
-         */
-        /* eslint-disable @typescript-eslint/no-explicit-any */
-        const kDate: any = crypto.hmac('sha256', 'AWS4' + kSecret, shortDate, 'binary')
-        const kRegion: any = crypto.hmac('sha256', kDate, region, 'binary')
-        const kService: any = crypto.hmac('sha256', kRegion, service, 'binary')
-        const kSigning: any = crypto.hmac('sha256', kService, 'aws4_request', 'binary')
-        /* eslint-enable @typescript-eslint/no-explicit-any */
+        
+        // First HMAC: string secret -> bytes
+        const kDateBytes: bytes = crypto.hmac('sha256', 'AWS4' + kSecret, shortDate, 'binary')
+        const kDate = bytesToUint8Array(kDateBytes)
+        
+        // Second HMAC: ArrayBuffer secret -> bytes
+        const kRegionBytes: bytes = crypto.hmac('sha256', uint8ArrayToArrayBuffer(kDate), region, 'binary')
+        const kRegion = bytesToUint8Array(kRegionBytes)
+        
+        // Third HMAC: ArrayBuffer secret -> bytes
+        const kServiceBytes: bytes = crypto.hmac('sha256', uint8ArrayToArrayBuffer(kRegion), service, 'binary')
+        const kService = bytesToUint8Array(kServiceBytes)
+        
+        // Fourth HMAC: ArrayBuffer secret -> bytes
+        const kSigningBytes: bytes = crypto.hmac('sha256', uint8ArrayToArrayBuffer(kService), 'aws4_request', 'binary')
+        const kSigning = bytesToUint8Array(kSigningBytes)
 
         return kSigning
     }
@@ -809,6 +813,30 @@ export interface DateInfo {
      * String in the format YYYYMMDD
      */
     shortDate: string
+}
+
+/**
+ * Converts k6's bytes (number[]) to Uint8Array for proper typing.
+ * k6's crypto.hmac with 'binary' encoding returns bytes (number[]), but subsequent
+ * HMAC operations need ArrayBuffer input, and our function signature requires Uint8Array.
+ *
+ * @param bytes {bytes} The bytes array from k6's crypto operations.
+ * @returns {Uint8Array} The converted Uint8Array.
+ */
+function bytesToUint8Array(bytes: bytes): Uint8Array {
+    return new Uint8Array(bytes)
+}
+
+/**
+ * Converts Uint8Array to ArrayBuffer for HMAC secret parameter.
+ * k6's crypto.hmac accepts string | ArrayBuffer as secret, so we convert our Uint8Array
+ * to ArrayBuffer for chained HMAC operations.
+ *
+ * @param uint8Array {Uint8Array} The Uint8Array to convert.
+ * @returns {ArrayBuffer} The converted ArrayBuffer.
+ */
+function uint8ArrayToArrayBuffer(uint8Array: Uint8Array): ArrayBuffer {
+    return uint8Array.buffer.slice(uint8Array.byteOffset, uint8Array.byteOffset + uint8Array.byteLength)
 }
 
 /**

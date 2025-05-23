@@ -21,9 +21,9 @@ export type JSONValue = string | number | boolean | null | JSONArray | JSONObjec
  * This extends the built-in Array type to ensure that all its members are 
  * valid JSON values.
  * 
- * @interface JSONArray
+ * @type JSONArray
  */
-export interface JSONArray extends Array<JSONValue> { }
+export type JSONArray = Array<JSONValue>;
 
 /**
  * Represents a valid JSON object. A JSON object is a collection of key-value 

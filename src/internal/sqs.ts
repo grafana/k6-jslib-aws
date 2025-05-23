@@ -299,8 +299,6 @@ export class SQSClient extends AWSClient {
             default:
                 throw new SQSServiceError(errorMessage, error.__type as string, operation)
         }
-
-        return true
     }
 
     protected handleError(
