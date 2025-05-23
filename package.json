@@ -4,6 +4,7 @@
     "version": "0.14.0",
     "description": "Create a distribution file for the aws jslib",
     "main": "src/index.js",
+    "type": "module",
     "devDependencies": {
         "@babel/core": "^7.24.9",
         "@babel/eslint-parser": "^7.25.1",
@@ -19,7 +20,7 @@
         "babel-loader": "^9.1.3",
         "chai": "5.1.1",
         "esbuild": "^0.25.4",
-        "eslint": "^8.56.0",
+        "eslint": "^9.27.0",
         "eslint-plugin-import": "^2.29.1",
         "typescript": "^5.5.4"
     },
