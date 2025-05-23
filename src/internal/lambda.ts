@@ -115,8 +115,6 @@ export class LambdaClient extends AWSClient {
             default:
                 throw awsError
         }
-
-        return true
     }
 }
 

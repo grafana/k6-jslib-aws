@@ -57,11 +57,9 @@ export async function asyncDescribe(description, callback) {
         })
     } catch (error) {
         if (error.name !== 'AssertionError') {
-            // eslint-disable-next-line no-undef
             console.error(`FAIL [${description}]`, error.stack);
             check(error, {[description]: () => false})
         } else {
-            // eslint-disable-next-line no-undef
             console.error(`FAIL [${description}]`, error.message);
         }
     }

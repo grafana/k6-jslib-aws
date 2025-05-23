@@ -60,7 +60,7 @@ export async function kinesisTestSuite(data) {
 
     await asyncDescribe('kinesis.listShards and read all data from shards', async () => {
         const shards = await kinesis.listShards(dummyStream)
-        for (let shard of shards.shards) {
+        for (const shard of shards.shards) {
             let iterator = (await kinesis.getShardIterator(dummyStream, shard.id, `TRIM_HORIZON`))
                 .shardIterator
 
