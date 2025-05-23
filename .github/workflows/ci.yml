@@ -1,4 +1,4 @@
-name: Build and test the aws jslib against a Localstack instance
+name: CI
 on:
     # Enables running the workflow manually from the Actions tab
     workflow_dispatch:
@@ -11,19 +11,31 @@ on:
 
     pull_request:
 
-permissions:
-    contents: read
-
 jobs:
     test:
         runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+          contents: read
+
         steps:
             - uses: actions/checkout@v4
               with:
                   persist-credentials: false
 
-            - name: Install npm packages
-              run: npm install
+            - name: Setup Deno
+              uses: denoland/setup-deno@909cc5acb0fdd60627fb858598759246509fa755 # v2.0.2
+              with:
+                deno-version: v2.x
+
+            - name: Check Formatting
+              run: deno task fmt
+
+            - name: Check Linting
+              run: deno task lint
+
+            - name: Build
+              run: deno task build
 
             - name: Install Go
               uses: actions/setup-go@v4
@@ -44,4 +56,4 @@ jobs:
               run: sleep 30
 
             - name: Test
-              run: npm run test:ci
+              run: deno task test:ci
