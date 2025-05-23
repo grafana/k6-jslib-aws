@@ -90,9 +90,11 @@ export async function s3TestSuite(data) {
 
     await asyncDescribe('s3.putObject', async (expect) => {
         // Act
+        let putUploadedObject;
         let putObectError
+
         try {
-            await s3Client.putObject(
+            putUploadedObject = await s3Client.putObject(
                 data.s3.testBucketName,
                 'created-by-test.txt',
                 'This file was created by a test'
@@ -103,6 +105,11 @@ export async function s3TestSuite(data) {
 
         // Assert
         expect(putObectError).to.be.undefined
+        expect(putUploadedObject).to.be.an('object')
+        expect(putUploadedObject).to.have.property('key')
+        expect(putUploadedObject.key).to.equal('created-by-test.txt')
+        expect(putUploadedObject).to.have.property('etag')
+        expect(putUploadedObject.etag).to.be.a('string')
     })
 
     await asyncDescribe('s3.deleteObject', async (expect) => {
