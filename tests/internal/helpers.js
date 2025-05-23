@@ -1,5 +1,5 @@
-import { expect } from 'https://jslib.k6.io/k6chaijs/4.3.4.1/index.js'
-import { check } from 'k6'
+import { expect } from "https://jslib.k6.io/k6chaijs/4.3.4.1/index.js";
+import { check } from "k6";
 
 /*
  * asyncDescribe is a helper function that allows us to use async/await
@@ -51,16 +51,16 @@ import { check } from 'k6'
  * ```
  */
 export async function asyncDescribe(description, callback) {
-    try {
-        await callback((what) => {
-            return expect(what, description)
-        })
-    } catch (error) {
-        if (error.name !== 'AssertionError') {
-            console.error(`FAIL [${description}]`, error.stack);
-            check(error, {[description]: () => false})
-        } else {
-            console.error(`FAIL [${description}]`, error.message);
-        }
+  try {
+    await callback((what) => {
+      return expect(what, description);
+    });
+  } catch (error) {
+    if (error.name !== "AssertionError") {
+      console.error(`FAIL [${description}]`, error.stack);
+      check(error, { [description]: () => false });
+    } else {
+      console.error(`FAIL [${description}]`, error.message);
     }
+  }
 }

@@ -18,17 +18,17 @@ jobs:
               with:
                   persist-credentials: false
 
-            - name: Use Node.js
-              uses: actions/setup-node@v4
+            - name: Setup Deno
+              uses: denoland/setup-deno@909cc5acb0fdd60627fb858598759246509fa755 # v2.0.2
               with:
-                  node-version: '18.x'
-            - name: Install dependencies
-              run: npm install
+                deno-version: v2.x
+
             - name: Build & archive
               run: |
                   set -x
                   VERSION="${GITHUB_REF##*/}"
-                  npm run release && tar -zcf "k6-jslib-aws-${VERSION}.tar.gz" -C dist .
+                  deno task release && tar -zcf "k6-jslib-aws-${VERSION}.tar.gz" -C dist .
+
             - name: Create release with assets
               env:
                   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

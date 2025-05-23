@@ -7,10 +7,10 @@ If the jslib-aws does not support the service you need yet, the best way to get 
 ### Useful information
 
 1. The project uses the [TypeScript](https://www.typescriptlang.org/) language. [TypeScript](https://www.typescriptlang.org/) is a superset of the Javascript language and essentially adds static typing and functional constructs to the language. It compiles into Javascript, which is then used by the k6 runtime.
-2. The project files should be formatted using the [Prettier](https://prettier.io/) tool. The project has a `.prettierrc.json` file containing the tool's configuration.
+2. The project files should be formatted using the [Deno fmt](https://deno.com/) command.
 3. The project uses esbuild to produce build files. The project has a `build.mjs` file containing the tool's configuration. Each service is built into its dedicated file, and an overarching `aws.js` contains them for convenience.
 4. To allow easier testing, files in the `src` directory are organized in a public/private structure. Files at the root of the folder are the public files; they import the content of the internal (private) directory and explicitly export the symbols that should be made available to the user. The internal files are the ones that contain the actual implementation of the service. The internal files are not exported and are not meant to be used directly by the user.
-5. The project is tested in an end2end fashion using the [k6](https://k6.io/) tool. The tests live in the `tests` directory. The tests are written in Javascript and use the [k6 chai js](https://grafana.com/docs/k6/latest/javascript-api/jslib/k6chaijs) jslib to test the functionality of the library. The `npm test` command runs the test suites. The tests run in a docker container, and the `docker-compose.yml` file contains the configuration for the container. The docker-compose setup spins up a [localstack](https://github.com/localstack/localstack) setup, which emulates AWS locally, and the test script performs its assertions against it directly.
+5. The project is tested in an end2end fashion using the [k6](https://k6.io/) tool. The tests live in the `tests` directory. The tests are written in Javascript and use the [k6 chai js](https://grafana.com/docs/k6/latest/javascript-api/jslib/k6chaijs) jslib to test the functionality of the library. The `deno task test` command runs the test suites. The tests run in a docker container, and the `docker-compose.yml` file contains the configuration for the container. The docker-compose setup spins up a [localstack](https://github.com/localstack/localstack) setup, which emulates AWS locally, and the test script performs its assertions against it directly.
 
 ### Conventions
 
@@ -28,9 +28,9 @@ If the jslib-aws does not support the service you need yet, the best way to get 
 6. Tests verifying that the service class works as expected should be added in the `tests/internal` directory. The dedicated test file should follow the same naming convention as the service class file, except it should have the `.js` extension. For example, if the service class file is named `systems-manager.ts`, the test file should be called `systems-manager.js`.
 7. Test files should consists in a k6 script using the [k6 chai js](https://grafana.com/docs/k6/latest/javascript-api/jslib/k6chaijs) library, and exporting a single `{serviceName}TestSuite(data)` function. This function should consist of a set of `describe` statements containing the actual test assertions, as demonstrated in the [existing s3 test suite](https://github.com/grafana/k6-jslib-aws/blob/main/tests/internal/s3.js). The test suite should be imported and called in the [`tests/internal/index.js`](https://github.com/grafana/k6-jslib-aws/blob/main/tests/index.js) test script, which is the entry point for the test suite.
 8. If the tests depend on a specific pre-existing state of the localstack setup, you can add a dedicated script in the `tests/internal/localstack_init` folder. Localstack will execute all the commands present in this script during its setup phase.
-9. The `npm test` command runs the test suite. This command will build the project and run the tests against the spun-up localstack docker container. The `docker-compose.yml` file contains the configuration for the container.
+9. The `deno task test` command runs the test suite. This command will build the project and run the tests against the spun-up localstack docker container. The `docker-compose.yml` file contains the configuration for the container.
 10. Once the tests pass, the `src/index.ts` file should export the service class in the `src/index.ts` file so the user can use it.
-11. To get the build system to produce a build of your new service, run `npm run build`.
+11. To get the build system to produce a build of your new service, run `deno task build`.
 
 ### Publishing a new version
 
@@ -39,9 +39,9 @@ If the jslib-aws does not support the service you need yet, the best way to get 
 1. The service should have tests.
 2. The service should have documentation.
 3. The service should be re-exported in the `src/index.ts` file.
-4. The service should be exposed in the `aws.js` file in the `dist` directory when running the `npm run build` command.
-5. The service should produce a dedicated `{service-name}.js` file in the `dist` directory when running the `npm run build` command.
-6. The service should produce source map files for the dedicated `{service-name}.js` file and the `aws.js` file in the `dist` directory when running the `npm run build` command.
+4. The service should be exposed in the `aws.js` file in the `dist` directory when running the `deno task build` command.
+5. The service should produce a dedicated `{service-name}.js` file in the `dist` directory when running the `deno task build` command.
+6. The service should produce source map files for the dedicated `{service-name}.js` file and the `aws.js` file in the `dist` directory when running the `deno task build` command.
 
 #### Steps
 
@@ -49,9 +49,9 @@ If the jslib-aws does not support the service you need yet, the best way to get 
 
 In a PR:
 
-1. Bump the version in the `package.json` file.
-2. Run the `npm update` command to update the `package-lock.json` file.
-3. Run the `npm run build` command to ensure the build system produces the latest distributable files.
+1. Bump the version in the `deno.json` file.
+2. Run the `deno update` command to update the `deno-lock.json` file.
+3. Run the `deno task build` command to ensure the build system produces the latest distributable files.
 4. Search and replace every occurrence of the previous version in the `README.md` file with the new version.
 5. Search and replace every occurrence of the previous version in the `/examples` directory with the new version.
 
