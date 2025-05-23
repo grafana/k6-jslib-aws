@@ -90,7 +90,10 @@ export class AWSConfig {
             )
         }
 
-        if (options.accessKeyId.length < 16 || options.accessKeyId.length > 128) {
+        if (
+            options.accessKeyId.length < 16 ||
+            (options.accessKeyId.length > 128 && options.sessionToken != undefined)
+        ) {
             throw new InvalidAWSConfigError(
                 `invalid AWS access key ID; reason: size should be between 16 and 128 characters, got ${options.accessKeyId.length}`
             )
