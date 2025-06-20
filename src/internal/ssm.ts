@@ -1,12 +1,12 @@
 import { JSONObject } from "k6";
 import http, { RefinedResponse, ResponseType } from "k6/http";
 
-import { AWSClient } from "./client";
-import { AWSConfig } from "./config";
-import { AMZ_TARGET_HEADER } from "./constants";
-import { AWSError } from "./error";
-import { HTTPHeaders, HTTPMethod } from "./http";
-import { InvalidSignatureError, SignatureV4 } from "./signature";
+import { AWSClient } from "./client.ts";
+import { AWSConfig } from "./config.ts";
+import { AMZ_TARGET_HEADER } from "./constants.ts";
+import { AWSError } from "./error.ts";
+import { HTTPHeaders, HTTPMethod } from "./http.ts";
+import { InvalidSignatureError, SignatureV4 } from "./signature.ts";
 
 /**
  * Class allowing to interact with Amazon AWS's Systems Manager service
@@ -84,7 +84,7 @@ export class SystemsManagerClient extends AWSClient {
     return SystemsManagerParameter.fromJSON(res.json() as JSONObject);
   }
 
-  protected handleError(
+  protected override handleError(
     response: RefinedResponse<ResponseType | undefined>,
     operation?: string,
   ): boolean {

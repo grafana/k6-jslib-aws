@@ -1,11 +1,11 @@
 import { parseHTML } from "k6/html";
 import http, { RefinedResponse, ResponseType } from "k6/http";
 
-import { AWSClient } from "./client";
-import { AWSConfig } from "./config";
-import { AWSError } from "./error";
-import { SignedHTTPRequest } from "./http";
-import { InvalidSignatureError, SignatureV4 } from "./signature";
+import { AWSClient } from "./client.ts";
+import { AWSConfig } from "./config.ts";
+import { AWSError } from "./error.ts";
+import { SignedHTTPRequest } from "./http.ts";
+import { InvalidSignatureError, SignatureV4 } from "./signature.ts";
 
 /** Class allowing to interact with Amazon AWS's S3 service */
 export class S3Client extends AWSClient {
@@ -571,7 +571,7 @@ export class S3Client extends AWSClient {
     this.handleError(res, "AbortMultipartUpload");
   }
 
-  handleError(
+  protected override handleError(
     response: RefinedResponse<ResponseType | undefined>,
     operation?: string,
   ): boolean {

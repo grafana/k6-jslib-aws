@@ -1,8 +1,8 @@
-import { Params, RefinedResponse, ResponseType } from "k6/http";
+import { type Params, type RefinedResponse, type ResponseType } from "k6/http";
 
-import { AWSConfig } from "./config";
-import { Endpoint } from "./endpoint";
-import { HTTPHeaders } from "./http";
+import { AWSConfig } from "./config.ts";
+import { Endpoint } from "./endpoint.ts";
+import { HTTPHeaders } from "./http.ts";
 import {
   DNSError,
   DNSErrorKind,
@@ -14,7 +14,7 @@ import {
   TCPErrorKind,
   TLSError,
   TLSErrorKind,
-} from "./error";
+} from "./error.ts";
 
 /**
  * Class allowing to build requests targeting AWS APIs

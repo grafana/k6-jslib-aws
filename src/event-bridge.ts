@@ -1,4 +1,4 @@
-export { AWSConfig, InvalidAWSConfigError } from "./internal/config";
+export { AWSConfig, InvalidAWSConfigError } from "./internal/config.ts";
 export {
   AWSError,
   DNSError,
@@ -7,9 +7,9 @@ export {
   NetworkError,
   TCPError,
   TLSError,
-} from "./internal/error";
+} from "./internal/error.ts";
 export {
   EventBridgeClient,
   EventBridgeServiceError,
-} from "./internal/event-bridge";
-export { InvalidSignatureError } from "./internal/signature";
+} from "./internal/event-bridge.ts";
+export { InvalidSignatureError } from "./internal/signature.ts";

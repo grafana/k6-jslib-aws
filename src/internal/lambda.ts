@@ -1,12 +1,12 @@
 import http, { RefinedResponse, ResponseType } from "k6/http";
 import encoding from "k6/encoding";
 
-import { AWSClient } from "./client";
-import { AWSConfig } from "./config";
-import { AWSError } from "./error";
-import { InvalidSignatureError, SignatureV4 } from "./signature";
-import { AMZ_TARGET_HEADER } from "./constants";
-import { HTTPHeaders, HTTPMethod, QueryParameterBag } from "./http";
+import { AWSClient } from "./client.ts";
+import { AWSConfig } from "./config.ts";
+import { AWSError } from "./error.ts";
+import { InvalidSignatureError, SignatureV4 } from "./signature.ts";
+import { AMZ_TARGET_HEADER } from "./constants.ts";
+import { HTTPHeaders, HTTPMethod, QueryParameterBag } from "./http.ts";
 
 /**
  * Class allowing to interact with Amazon AWS's Lambda service
@@ -107,7 +107,7 @@ export class LambdaClient extends AWSClient {
     }
   }
 
-  protected handleError(
+  protected override handleError(
     response: RefinedResponse<ResponseType | undefined>,
     operation?: string,
   ): boolean {

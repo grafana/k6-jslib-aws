@@ -13,8 +13,8 @@ export {
   HOST_HEADER,
   SIGNING_ALGORITHM_IDENTIFIER,
   UNSIGNED_PAYLOAD,
-} from "./internal/constants";
-export { AWSConfig, InvalidAWSConfigError } from "./internal/config";
+} from "./internal/constants.ts";
+export { AWSConfig, InvalidAWSConfigError } from "./internal/config.ts";
 export {
   AWSError,
   DNSError,
@@ -23,7 +23,7 @@ export {
   NetworkError,
   TCPError,
   TLSError,
-} from "./internal/error";
-export { Endpoint } from "./internal/endpoint";
-export { InvalidSignatureError } from "./internal/signature";
-export { SignatureV4 } from "./internal/signature";
+} from "./internal/error.ts";
+export { Endpoint } from "./internal/endpoint.ts";
+export { InvalidSignatureError } from "./internal/signature.ts";
+export { SignatureV4 } from "./internal/signature.ts";

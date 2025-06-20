@@ -1,11 +1,12 @@
-import { AWSClient } from "./client";
-import { AWSConfig } from "./config";
-import { InvalidSignatureError, SignatureV4 } from "./signature";
-import { HTTPHeaders } from "./http";
 import http, { RefinedResponse, ResponseType } from "k6/http";
-import { AWSError } from "./error";
-import { AMZ_TARGET_HEADER } from "./constants";
-import { JSONArray, JSONObject } from "./json";
+
+import { AWSClient } from "./client.ts";
+import { AWSConfig } from "./config.ts";
+import { InvalidSignatureError, SignatureV4 } from "./signature.ts";
+import { HTTPHeaders } from "./http.ts";
+import { AWSError } from "./error.ts";
+import { AMZ_TARGET_HEADER } from "./constants.ts";
+import { JSONArray, JSONObject } from "./json.ts";
 
 export class SQSClient extends AWSClient {
   private readonly signature: SignatureV4;
@@ -325,7 +326,7 @@ export class SQSClient extends AWSClient {
     }
   }
 
-  protected handleError(
+  protected override handleError(
     response: RefinedResponse<ResponseType | undefined>,
     operation?: string,
   ): boolean {

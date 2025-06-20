@@ -1,4 +1,4 @@
-import { Endpoint } from "./endpoint";
+import { Endpoint } from "./endpoint.ts";
 
 /**
  * Type representing HTTP schemes

@@ -1,5 +1,5 @@
-import { HTTPScheme } from "./http";
-import { Endpoint } from "./endpoint";
+import { HTTPScheme } from "./http.ts";
+import { Endpoint } from "./endpoint.ts";
 
 /** Class holding an AWS connection information */
 export class AWSConfig {
