@@ -145,7 +145,7 @@ export class SecretsManagerClient extends AWSClient {
     versionID?: string,
     tags?: Array<object>,
   ): Promise<Secret> {
-    versionID = versionID ?? uuidv4(true);
+    versionID = versionID ?? crypto.randomUUID();
 
     const signedRequest = this.signature.sign(
       {
@@ -201,7 +201,7 @@ export class SecretsManagerClient extends AWSClient {
     secret: string,
     versionID?: string,
   ): Promise<Secret> {
-    versionID = versionID ?? uuidv4(true);
+    versionID = versionID ?? crypto.randomUUID();
 
     const signedRequest = this.signature.sign(
       {
