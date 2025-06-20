@@ -5,8 +5,7 @@
     "jsr:@std/internal@^1.0.5": "1.0.5",
     "npm:@types/k6@^1.0.2": "1.0.2",
     "npm:esbuild@0.24": "0.24.2",
-    "npm:eslint@^9.27.0": "9.27.0",
-    "npm:k6@^0.0.0": "0.0.0"
+    "npm:eslint@^9.27.0": "9.27.0"
   },
   "jsr": {
     "@std/assert@1.0.11": {
@@ -504,9 +503,6 @@
     "json-stable-stringify-without-jsonify@1.0.1": {
       "integrity": "sha512-Bdboy+l7tA3OGW6FjyFHWkP5LuByj1Tk33Ljyq0axyzdk9//JSi2u3fP1QSmd1KNwq6VOKYGlAu87CisVir6Pw=="
     },
-    "k6@0.0.0": {
-      "integrity": "sha512-GAQSWayS2+LjbH5bkRi+pMPYyP1JSp7o+4j58ANZ762N/RH/SdlAT3CHHztnn8s/xgg8kYNM24Gd2IPo9b5W+g=="
-    },
     "keyv@4.5.4": {
       "integrity": "sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==",
       "dependencies": [
@@ -634,8 +630,7 @@
       "jsr:@std/assert@1",
       "npm:@types/k6@^1.0.2",
       "npm:esbuild@0.24",
-      "npm:eslint@^9.27.0",
-      "npm:k6@^0.0.0"
+      "npm:eslint@^9.27.0"
     ]
   }
 }
