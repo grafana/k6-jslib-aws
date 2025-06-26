@@ -1,22 +1,10 @@
 {
   "version": "5",
   "specifiers": {
-    "jsr:@std/assert@1": "1.0.11",
-    "jsr:@std/internal@^1.0.5": "1.0.5",
+    "npm:@types/k6@1": "1.0.2",
     "npm:@types/k6@^1.0.2": "1.0.2",
     "npm:esbuild@0.24": "0.24.2",
     "npm:eslint@^9.27.0": "9.27.0"
-  },
-  "jsr": {
-    "@std/assert@1.0.11": {
-      "integrity": "2461ef3c368fe88bc60e186e7744a93112f16fd110022e113a0849e94d1c83c1",
-      "dependencies": [
-        "jsr:@std/internal"
-      ]
-    },
-    "@std/internal@1.0.5": {
-      "integrity": "54a546004f769c1ac9e025abd15a76b6671ddc9687e2313b67376125650dc7ba"
-    }
   },
   "npm": {
     "@esbuild/aix-ppc64@0.24.2": {
@@ -628,6 +616,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
+      "npm:@types/k6@1",
       "npm:@types/k6@^1.0.2",
       "npm:esbuild@0.24",
       "npm:eslint@^9.27.0"
