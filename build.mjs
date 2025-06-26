@@ -1,6 +1,4 @@
 import { build } from 'esbuild';
-import * as process from 'node:process'
-
 
 const buildOptions = {
     // Produce the build results in the dist folder
@@ -46,7 +44,7 @@ const buildOptions = {
 };
 
 // Determine if this is a release build or a development build
-if (process.env.NODE_ENV === 'production') {
+if (Deno.env.get('NODE_ENV') === 'production') {
     // Setup release build options
     Object.assign(buildOptions, {
         // Minify the output files
@@ -58,4 +56,10 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 // Build the project
-build(buildOptions).catch(() => process.exit(1))
+try {
+    await build(buildOptions);
+    console.log('✅ Build completed successfully');
+} catch (error) {
+    console.error('❌ Build failed:', error);
+    Deno.exit(1);
+}

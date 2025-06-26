@@ -1,12 +1,12 @@
-import http, { RefinedResponse, ResponseType } from "k6/http";
+import http, { type RefinedResponse, type ResponseType } from "k6/http";
 
-import { AWSClient } from "./client";
-import { AWSConfig } from "./config";
-import { AWSError } from "./error";
-import { JSONObject } from "./json";
-import { InvalidSignatureError, SignatureV4 } from "./signature";
-import { AMZ_TARGET_HEADER } from "./constants";
-import { HTTPHeaders, HTTPMethod } from "./http";
+import { AWSClient } from "./client.ts";
+import { AWSConfig } from "./config.ts";
+import { AWSError } from "./error.ts";
+import { JSONObject } from "./json.ts";
+import { InvalidSignatureError, SignatureV4 } from "./signature.ts";
+import { AMZ_TARGET_HEADER } from "./constants.ts";
+import { HTTPHeaders, HTTPMethod } from "./http.ts";
 
 /**
  * Class allowing to interact with Amazon AWS's Event Bridge service
@@ -79,7 +79,7 @@ export class EventBridgeClient extends AWSClient {
     this.handleError(res, EventBridgeOperation.PutEvents);
   }
 
-  protected handleError(
+  protected override handleError(
     response: RefinedResponse<ResponseType | undefined>,
     operation?: string,
   ): boolean {

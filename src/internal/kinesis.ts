@@ -1,13 +1,13 @@
 import http, { RefinedResponse, ResponseType } from "k6/http";
 
-import { AWSClient } from "./client";
+import { AWSClient } from "./client.ts";
 
-import { AWSConfig } from "./config";
-import { AMZ_TARGET_HEADER } from "./constants";
-import { AWSError } from "./error";
-import { JSONObject } from "./json";
-import { HTTPHeaders } from "./http";
-import { InvalidSignatureError, SignatureV4 } from "./signature";
+import { AWSConfig } from "./config.ts";
+import { AMZ_TARGET_HEADER } from "./constants.ts";
+import { AWSError } from "./error.ts";
+import { JSONObject } from "./json.ts";
+import { HTTPHeaders } from "./http.ts";
+import { InvalidSignatureError, SignatureV4 } from "./signature.ts";
 
 /**
 This API is based on
@@ -295,7 +295,7 @@ export class KinesisClient extends AWSClient {
     return res;
   }
 
-  protected handleError(
+  protected override handleError(
     response: RefinedResponse<ResponseType | undefined>,
     operation?: string,
   ): boolean {

@@ -1,5 +1,5 @@
 // Re-Export public symbols
-export { AWSConfig, InvalidAWSConfigError } from "./internal/config";
+export { AWSConfig, InvalidAWSConfigError } from "./internal/config.ts";
 export {
   AWSError,
   DNSError,
@@ -8,6 +8,6 @@ export {
   NetworkError,
   TCPError,
   TLSError,
-} from "./internal/error";
-export { InvalidSignatureError } from "./internal/signature";
-export { ReceivedMessage, SQSClient, SQSServiceError } from "./internal/sqs";
+} from "./internal/error.ts";
+export { InvalidSignatureError } from "./internal/signature.ts";
+export { ReceivedMessage, SQSClient, SQSServiceError } from "./internal/sqs.ts";

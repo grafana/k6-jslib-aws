@@ -7,28 +7,28 @@ export {
   NetworkError,
   TCPError,
   TLSError,
-} from "./internal/error";
-export { InvalidSignatureError } from "./internal/signature";
-export { AWSConfig, InvalidAWSConfigError } from "./internal/config";
+} from "./internal/error.ts";
+export { InvalidSignatureError } from "./internal/signature.ts";
+export { AWSConfig, InvalidAWSConfigError } from "./internal/config.ts";
 export {
   AMZ_CONTENT_SHA256_HEADER,
   UNSIGNED_PAYLOAD,
-} from "./internal/constants";
-export { KMSClient, KMSDataKey, KMSServiceError } from "./internal/kms";
-export { Endpoint } from "./internal/endpoint";
-export { SignatureV4 } from "./internal/signature";
-export { S3Bucket, S3Client, S3Object, S3ServiceError } from "./internal/s3";
+} from "./internal/constants.ts";
+export { KMSClient, KMSDataKey, KMSServiceError } from "./internal/kms.ts";
+export { Endpoint } from "./internal/endpoint.ts";
+export { SignatureV4 } from "./internal/signature.ts";
+export { S3Bucket, S3Client, S3Object, S3ServiceError } from "./internal/s3.ts";
 export {
   Secret,
   SecretsManagerClient,
   SecretsManagerServiceError,
-} from "./internal/secrets-manager";
+} from "./internal/secrets-manager.ts";
 export {
   SystemsManagerClient,
   SystemsManagerParameter,
   SystemsManagerServiceError,
-} from "./internal/ssm";
-export { ReceivedMessage, SQSClient } from "./sqs";
-export { KinesisClient } from "./internal/kinesis";
-export { EventBridgeClient } from "./internal/event-bridge";
-export { LambdaClient, LambdaInvocationError } from "./lambda";
+} from "./internal/ssm.ts";
+export { ReceivedMessage, SQSClient } from "./sqs.ts";
+export { KinesisClient } from "./internal/kinesis.ts";
+export { EventBridgeClient } from "./internal/event-bridge.ts";
+export { LambdaClient, LambdaInvocationError } from "./lambda.ts";

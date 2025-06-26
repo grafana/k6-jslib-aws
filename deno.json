@@ -12,6 +12,6 @@
     "@types/k6": "npm:@types/k6@^1.0.2",
     "esbuild": "npm:esbuild@^0.24.0",
     "eslint": "npm:eslint@^9.27.0",
-    "k6": "npm:k6@^0.0.0"
+    "k6": "npm:@types/k6@^1.0.x"
   }
 }

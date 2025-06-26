@@ -1,16 +1,16 @@
 import crypto from "k6/crypto";
 import { bytes } from "k6";
 
-import * as constants from "./constants";
-import { AWSError } from "./error";
+import * as constants from "./constants.ts";
+import { AWSError } from "./error.ts";
 import {
   hasHeader,
   HTTPHeaderBag,
   HTTPRequest,
   QueryParameterBag,
   SignedHTTPRequest,
-} from "./http";
-import { isArrayBuffer } from "./utils";
+} from "./http.ts";
+import { isArrayBuffer } from "./utils.ts";
 
 /**
  * SignatureV4 can be used to sign HTTP requests and presign URLs using the AWS Signature

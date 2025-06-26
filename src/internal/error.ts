@@ -1,4 +1,4 @@
-import { JSONObject } from "./json";
+import { JSONObject } from "./json.ts";
 import { parseHTML } from "k6/html";
 import { Response } from "k6/http";
 
@@ -72,7 +72,7 @@ export class AWSError extends Error {
 export class NetworkError<N extends NetworkErrorName, K extends ErrorKind>
   extends Error {
   code: K;
-  name: N;
+  override name: N;
 
   /**
    * Create a NetworkError

@@ -1,5 +1,5 @@
 // Re-Export public symbols
-export { AWSConfig, InvalidAWSConfigError } from "./internal/config";
+export { AWSConfig, InvalidAWSConfigError } from "./internal/config.ts";
 export {
   AWSError,
   DNSError,
@@ -8,8 +8,8 @@ export {
   NetworkError,
   TCPError,
   TLSError,
-} from "./internal/error";
-export { InvalidSignatureError } from "./internal/signature";
+} from "./internal/error.ts";
+export { InvalidSignatureError } from "./internal/signature.ts";
 export {
   S3Bucket,
   S3Client,
@@ -18,4 +18,4 @@ export {
   S3Part,
   S3ServiceError,
   S3UploadedObject,
-} from "./internal/s3";
+} from "./internal/s3.ts";
