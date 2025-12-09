@@ -7,6 +7,11 @@
     "test": "deno task build && docker compose down -v && docker compose up --build -d && sleep 15 && k6 run -q tests/index.js",
     "test:ci": "deno task build && k6 run -q tests/index.js"
   },
+  "lint": {
+    "rules": {
+      "exclude": ["no-import-prefix"]
+    }
+  },
   "imports": {
     "@std/assert": "jsr:@std/assert@1",
     "@types/k6": "npm:@types/k6@^1.0.2",
