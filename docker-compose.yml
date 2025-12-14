@@ -3,7 +3,7 @@ version: '3.3'
 services:
     localstack:
         container_name: 'k6-jslib-aws-localstack'
-        image: 'localstack/localstack:3.4.0'
+        image: 'localstack/localstack:4.12.0@sha256:0df3a97da57de03a588c05d9b8f390f15c7033fc7c4512f94619d344bc3cd317'
         ports:
             - '127.0.0.1:4566:4566' # LocalStack Gateway
             - '127.0.0.1:4510-4559:4510-4559' # external services port range
