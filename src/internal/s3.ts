@@ -38,6 +38,62 @@ export class S3Client extends AWSClient {
   }
 
   /**
+   * Creates a new S3 bucket with the specified name.
+   *
+   * To use this operation, you must have the s3:CreateBucket permission.
+   *
+   * @param {string} bucketName - The name of the bucket to create
+   * @param {CreateBucketParams?} params - Optional parameters for bucket creation
+   * @throws {S3ServiceError}
+   * @throws {InvalidSignatureError}
+   */
+  async createBucket(
+    bucketName: string,
+    params?: CreateBucketParams,
+  ): Promise<void> {
+    const method = "PUT";
+
+    let body = "";
+    if (params?.region && params.region !== "us-east-1") {
+      body =
+        `<CreateBucketConfiguration><LocationConstraint>${params.region}</LocationConstraint></CreateBucketConfiguration>`;
+    }
+
+    const headers: Record<string, string> = {};
+    if (params?.acl) {
+      headers["x-amz-acl"] = params.acl;
+    }
+    if (params?.objectOwnership) {
+      headers["x-amz-object-ownership"] = params.objectOwnership;
+    }
+    if (params?.objectLockEnabled) {
+      headers["x-amz-bucket-object-lock-enabled"] = "true";
+    }
+
+    const signedRequest: SignedHTTPRequest = this.signature.sign(
+      {
+        method: method,
+        endpoint: this.endpoint,
+        path: `/${bucketName}`,
+        headers: headers,
+        body: body || undefined,
+      },
+      {},
+    );
+
+    const res = await http.asyncRequest(
+      method,
+      signedRequest.url,
+      signedRequest.body || null,
+      {
+        ...this.baseRequestParams,
+        headers: signedRequest.headers,
+      },
+    );
+    this.handleError(res, "CreateBucket");
+  }
+
+  /**
    * Returns a list of all buckets owned by the authenticated sender of the request.
    * To use this operation, you must have the s3:ListAllMyBuckets permission.
    *
@@ -873,6 +929,7 @@ type S3Operation =
   | "PutObject"
   | "DeleteObject"
   | "CopyObject"
+  | "CreateBucket"
   | "CreateMultipartUpload"
   | "CompleteMultipartUpload"
   | "UploadPart"
@@ -896,6 +953,33 @@ type StorageClass =
   | "OUTPOSTS"
   | "GLACIER_IR"
   | undefined;
+
+/**
+ * Describes the object ownership setting for a bucket.
+ * 
+ * BucketOwnerPreferred - Objects uploaded to the bucket change ownership to the bucket owner 
+ * if the objects are uploaded with the bucket-owner-full-control canned ACL.
+ * 
+ * ObjectWriter - The uploading account will own the object if the object is uploaded with 
+ * the bucket-owner-full-control canned ACL.
+ * 
+ * BucketOwnerEnforced - Access control lists (ACLs) are disabled and no longer affect permissions. 
+ * The bucket owner automatically owns and has full control over every object in the bucket.
+ */
+type S3ObjectOwnership = "BucketOwnerPreferred" | "ObjectWriter" | "BucketOwnerEnforced";
+
+/**
+ * Describes the canned ACL (Access Control List) to apply to a bucket.
+ * 
+ * private - Owner gets FULL_CONTROL. No one else has access rights (default).
+ * 
+ * public-read - Owner gets FULL_CONTROL. The AllUsers group gets READ access.
+ * 
+ * public-read-write - Owner gets FULL_CONTROL. The AllUsers group gets READ and WRITE access.
+ * 
+ * authenticated-read - Owner gets FULL_CONTROL. The AuthenticatedUsers group gets READ access.
+ */
+type S3CannedACL = "private" | "public-read" | "public-read-write" | "authenticated-read";
 
 /**
  * PutObjectParams describes the parameters that can be passed to the PutObject operation.
@@ -941,4 +1025,33 @@ export interface PutObjectParams {
    * For more information, see https://www.rfc-editor.org/rfc/rfc9110.html#name-content-type.
    */
   contentType?: string;
+}
+
+/**
+ * CreateBucketParams describes the parameters that can be passed to the CreateBucket operation.
+ */
+export interface CreateBucketParams {
+  /**
+   * Specifies the AWS region where the bucket will be created.
+   * If not specified, the bucket is created in the US East (N. Virginia) Region (us-east-1).
+   */
+  region?: string;
+
+  /**
+   * The canned ACL to apply to the bucket.
+   * For more information, see https://docs.aws.amazon.com/AmazonS3/latest/userguide/acl-overview.html#canned-acl
+   */
+  acl?: S3CannedACL;
+
+  /**
+   * The container element for object ownership for a bucket's ownership controls.
+   * For more information, see https://docs.aws.amazon.com/AmazonS3/latest/userguide/about-object-ownership.html
+   */
+  objectOwnership?: S3ObjectOwnership;
+
+  /**
+   * Specifies whether you want S3 Object Lock to be enabled for the new bucket.
+   * For more information, see https://docs.aws.amazon.com/AmazonS3/latest/userguide/object-lock.html
+   */
+  objectLockEnabled?: boolean;
 }
