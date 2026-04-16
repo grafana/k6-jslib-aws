@@ -111,7 +111,7 @@ export class EventBridgeClient extends AWSClient {
 
     if (errorCode === 1500) {
       throw new EventBridgeServiceError(
-        "An error occured on the server side",
+        "An error occurred on the server side",
         "InternalServiceError",
         operation as EventBridgeOperation,
       );
