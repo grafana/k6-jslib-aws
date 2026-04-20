@@ -327,7 +327,7 @@ export class KinesisClient extends AWSClient {
 
     if (errorCode === 1500) {
       throw new KinesisServiceError(
-        "An error occured on the server side",
+        "An error occurred on the server side",
         "InternalServiceError",
         operation || "Unknown",
       );

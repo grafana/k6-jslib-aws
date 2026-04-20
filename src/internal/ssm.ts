@@ -116,7 +116,7 @@ export class SystemsManagerClient extends AWSClient {
 
     if (errorCode === 1500) {
       throw new SystemsManagerServiceError(
-        "An error occured on the server side",
+        "An error occurred on the server side",
         "InternalServiceError",
         operation as SystemsManagerOperation,
       );
