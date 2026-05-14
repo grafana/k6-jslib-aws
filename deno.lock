@@ -3,8 +3,7 @@
   "specifiers": {
     "jsr:@std/assert@1": "1.0.19",
     "jsr:@std/internal@^1.0.12": "1.0.13",
-    "npm:@types/k6@1": "1.0.2",
-    "npm:@types/k6@^1.0.2": "1.0.2",
+    "npm:@types/k6@2": "2.0.0",
     "npm:esbuild@0.25": "0.25.12",
     "npm:eslint@^9.27.0": "9.27.0"
   },
@@ -229,8 +228,8 @@
     "@types/json-schema@7.0.15": {
       "integrity": "sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA=="
     },
-    "@types/k6@1.0.2": {
-      "integrity": "sha512-bpja1c7OXIJk06aPGN+Aw5f3QhP0PjvgX2Fwfa3rJUaUI+O1ZE3491g9hMjhH21ZlTaAhz7h6veyxaz/RqPUTg=="
+    "@types/k6@2.0.0": {
+      "integrity": "sha512-ztO2fVOAQxtCpF6VWTn8O6FW6Z4DpjhY+XvD2GpCe/+fAfekD45bQ+vrM0B0C0c5ajLpVgWTMlLu9dKZ1nI+wg=="
     },
     "acorn-jsx@5.3.2_acorn@8.14.0": {
       "integrity": "sha512-rq9s+JNhf0IChjtDXxllJ7g41oZk5SlXtp0LHwyA5cejwn7vKmKp4pPri6YEePv2PU65sAsegbXtIinmDFDXgQ==",
@@ -635,8 +634,7 @@
   "workspace": {
     "dependencies": [
       "jsr:@std/assert@1",
-      "npm:@types/k6@1",
-      "npm:@types/k6@^1.0.2",
+      "npm:@types/k6@2",
       "npm:esbuild@0.25",
       "npm:eslint@^9.27.0"
     ]
