@@ -10,6 +10,7 @@ const buildOptions = {
         { in: 'src/s3.ts', out: 's3' },
         { in: 'src/secrets-manager.ts', out: 'secrets-manager' },
         { in: 'src/sqs.ts', out: 'sqs' },
+        { in: 'src/dynamo-db.ts', out: 'dynamo-db' },
         { in: 'src/ssm.ts', out: 'ssm' },
         { in: 'src/kms.ts', out: 'kms' },
         { in: 'src/kinesis.ts', out: 'kinesis' },
