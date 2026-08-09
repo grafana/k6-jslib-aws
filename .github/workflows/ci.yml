@@ -47,7 +47,7 @@ jobs:
               run: go install go.k6.io/k6@latest
 
             - name: Build the docker-compose stack
-              uses: hoverkraft-tech/compose-action@4894d2492015c1774ee5a13a95b1072093087ec3 # v2.5.0
+              uses: hoverkraft-tech/compose-action@ee6af68587292d72db67743171809c19787df4c9 # v3.1.0
               with:
                   up-flags: '-d'
                   down-flags: '-v'
