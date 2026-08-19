@@ -25,3 +25,4 @@ Adding a new AWS service requires coordinated changes in five places: the intern
 The LocalStack test setup uses a fixed sleep (15s locally, 30s in CI) instead of a health check to wait for initialization. Tests will fail intermittently if LocalStack init scripts take longer than expected, with no retry mechanism.
 
 Publishing a new version requires opening a PR on a separate repository (the jslib CDN repo) with the built artifacts. The version number must be updated in the Deno config, and all version references across README and examples must be manually updated to match.
+- Security issues should be reported via [Grafana's security issue reporting page](https://grafana.com/legal/report-a-security-issue/) and not directly in this repository.
