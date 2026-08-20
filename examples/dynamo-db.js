@@ -19,31 +19,56 @@ export default async function () {
     sk: { S: `item#${exec.vu.idInTest}` },
   };
 
-  // Create or replace an item.
-  await dynamoDb.putItem(testTableName, {
-    ...key,
-    value: { S: "hello from k6" },
-  });
+  // Create the item, guarding against overwriting one left over from a
+  // previous, uncleaned run of this same VU.
+  await dynamoDb.putItem(
+    testTableName,
+    { ...key, value: { S: "hello from k6" } },
+    { conditionExpression: "attribute_not_exists(pk)" },
+  );
 
-  // Read it back.
-  const item = await dynamoDb.getItem(testTableName, key);
+  // Read it back with a strongly consistent read, since we just wrote it.
+  const item = await dynamoDb.getItem(testTableName, key, {
+    consistentRead: true,
+  });
   check(item, { "item was written": (i) => i?.value?.S === "hello from k6" });
 
-  // Update a single attribute.
-  await dynamoDb.updateItem(
+  // Update a single attribute and get the new value back.
+  const updated = await dynamoDb.updateItem(
     testTableName,
     key,
     "SET #v = :v",
     {
       expressionAttributeNames: { "#v": "value" },
       expressionAttributeValues: { ":v": { S: "updated by k6" } },
+      returnValues: "ALL_NEW",
     },
   );
+  check(updated, { "item was updated": (i) => i.value.S === "updated by k6" });
 
-  // Query all items for this tenant.
-  await dynamoDb.query(testTableName, "pk = :pk", {
-    expressionAttributeValues: { ":pk": { S: "tenant#1" } },
+  // Query for this tenant's items, filtering down to the value we just set
+  // (other VUs are writing under the same partition key concurrently).
+  const matches = await dynamoDb.query(testTableName, "pk = :pk", {
+    expressionAttributeNames: { "#v": "value" },
+    expressionAttributeValues: {
+      ":pk": { S: "tenant#1" },
+      ":v": { S: "updated by k6" },
+    },
+    filterExpression: "#v = :v",
   });
+  check(matches, { "query found the item": (r) => r.count >= 1 });
+
+  // Scan the whole table, one page at a time.
+  let page = await dynamoDb.scan(testTableName, { limit: 25 });
+  let scannedCount = page.count;
+  while (page.lastEvaluatedKey) {
+    page = await dynamoDb.scan(testTableName, {
+      limit: 25,
+      exclusiveStartKey: page.lastEvaluatedKey,
+    });
+    scannedCount += page.count;
+  }
+  check(scannedCount, { "scan visited at least one item": (n) => n >= 1 });
 
   // Clean up.
   await dynamoDb.deleteItem(testTableName, key);

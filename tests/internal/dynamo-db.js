@@ -28,6 +28,29 @@ export async function dynamoDbTestSuite(data) {
     expect(item).to.be.undefined;
   });
 
+  await asyncDescribe(
+    "dynamoDb.getItem with consistentRead and projectionExpression",
+    async (expect) => {
+      // Act: project only the "value" attribute (itself a reserved word,
+      // hence the name placeholder), not the primary key.
+      const item = await dynamoDb.getItem(
+        tableName,
+        { pk: { S: "tenant#1" }, sk: { S: "item#1" } },
+        {
+          consistentRead: true,
+          projectionExpression: "#v",
+          expressionAttributeNames: { "#v": "value" },
+        },
+      );
+
+      // Assert: only the projected attribute comes back.
+      expect(item).to.not.be.undefined;
+      expect(item.value.S).to.equal("alpha");
+      expect(item.pk).to.be.undefined;
+      expect(item.sk).to.be.undefined;
+    },
+  );
+
   await asyncDescribe("dynamoDb.query", async (expect) => {
     // Act
     const result = await dynamoDb.query(
@@ -38,9 +61,9 @@ export async function dynamoDbTestSuite(data) {
       },
     );
 
-    // Assert
-    expect(result.count).to.equal(4); // item#1, item#2, item#update, item#delete
-    expect(result.items).to.have.length(4);
+    // Assert: the items seeded by the init script that no other test ever
+    // removes are present. The exact count isn't asserted, since other
+    // tests add and remove items within this same partition.
     expect(result.items.map((i) => i.sk.S)).to.include("item#1");
     expect(result.items.map((i) => i.sk.S)).to.include("item#2");
   });
@@ -114,9 +137,15 @@ export async function dynamoDbTestSuite(data) {
     // Act
     const result = await dynamoDb.scan(tableName);
 
-    // Assert
-    expect(result.count).to.equal(5); // all items seeded by the init script
-    expect(result.items).to.have.length(5);
+    // Assert: the items seeded by the init script that no other test ever
+    // removes are present, across both partitions. The exact count isn't
+    // asserted, since other tests add and remove items in the table.
+    const hasItem = (pk, sk) =>
+      result.items.some((i) => i.pk.S === pk && i.sk.S === sk);
+
+    expect(hasItem("tenant#1", "item#1")).to.be.true;
+    expect(hasItem("tenant#1", "item#2")).to.be.true;
+    expect(hasItem("tenant#2", "item#1")).to.be.true;
   });
 
   await asyncDescribe("dynamoDb.putItem", async (expect) => {
@@ -233,6 +262,50 @@ export async function dynamoDbTestSuite(data) {
     });
     expect(afterDelete).to.be.undefined;
   });
+
+  await asyncDescribe(
+    "dynamoDb.deleteItem with returnValues and a failing conditionExpression",
+    async (expect) => {
+      // Arrange
+      const key = {
+        pk: { S: "tenant#1" },
+        sk: { S: "item#delete-conditional" },
+      };
+      await dynamoDb.putItem(tableName, {
+        ...key,
+        value: { S: "to-be-deleted" },
+      });
+
+      // Act: a delete that should be rejected...
+      let conditionalCheckError;
+      try {
+        await dynamoDb.deleteItem(tableName, key, {
+          conditionExpression: "attribute_not_exists(pk)",
+        });
+      } catch (error) {
+        conditionalCheckError = error;
+      }
+
+      // Assert: ...because the item exists, so nothing was deleted.
+      expect(conditionalCheckError).to.not.be.undefined;
+      expect(conditionalCheckError).to.be.an.instanceOf(DynamoDBServiceError);
+      expect(conditionalCheckError.code).to.include(
+        "ConditionalCheckFailedException",
+      );
+
+      // Act: delete it for real, returning its previous attributes.
+      const deleted = await dynamoDb.deleteItem(tableName, key, {
+        returnValues: "ALL_OLD",
+      });
+
+      // Assert
+      expect(deleted).to.not.be.undefined;
+      expect(deleted.value.S).to.equal("to-be-deleted");
+
+      const afterDelete = await dynamoDb.getItem(tableName, key);
+      expect(afterDelete).to.be.undefined;
+    },
+  );
 
   await asyncDescribe(
     "dynamoDb.getItem from non-existent table",
