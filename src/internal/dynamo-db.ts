@@ -59,24 +59,7 @@ export class DynamoDBClient extends AWSClient {
   ): Promise<AttributeMap | undefined> {
     let body: Record<string, unknown> = { TableName: tableName, Item: item };
 
-    if (typeof options.conditionExpression !== "undefined") {
-      body = { ...body, ConditionExpression: options.conditionExpression };
-    }
-    if (typeof options.expressionAttributeNames !== "undefined") {
-      body = {
-        ...body,
-        ExpressionAttributeNames: options.expressionAttributeNames,
-      };
-    }
-    if (typeof options.expressionAttributeValues !== "undefined") {
-      body = {
-        ...body,
-        ExpressionAttributeValues: options.expressionAttributeValues,
-      };
-    }
-    if (typeof options.returnValues !== "undefined") {
-      body = { ...body, ReturnValues: options.returnValues };
-    }
+    body = this._withConditionalWriteOptions(body, options);
 
     const res = await this._sendRequest("PutItem", body);
 
@@ -135,24 +118,7 @@ export class DynamoDBClient extends AWSClient {
   ): Promise<AttributeMap | undefined> {
     let body: Record<string, unknown> = { TableName: tableName, Key: key };
 
-    if (typeof options.conditionExpression !== "undefined") {
-      body = { ...body, ConditionExpression: options.conditionExpression };
-    }
-    if (typeof options.expressionAttributeNames !== "undefined") {
-      body = {
-        ...body,
-        ExpressionAttributeNames: options.expressionAttributeNames,
-      };
-    }
-    if (typeof options.expressionAttributeValues !== "undefined") {
-      body = {
-        ...body,
-        ExpressionAttributeValues: options.expressionAttributeValues,
-      };
-    }
-    if (typeof options.returnValues !== "undefined") {
-      body = { ...body, ReturnValues: options.returnValues };
-    }
+    body = this._withConditionalWriteOptions(body, options);
 
     const res = await this._sendRequest("DeleteItem", body);
 
@@ -182,24 +148,7 @@ export class DynamoDBClient extends AWSClient {
       UpdateExpression: updateExpression,
     };
 
-    if (typeof options.conditionExpression !== "undefined") {
-      body = { ...body, ConditionExpression: options.conditionExpression };
-    }
-    if (typeof options.expressionAttributeNames !== "undefined") {
-      body = {
-        ...body,
-        ExpressionAttributeNames: options.expressionAttributeNames,
-      };
-    }
-    if (typeof options.expressionAttributeValues !== "undefined") {
-      body = {
-        ...body,
-        ExpressionAttributeValues: options.expressionAttributeValues,
-      };
-    }
-    if (typeof options.returnValues !== "undefined") {
-      body = { ...body, ReturnValues: options.returnValues };
-    }
+    body = this._withConditionalWriteOptions(body, options);
 
     const res = await this._sendRequest("UpdateItem", body);
 
@@ -254,6 +203,37 @@ export class DynamoDBClient extends AWSClient {
 
     const res = await this._sendRequest("Scan", body);
     return QueryResponse.fromJSON(res.json() as JSONObject);
+  }
+
+  private _withConditionalWriteOptions(
+    body: Record<string, unknown>,
+    options: {
+      conditionExpression?: string;
+      expressionAttributeNames?: Record<string, string>;
+      expressionAttributeValues?: AttributeMap;
+      returnValues?: ReturnValues;
+    },
+  ): Record<string, unknown> {
+    if (typeof options.conditionExpression !== "undefined") {
+      body = { ...body, ConditionExpression: options.conditionExpression };
+    }
+    if (typeof options.expressionAttributeNames !== "undefined") {
+      body = {
+        ...body,
+        ExpressionAttributeNames: options.expressionAttributeNames,
+      };
+    }
+    if (typeof options.expressionAttributeValues !== "undefined") {
+      body = {
+        ...body,
+        ExpressionAttributeValues: options.expressionAttributeValues,
+      };
+    }
+    if (typeof options.returnValues !== "undefined") {
+      body = { ...body, ReturnValues: options.returnValues };
+    }
+
+    return body;
   }
 
   private _withCommonQueryLikeOptions(
@@ -388,7 +368,7 @@ export interface AttributeValue {
 export type AttributeMap = Record<string, AttributeValue>;
 
 /**
- * Determines which item attributes a write operation should return.
+ * Determines which item attributes UpdateItem should return.
  */
 export type ReturnValues =
   | "NONE"
@@ -396,6 +376,13 @@ export type ReturnValues =
   | "UPDATED_OLD"
   | "ALL_NEW"
   | "UPDATED_NEW";
+
+/**
+ * Determines which item attributes PutItem/DeleteItem should return.
+ * Unlike UpdateItem, they only support returning the item's previous
+ * attributes, or nothing.
+ */
+export type WriteReturnValues = "NONE" | "ALL_OLD";
 
 export interface PutItemOptions {
   /**
@@ -413,7 +400,7 @@ export interface PutItemOptions {
   /**
    * Whether to return the item's previous attributes ("ALL_OLD") or nothing ("NONE", the default).
    */
-  returnValues?: ReturnValues;
+  returnValues?: WriteReturnValues;
 }
 
 export interface GetItemOptions {
@@ -447,7 +434,7 @@ export interface DeleteItemOptions {
   /**
    * Whether to return the item's attributes as they were before deletion ("ALL_OLD") or nothing ("NONE", the default).
    */
-  returnValues?: ReturnValues;
+  returnValues?: WriteReturnValues;
 }
 
 export interface UpdateItemOptions {
