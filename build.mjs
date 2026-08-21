@@ -15,6 +15,7 @@ const buildOptions = {
         { in: 'src/kinesis.ts', out: 'kinesis' },
         { in: 'src/event-bridge.ts', out: 'event-bridge' },
         { in: 'src/lambda.ts', out: 'lambda' },
+        { in: 'src/cognito.ts', out: 'cognito' },
         { in: 'src/signature.ts', out: 'signature' },
     ],
 

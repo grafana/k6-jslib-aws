@@ -11,6 +11,7 @@ import { signatureV4TestSuite } from "./internal/signature.js";
 import { sqsTestSuite } from "./internal/sqs.js";
 import { eventBridgeTestSuite } from "./internal/event-bridge.js";
 import { lambdaTestSuite } from "./internal/lambda.js";
+import { cognitoTestSuite } from "./internal/cognito.js";
 
 // Must know:
 //   * end2end tests such as these rely on the localstack
@@ -100,6 +101,13 @@ const testData = {
       value: `test-parameter-secret-value`,
     },
   },
+
+  cognito: {
+    poolName: "test-jslib-aws",
+    clientName: "test-jslib-aws",
+    username: "test-user",
+    password: "TestPassword1",
+  },
 };
 
 export const options = {
@@ -120,4 +128,5 @@ export default async function () {
   await kinesisTestSuite(testData);
   await eventBridgeTestSuite(testData);
   await lambdaTestSuite(testData);
+  await cognitoTestSuite(testData);
 }
