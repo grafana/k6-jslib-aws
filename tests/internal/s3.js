@@ -330,6 +330,22 @@ export async function s3TestSuite(data) {
       );
   });
 
+  await asyncDescribe("s3.createBucket", async (expect) => {
+    const testBucketName = `test-create-bucket-${Date.now()}`;
+
+    // Act - Create a new bucket
+    await s3Client.createBucket(testBucketName);
+
+    // Verify bucket was created by listing buckets
+    const bucketsAfterCreate = await s3Client.listBuckets();
+
+    // Assert
+    expect(bucketsAfterCreate.map((b) => b.name)).to.contain(testBucketName);
+
+    // Note: Bucket cleanup would require a deleteBucket operation
+    // For now, the test buckets will remain in LocalStack until container restart
+  });
+
   // Teardown
   // Ensure to cleanup the file create by the s3 tests.
   await s3Client.deleteObject(data.s3.testBucketName, "created-by-test.txt");
