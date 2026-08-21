@@ -10,6 +10,7 @@ Extensive documentation and examples for each of these clients can be found in t
 
 -   [`EventBridge`](https://grafana.com/docs/k6/latest/javascript-api/jslib/aws/eventbridgeclient/): allows to put events to AWS EventBridge.
 -   [`Kinesis`](./examples/kinesis.js): allows to list streams, create streams, put records, list shards, get shard iterators, and get records from AWS Kinesis.
+-   [`Cognito`](./examples/cognito.js): allows users to authenticate with the USER_SRP_AUTH flow.
 -   [`KMS`](https://grafana.com/docs/k6/latest/javascript-api/jslib/aws/kmsclient/): allows to list KMS keys and generate a unique symmetric data key for use outside of AWS KMS
 -   [`Lambda`](./examples/lambda.js): allows to invoke functions in AWS Lambda.
 -   [`S3Client`](https://grafana.com/docs/k6/latest/javascript-api/jslib/aws/s3client/): allows to list buckets and bucket's objects, as well as uploading, downloading, and deletion of objects.
