@@ -17,11 +17,3 @@ awslocal dynamodb put-item \
 awslocal dynamodb put-item \
   --table-name test-jslib-aws-table \
   --item '{"pk": {"S": "tenant#2"}, "sk": {"S": "item#1"}, "value": {"S": "gamma"}}'
-
-awslocal dynamodb put-item \
-  --table-name test-jslib-aws-table \
-  --item '{"pk": {"S": "tenant#1"}, "sk": {"S": "item#update"}, "value": {"S": "original"}}'
-
-awslocal dynamodb put-item \
-  --table-name test-jslib-aws-table \
-  --item '{"pk": {"S": "tenant#1"}, "sk": {"S": "item#delete"}, "value": {"S": "to-delete"}}'

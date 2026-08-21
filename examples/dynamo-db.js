@@ -13,9 +13,13 @@ const awsConfig = new AWSConfig({
 const dynamoDb = new DynamoDBClient(awsConfig);
 const testTableName = "test-jslib-aws-table";
 
+// Distinct from any partition key used by seeded test data, so this demo
+// never collides with pre-existing items for low VU ids.
+const examplePartitionKey = "tenant#example";
+
 export default async function () {
   const key = {
-    pk: { S: "tenant#1" },
+    pk: { S: examplePartitionKey },
     sk: { S: `item#${exec.vu.idInTest}` },
   };
 
@@ -47,26 +51,28 @@ export default async function () {
   check(updated, { "item was updated": (i) => i.value.S === "updated by k6" });
 
   // Query for this tenant's items, filtering down to the value we just set
-  // (other VUs are writing under the same partition key concurrently).
+  // (other VUs are writing under the same partition key concurrently). A
+  // consistent read avoids racing the update above.
   const matches = await dynamoDb.query(testTableName, "pk = :pk", {
     expressionAttributeNames: { "#v": "value" },
     expressionAttributeValues: {
-      ":pk": { S: "tenant#1" },
+      ":pk": { S: examplePartitionKey },
       ":v": { S: "updated by k6" },
     },
     filterExpression: "#v = :v",
+    consistentRead: true,
   });
   check(matches, { "query found the item": (r) => r.count >= 1 });
 
   // Scan the whole table, one page at a time.
   let page = await dynamoDb.scan(testTableName, { limit: 25 });
-  let scannedCount = page.count;
+  let scannedCount = page.scannedCount;
   while (page.lastEvaluatedKey) {
     page = await dynamoDb.scan(testTableName, {
       limit: 25,
       exclusiveStartKey: page.lastEvaluatedKey,
     });
-    scannedCount += page.count;
+    scannedCount += page.scannedCount;
   }
   check(scannedCount, { "scan visited at least one item": (n) => n >= 1 });
 

@@ -240,6 +240,9 @@ export class DynamoDBClient extends AWSClient {
     body: Record<string, unknown>,
     options: QueryOptions | ScanOptions,
   ): Record<string, unknown> {
+    if (typeof options.consistentRead !== "undefined") {
+      body = { ...body, ConsistentRead: options.consistentRead };
+    }
     if (typeof options.expressionAttributeNames !== "undefined") {
       body = {
         ...body,
@@ -331,7 +334,7 @@ export class DynamoDBClient extends AWSClient {
       );
     }
 
-    if (errorCode === 1500) {
+    if (errorCode >= 1500 && errorCode <= 1599) {
       throw new DynamoDBServiceError(
         "An error occurred on the server side",
         "InternalServiceError",
@@ -352,9 +355,11 @@ export class DynamoDBClient extends AWSClient {
 export interface AttributeValue {
   S?: string;
   N?: string;
+  /** Base64-encoded binary data. */
   B?: string;
   SS?: string[];
   NS?: string[];
+  /** Base64-encoded binary data, one entry per set member. */
   BS?: string[];
   M?: AttributeMap;
   L?: AttributeValue[];
@@ -458,6 +463,12 @@ export interface UpdateItemOptions {
 
 export interface QueryOptions {
   /**
+   * Whether to use strongly consistent reads instead of eventually
+   * consistent reads. Not supported when `indexName` is a global secondary
+   * index.
+   */
+  consistentRead?: boolean;
+  /**
    * Substitution tokens for attribute names in an expression.
    */
   expressionAttributeNames?: Record<string, string>;
@@ -488,6 +499,12 @@ export interface QueryOptions {
 }
 
 export interface ScanOptions {
+  /**
+   * Whether to use strongly consistent reads instead of eventually
+   * consistent reads. Not supported when `indexName` is a global secondary
+   * index.
+   */
+  consistentRead?: boolean;
   /**
    * Substitution tokens for attribute names in an expression.
    */

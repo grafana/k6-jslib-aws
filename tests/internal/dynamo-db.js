@@ -190,8 +190,10 @@ export async function dynamoDbTestSuite(data) {
   await asyncDescribe(
     "dynamoDb.putItem with a failing conditionExpression",
     async (expect) => {
-      // Arrange: seeded by the init script, untouched by other tests.
-      const key = { pk: { S: "tenant#1" }, sk: { S: "item#1" } };
+      // Arrange: a dedicated item, so this test's assumptions can't be
+      // broken by an unrelated change to a shared, widely-read item.
+      const key = { pk: { S: "tenant#1" }, sk: { S: "item#put-conditional" } };
+      await dynamoDb.putItem(tableName, { ...key, value: { S: "original" } });
 
       // Act
       let conditionalCheckError;
@@ -211,18 +213,25 @@ export async function dynamoDbTestSuite(data) {
       expect(conditionalCheckError.code).to.include(
         "ConditionalCheckFailedException",
       );
+      expect(conditionalCheckError.operation).to.equal("PutItem");
 
       // ...and the existing item was left untouched.
       const item = await dynamoDb.getItem(tableName, key);
-      expect(item.value.S).to.equal("alpha");
+      expect(item.value.S).to.equal("original");
     },
   );
 
   await asyncDescribe("dynamoDb.updateItem", async (expect) => {
+    // Arrange: an explicit starting value, so this test proves a real
+    // transition happened (rather than passing as a no-op on a repeat run
+    // against the same table, where the item might already be "updated").
+    const key = { pk: { S: "tenant#1" }, sk: { S: "item#update" } };
+    await dynamoDb.putItem(tableName, { ...key, value: { S: "original" } });
+
     // Act
     const updated = await dynamoDb.updateItem(
       tableName,
-      { pk: { S: "tenant#1" }, sk: { S: "item#update" } },
+      key,
       "SET #v = :v",
       {
         expressionAttributeNames: { "#v": "value" },
@@ -234,32 +243,25 @@ export async function dynamoDbTestSuite(data) {
     // Assert
     expect(updated.value.S).to.equal("updated");
 
-    const item = await dynamoDb.getItem(tableName, {
-      pk: { S: "tenant#1" },
-      sk: { S: "item#update" },
-    });
+    const item = await dynamoDb.getItem(tableName, key);
     expect(item.value.S).to.equal("updated");
   });
 
   await asyncDescribe("dynamoDb.deleteItem", async (expect) => {
-    // Arrange
-    const beforeDelete = await dynamoDb.getItem(tableName, {
-      pk: { S: "tenant#1" },
-      sk: { S: "item#delete" },
-    });
+    // Arrange: create the item to delete here, rather than relying on the
+    // init script's seed, so this test is safe to rerun against a table
+    // that's already been through a previous run of this same suite.
+    const key = { pk: { S: "tenant#1" }, sk: { S: "item#delete" } };
+    await dynamoDb.putItem(tableName, { ...key, value: { S: "to-delete" } });
+
+    const beforeDelete = await dynamoDb.getItem(tableName, key);
     expect(beforeDelete).to.not.be.undefined;
 
     // Act
-    await dynamoDb.deleteItem(tableName, {
-      pk: { S: "tenant#1" },
-      sk: { S: "item#delete" },
-    });
+    await dynamoDb.deleteItem(tableName, key);
 
     // Assert
-    const afterDelete = await dynamoDb.getItem(tableName, {
-      pk: { S: "tenant#1" },
-      sk: { S: "item#delete" },
-    });
+    const afterDelete = await dynamoDb.getItem(tableName, key);
     expect(afterDelete).to.be.undefined;
   });
 
@@ -292,6 +294,7 @@ export async function dynamoDbTestSuite(data) {
       expect(conditionalCheckError.code).to.include(
         "ConditionalCheckFailedException",
       );
+      expect(conditionalCheckError.operation).to.equal("DeleteItem");
 
       // Act: delete it for real, returning its previous attributes.
       const deleted = await dynamoDb.deleteItem(tableName, key, {
@@ -324,6 +327,7 @@ export async function dynamoDbTestSuite(data) {
       // Assert
       expect(getItemError).to.not.be.undefined;
       expect(getItemError).to.be.an.instanceOf(DynamoDBServiceError);
+      expect(getItemError.operation).to.equal("GetItem");
     },
   );
 }
