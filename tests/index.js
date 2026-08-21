@@ -11,6 +11,7 @@ import { signatureV4TestSuite } from "./internal/signature.js";
 import { sqsTestSuite } from "./internal/sqs.js";
 import { eventBridgeTestSuite } from "./internal/event-bridge.js";
 import { lambdaTestSuite } from "./internal/lambda.js";
+import { dynamoDbTestSuite } from "./internal/dynamo-db.js";
 
 // Must know:
 //   * end2end tests such as these rely on the localstack
@@ -89,6 +90,11 @@ const testData = {
     },
   },
 
+  // DynamoDB tests specific data
+  dynamoDb: {
+    tableName: "test-jslib-aws-table",
+  },
+
   // Systems Manager tests specific data
   systemsManager: {
     testParameter: {
@@ -120,4 +126,5 @@ export default async function () {
   await kinesisTestSuite(testData);
   await eventBridgeTestSuite(testData);
   await lambdaTestSuite(testData);
+  await dynamoDbTestSuite(testData);
 }

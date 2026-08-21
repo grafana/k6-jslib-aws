@@ -29,6 +29,11 @@ export {
   SystemsManagerServiceError,
 } from "./internal/ssm.ts";
 export { ReceivedMessage, SQSClient } from "./sqs.ts";
+export {
+  DynamoDBClient,
+  DynamoDBServiceError,
+  QueryResponse,
+} from "./internal/dynamo-db.ts";
 export { KinesisClient } from "./internal/kinesis.ts";
 export { EventBridgeClient } from "./internal/event-bridge.ts";
 export { LambdaClient, LambdaInvocationError } from "./lambda.ts";
