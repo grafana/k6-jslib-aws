@@ -1,6 +1,6 @@
 # k6-jslib-aws
 
-TypeScript library that lets k6 load test scripts interact with AWS services (S3, SQS, KMS, Lambda, Kinesis, EventBridge, SecretsManager, SSM). Distributed as bundled ESM via the k6 jslib CDN.
+TypeScript library that lets k6 load test scripts interact with AWS services (S3, SQS, KMS, Lambda, Kinesis, EventBridge, SecretsManager, SSM, DynamoDB). Distributed as bundled ESM via the k6 jslib CDN.
 
 ## Architecture
 
