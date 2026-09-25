@@ -8,6 +8,7 @@ Extensive documentation and examples for each of these clients can be found in t
 
 ## Supported services and features
 
+-   [`DynamoDB`](./examples/dynamo-db.js): allows to put, get, delete, update, query and scan items in AWS DynamoDB.
 -   [`EventBridge`](https://grafana.com/docs/k6/latest/javascript-api/jslib/aws/eventbridgeclient/): allows to put events to AWS EventBridge.
 -   [`Kinesis`](./examples/kinesis.js): allows to list streams, create streams, put records, list shards, get shard iterators, and get records from AWS Kinesis.
 -   [`KMS`](https://grafana.com/docs/k6/latest/javascript-api/jslib/aws/kmsclient/): allows to list KMS keys and generate a unique symmetric data key for use outside of AWS KMS
