@@ -14,9 +14,9 @@
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1",
-    "@types/k6": "npm:@types/k6@^1.0.2",
+    "@types/k6": "npm:@types/k6@^2.0.0",
     "esbuild": "npm:esbuild@^0.25.0",
     "eslint": "npm:eslint@^9.27.0",
-    "k6": "npm:@types/k6@^1.0.x"
+    "k6": "npm:@types/k6@^2.0.0"
   }
 }
