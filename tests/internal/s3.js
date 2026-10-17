@@ -330,6 +330,75 @@ export async function s3TestSuite(data) {
       );
   });
 
+  for (
+    const key of [
+      "encoding/test@bonjour.txt",
+      "encoding/reserved +?#&=:'!()*.txt",
+      "encoding/literal%2F-é-雪.txt",
+      "encoding//nested/./../file.txt",
+    ]
+  ) {
+    await asyncDescribe(`s3 object key encoding: ${key}`, async (expect) => {
+      const bucket = data.s3.testBucketName;
+      const body = `Object stored as ${key}`;
+      const copyKey = `${key}-copy`;
+
+      await s3Client.putObject(bucket, key, body);
+      const object = await s3Client.getObject(bucket, key);
+      expect(object.data).to.equal(body);
+
+      // A put/get round trip alone can address the same truncated key twice.
+      const objects = await s3Client.listObjects(bucket, "encoding/");
+      expect(objects.map((entry) => entry.key)).to.contain(key);
+
+      await s3Client.copyObject(bucket, key, bucket, copyKey);
+      const copy = await s3Client.getObject(bucket, copyKey);
+      expect(copy.data).to.equal(body);
+      const copiedObjects = await s3Client.listObjects(bucket, "encoding/");
+      expect(copiedObjects.map((entry) => entry.key)).to.contain(copyKey);
+
+      await s3Client.deleteObject(bucket, key);
+      await s3Client.deleteObject(bucket, copyKey);
+      const remainingObjects = await s3Client.listObjects(bucket, "encoding/");
+      expect(remainingObjects.map((entry) => entry.key)).not.to.contain(key);
+      expect(remainingObjects.map((entry) => entry.key)).not.to.contain(
+        copyKey,
+      );
+    });
+  }
+
+  await asyncDescribe("s3 multipart object key encoding", async (expect) => {
+    const bucket = data.s3.testBucketName;
+    const key = "encoding/multipart@ +?#%2F-é.txt";
+    const body = "Multipart body with a reserved-character key";
+    const upload = await s3Client.createMultipartUpload(bucket, key);
+    const part = await s3Client.uploadPart(
+      bucket,
+      key,
+      upload.uploadId,
+      1,
+      body,
+    );
+    await s3Client.completeMultipartUpload(bucket, key, upload.uploadId, [
+      part,
+    ]);
+    const object = await s3Client.getObject(bucket, key);
+    expect(object.data).to.equal(body);
+    const objects = await s3Client.listObjects(bucket, "encoding/");
+    expect(objects.map((entry) => entry.key)).to.contain(key);
+    await s3Client.deleteObject(bucket, key);
+
+    const aborted = await s3Client.createMultipartUpload(bucket, key);
+    await s3Client.abortMultipartUpload(bucket, key, aborted.uploadId);
+    let abortedUploadError;
+    try {
+      await s3Client.uploadPart(bucket, key, aborted.uploadId, 1, body);
+    } catch (error) {
+      abortedUploadError = error;
+    }
+    expect(abortedUploadError).to.be.an.instanceOf(S3ServiceError);
+  });
+
   // Teardown
   // Ensure to cleanup the file create by the s3 tests.
   await s3Client.deleteObject(data.s3.testBucketName, "created-by-test.txt");

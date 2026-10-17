@@ -917,7 +917,7 @@ function uint8ArrayToArrayBuffer(uint8Array: Uint8Array): ArrayBuffer {
  * @param URI {string} The URI to escape.
  * @returns {string} The escaped URI.
  */
-function escapeURI(URI: string): string {
+export function escapeURI(URI: string): string {
   const hexEncode = (c: string): string => {
     return `%${c.charCodeAt(0).toString(16).toUpperCase()}`;
   };
