@@ -1,6 +1,8 @@
 import { randomIntBetween } from "https://jslib.k6.io/k6-utils/1.2.0/index.js";
 
 import { AWSConfig } from "../dist/index.js";
+import { check } from "k6";
+import { setupFixtures } from "./fixtures/aws.js";
 
 import { s3TestSuite } from "./internal/s3.js";
 import { secretsManagerTestSuite } from "./internal/secrets-manager.js";
@@ -13,31 +15,14 @@ import { eventBridgeTestSuite } from "./internal/event-bridge.js";
 import { lambdaTestSuite } from "./internal/lambda.js";
 import { dynamoDbTestSuite } from "./internal/dynamo-db.js";
 
-// Must know:
-//   * end2end tests such as these rely on the localstack
-//   docker compose stack to be running. See the docker-compose.yml
-//   file in the root of the project.
-//   * The localstack docker compose stack is initialized with
-//   some data using the scripts found in tests/localstack_init/*.sh.
-//   These scripts are ran everytime the localstack container starts.
-//   The following tests rely on the data created by these scripts.
-//
-// Initialize an AWS configuration set to use the localstack service.
+// The Compose stack supplies a fresh fakecloud instance. setup() provisions
+// fixtures through AWS APIs; service tests use generated IAM credentials.
 const awsConfig = new AWSConfig({
-  // Localstack runs on localhost:4566
-  endpoint: "http://localhost.localstack.cloud:4566",
-
-  // Localstack is setup to use the us-east-1 region
+  endpoint: __ENV.AWS_TEST_ENDPOINT || "http://localhost.localstack.cloud:4566",
   region: "us-east-1",
-
-  // Dummy value to keep the client happy
-  accessKeyId: "RUSZHYJUBIXGH4A5AAIX",
-
-  // Dummy value to keep the client happy
-  secretAccessKey: "9g7dpx9QU4XNawNHkMnXUQ6LgTfZIPG6fnIdADDQ",
-
-  // Dummy value to keep the client happy
-  sessionToken: "sessiontoken",
+  // fakecloud reserves test-prefixed credentials for IAM bootstrapping.
+  accessKeyId: "test-bootstrap-key",
+  secretAccessKey: "test-bootstrap-secret",
 });
 
 const testData = {
@@ -75,20 +60,7 @@ const testData = {
   },
 
   // Simple Queue Service tests specific data
-  sqs: {
-    testQueues: {
-      fifoQueueSend:
-        "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/fifo-test-queue.fifo",
-      fifo:
-        "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/responding-test-queue.fifo",
-      standard:
-        "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/responding-test-standard-queue",
-      emptyQueue:
-        "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/fifo-test-queue.fifo",
-      deleteQueue:
-        "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/message-deletion-test-queue",
-    },
-  },
+  sqs: {},
 
   // DynamoDB tests specific data
   dynamoDb: {
@@ -116,15 +88,31 @@ export const options = {
   },
 };
 
-export default async function () {
-  signatureV4TestSuite();
-  await s3TestSuite(testData);
-  await secretsManagerTestSuite(testData);
-  await kmsTestSuite(testData);
-  await sqsTestSuite(testData);
-  await ssmTestSuite(testData);
-  await kinesisTestSuite(testData);
-  await eventBridgeTestSuite(testData);
-  await lambdaTestSuite(testData);
-  await dynamoDbTestSuite(testData);
+export async function setup() {
+  return await setupFixtures(awsConfig, testData);
+}
+
+export default async function (fixtures) {
+  testData.awsConfig = new AWSConfig({
+    region: awsConfig.region,
+    endpoint: awsConfig.endpoint,
+    ...fixtures.credentials,
+  });
+  testData.sqs.testQueues = fixtures.testQueues;
+  testData.kms = { keyId: fixtures.kmsKeyId };
+  try {
+    signatureV4TestSuite();
+    await s3TestSuite(testData);
+    await secretsManagerTestSuite(testData);
+    await kmsTestSuite(testData);
+    await sqsTestSuite(testData);
+    await ssmTestSuite(testData);
+    await kinesisTestSuite(testData);
+    await eventBridgeTestSuite(testData);
+    await lambdaTestSuite(testData);
+    await dynamoDbTestSuite(testData);
+  } catch (error) {
+    check(null, { "all service suites completed": () => false });
+    throw error;
+  }
 }

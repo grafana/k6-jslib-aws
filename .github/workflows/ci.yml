@@ -49,11 +49,8 @@ jobs:
             - name: Build the docker-compose stack
               uses: hoverkraft-tech/compose-action@b659c744ee9bed25aea2307c017ad849bd104433 # v3.2.0
               with:
-                  up-flags: '-d'
+                  up-flags: '-d --wait --wait-timeout 300'
                   down-flags: '-v'
-
-            - name: Wait for the localstack scripts to have been applied
-              run: sleep 30
 
             - name: Test
               run: deno task test:ci

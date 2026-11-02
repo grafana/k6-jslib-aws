@@ -1,18 +1,22 @@
-version: '3.3'
-
 services:
-    localstack:
-        container_name: 'k6-jslib-aws-localstack'
-        image: 'localstack/localstack:4.14.0@sha256:3ebc37595918b8accb852f8048fef2aff047d465167edd655528065b07bc364a'
+    fakecloud:
+        image: ghcr.io/faiscadev/fakecloud:0.51.0
         ports:
-            - '127.0.0.1:4566:4566' # LocalStack Gateway
-            - '127.0.0.1:4510-4559:4510-4559' # external services port range
+            - '127.0.0.1:4566:4566'
         environment:
-            - SERVICES=s3,secretsmanager,sqs,kms,ssm,kinesis,lambda,dynamodb
-            - S3_SKIP_SIGNATURE_VALIDATION=0 # enable signature validation
-            - DEBUG=${DEBUG-}
-            - PERSISTENCE=${PERSISTENCE-}
+            FAKECLOUD_ADDR: '0.0.0.0:4566'
+            FAKECLOUD_REGION: us-east-1
+            FAKECLOUD_ACCOUNT_ID: '000000000000'
+            FAKECLOUD_VERIFY_SIGV4: 'true'
+        # Allow the development emulator to connect to Docker on SELinux hosts.
+        security_opt:
+            - label=disable
         volumes:
-            - '${LOCALSTACK_VOLUME_DIR:-./volume}:/var/lib/localstack'
-            - './localstack/init:/etc/localstack/init'
-            - '/var/run/docker.sock:/var/run/docker.sock'
+            - '/run/docker.sock:/var/run/docker.sock'
+        extra_hosts:
+            - 'host.docker.internal:host-gateway'
+        healthcheck:
+            test: ['CMD', 'fakecloud', 'healthcheck']
+            interval: 2s
+            timeout: 3s
+            retries: 30

@@ -5,9 +5,11 @@ import { S3Client, S3ServiceError } from "../../dist/s3.js";
 export async function s3TestSuite(data) {
   const s3Client = new S3Client(data.awsConfig);
 
-  // Ensure the endpoint's hostname is prefixed with the service name
+  // Include the region so the emulator can distinguish virtual-hosted buckets
+  // from service prefixes when the client switches addressing styles.
   const s3Endpoint = data.awsConfig.endpoint.copy();
-  s3Endpoint.hostname = `s3.${data.awsConfig.endpoint.hostname}`;
+  s3Endpoint.hostname =
+    `s3.${data.awsConfig.region}.${data.awsConfig.endpoint.hostname}`;
   s3Client.endpoint = s3Endpoint;
 
   await asyncDescribe("s3.listBuckets", async (expect) => {
@@ -233,10 +235,11 @@ export async function s3TestSuite(data) {
   });
 
   await asyncDescribe("s3.completeMultipartUpload", async (expect) => {
-    // Arrange
+    // Use a fresh key: fakecloud treats unknown upload IDs for existing objects
+    // as idempotent completions, even when the ID was never issued.
     const multipartUpload = await s3Client.createMultipartUpload(
       data.s3.testBucketName,
-      "created-by-test.txt",
+      "multipart-completion-test.txt",
     );
     const uploadPart = await s3Client.uploadPart(
       data.s3.testBucketName,
@@ -245,18 +248,6 @@ export async function s3TestSuite(data) {
       1,
       "This file was created by a test",
     );
-
-    let completeMultipartUploadError;
-    try {
-      await s3Client.completeMultipartUpload(
-        data.s3.testBucketName,
-        multipartUpload.key,
-        multipartUpload.uploadId,
-        [uploadPart],
-      );
-    } catch (error) {
-      completeMultipartUploadError = error;
-    }
 
     let completeMultipartUploadNonExistingMultipartUploadIdError;
     try {
@@ -270,16 +261,29 @@ export async function s3TestSuite(data) {
       completeMultipartUploadNonExistingMultipartUploadIdError = error;
     }
 
+    // Validate missing parts while the upload is still active.
     let completeMultipartUploadNonExistingPartError;
     try {
       await s3Client.completeMultipartUpload(
         data.s3.testBucketName,
         multipartUpload.key,
         multipartUpload.uploadId,
-        [{ partNumber: 2, etag: "non-existent-etag" }],
+        [{ partNumber: 2, eTag: "non-existent-etag" }],
       );
     } catch (error) {
       completeMultipartUploadNonExistingPartError = error;
+    }
+
+    let completeMultipartUploadError;
+    try {
+      await s3Client.completeMultipartUpload(
+        data.s3.testBucketName,
+        multipartUpload.key,
+        multipartUpload.uploadId,
+        [uploadPart],
+      );
+    } catch (error) {
+      completeMultipartUploadError = error;
     }
 
     // Assert
@@ -291,6 +295,13 @@ export async function s3TestSuite(data) {
     expect(completeMultipartUploadNonExistingPartError).to.be.an.instanceOf(
       S3ServiceError,
     );
+    expect(completeMultipartUploadNonExistingMultipartUploadIdError.code).to.equal(
+      "NoSuchUpload",
+    );
+    expect(completeMultipartUploadNonExistingPartError.code).to.equal(
+      "InvalidPart",
+    );
+    await s3Client.deleteObject(data.s3.testBucketName, multipartUpload.key);
   });
 
   await asyncDescribe("s3.abortMultipartUpload", async (expect) => {

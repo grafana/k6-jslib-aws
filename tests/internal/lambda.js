@@ -1,5 +1,5 @@
 import { asyncDescribe } from "./helpers.js";
-import { LambdaClient } from "../../dist/lambda.js";
+import { LambdaClient, LambdaInvocationError } from "../../dist/lambda.js";
 
 export async function lambdaTestSuite(data) {
   const lambdaClient = new LambdaClient(data.awsConfig);
@@ -43,7 +43,8 @@ export async function lambdaTestSuite(data) {
       expectedError = error;
     }
 
-    expect(expectedError).to.be.an("error");
+    // Routing or Docker failures must not count as a successful handler-error test.
+    expect(expectedError).to.be.an.instanceOf(LambdaInvocationError);
   });
 
   await asyncDescribe("lambda.invoke - Log", async (expect) => {
