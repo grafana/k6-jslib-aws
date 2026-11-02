@@ -46,7 +46,13 @@ export class AWSError extends Error {
    * @returns {AWSError} - The parsed AWSError object
    */
   static parse(response: Response): AWSError {
-    if (response.headers["Content-Type"] === "application/json") {
+    const contentType = (response.headers["Content-Type"] || "")
+      .split(";")[0].trim().toLowerCase();
+    if (
+      contentType === "application/json" ||
+      contentType.startsWith("application/x-amz-json-") ||
+      contentType.endsWith("+json")
+    ) {
       const error = (response.json() as JSONObject) || {};
       const message = error.Message ||
         error.message ||

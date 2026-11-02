@@ -4,7 +4,7 @@
     "release": "NODE_ENV=production deno task build",
     "fmt": "deno fmt src tests examples",
     "lint": "deno lint src tests examples",
-    "test": "deno task build && docker compose down -v && docker compose up --build -d && sleep 15 && k6 run -q tests/index.js",
+    "test": "deno task build && docker compose down -v --remove-orphans && docker compose up --build -d --wait --wait-timeout 300 && k6 run -q tests/index.js",
     "test:ci": "deno task build && k6 run -q tests/index.js"
   },
   "lint": {

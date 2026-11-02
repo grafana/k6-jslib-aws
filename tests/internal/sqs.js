@@ -17,8 +17,8 @@ export async function sqsTestSuite(data) {
           },
           (error) => {
             expect(error.name).to.equal("SQSServiceError");
-            expect(error.message).to.equal(
-              'The input receipt handle "handle" is not a valid receipt handle.',
+            expect(error.code.split(".").pop()).to.equal(
+              "ReceiptHandleIsInvalid",
             );
           },
         );
@@ -54,25 +54,15 @@ export async function sqsTestSuite(data) {
     // Assert
     expect(queues.urls).to.have.lengthOf(5);
 
-    const gotFirstQueueName = queues.urls[0].split("/").pop();
-    expect(gotFirstQueueName).to.be.a("string");
-    expect(gotFirstQueueName).to.equal("standard-test-queue"); // as set in init script
-
-    const gotSecondQueueName = queues.urls[1].split("/").pop();
-    expect(gotSecondQueueName).to.be.a("string");
-    expect(gotSecondQueueName).to.equal("fifo-test-queue.fifo"); // as set in init script
-
-    const gotThirdQueueName = queues.urls[2].split("/").pop();
-    expect(gotThirdQueueName).to.be.a("string");
-    expect(gotThirdQueueName).to.equal("responding-test-standard-queue"); // as set in init script
-
-    const gotFourthQueueName = queues.urls[3].split("/").pop();
-    expect(gotFourthQueueName).to.be.a("string");
-    expect(gotFourthQueueName).to.equal("responding-test-queue.fifo"); // as set in init script
-
-    const gotFifthQueueName = queues.urls[4].split("/").pop();
-    expect(gotFifthQueueName).to.be.a("string");
-    expect(gotFifthQueueName).to.equal("message-deletion-test-queue"); // as set in init script
+    expect(queues.urls.map((url) => url.split("/").pop()).sort()).to.deep.equal(
+      [
+        "fifo-test-queue.fifo",
+        "message-deletion-test-queue",
+        "responding-test-queue.fifo",
+        "responding-test-standard-queue",
+        "standard-test-queue",
+      ],
+    );
   });
 
   await asyncDescribe(
@@ -159,8 +149,7 @@ export async function sqsTestSuite(data) {
 
   await asyncDescribe("sqs.sendMessage", async (expect) => {
     // Arrange
-    const queues = await sqsClient.listQueues();
-    const standardQueueUrl = queues.urls[0];
+    const standardQueueUrl = data.sqs.testQueues.standardSend;
 
     // Act
     const message = await sqsClient.sendMessage(standardQueueUrl, "test");
@@ -173,8 +162,7 @@ export async function sqsTestSuite(data) {
 
   await asyncDescribe("sqs.sendMessageWithAttributes", async (expect) => {
     // Arrange
-    const queues = await sqsClient.listQueues();
-    const standardQueueUrl = queues.urls[0];
+    const standardQueueUrl = data.sqs.testQueues.standardSend;
 
     // Act
     const message = await sqsClient.sendMessage(standardQueueUrl, "test", {
@@ -239,8 +227,7 @@ export async function sqsTestSuite(data) {
 
   await asyncDescribe("sqs.sendMessageBatch successful", async (expect) => {
     // Arrange
-    const queues = await sqsClient.listQueues();
-    const standardQueueUrl = queues.urls[0];
+    const standardQueueUrl = data.sqs.testQueues.standardSend;
     const messageBatch = [
       { messageId: "0", messageBody: "test0" },
       { messageId: "1", messageBody: "test1" },
@@ -268,8 +255,7 @@ export async function sqsTestSuite(data) {
     "sqs.sendMessageBatch ids not distinct",
     async (expect) => {
       // Arrange
-      const queues = await sqsClient.listQueues();
-      const standardQueueUrl = queues.urls[0];
+      const standardQueueUrl = data.sqs.testQueues.standardSend;
       const messageBatch = [
         { messageId: "0", messageBody: "test0" },
         { messageId: "0", messageBody: "test0" },

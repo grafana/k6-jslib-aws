@@ -96,3 +96,17 @@ deno task test
 ```
 
 For more details, refer to [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+Tests use fakecloud v0.51.0 on port 4566. Docker Compose waits for its health
+check before k6's `setup()` provisions fixtures through the AWS APIs. Fixture
+setup failures abort the run. Tests use generated IAM credentials with SigV4
+verification enabled; only IAM bootstrapping uses fakecloud's reserved root
+credentials. Lambda tests require the mounted Docker socket to execute their
+handlers. The development container disables SELinux labeling to allow that
+socket connection on Fedora; it has access to the host Docker daemon.
+
+`deno task test` recreates the emulator for a fresh set of fixtures. To run
+against a separate fresh fakecloud instance, set `AWS_TEST_ENDPOINT` when
+invoking k6. The endpoint must support regional S3 subdomains, as the tests
+exercise virtual-hosted requests. The old LocalStack seed files are retained
+temporarily while this test-backend migration is evaluated.
