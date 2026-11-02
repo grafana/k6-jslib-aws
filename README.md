@@ -102,8 +102,10 @@ check before k6's `setup()` provisions fixtures through the AWS APIs. Fixture
 setup failures abort the run. Tests use generated IAM credentials with SigV4
 verification enabled; only IAM bootstrapping uses fakecloud's reserved root
 credentials. Lambda tests require the mounted Docker socket to execute their
-handlers. The development container disables SELinux labeling to allow that
-socket connection on Fedora; it has access to the host Docker daemon.
+handlers. Before k6 starts, `deno task test:fixtures` packages the existing
+Lambda handler files using the host's `zip` command; both test tasks run this
+step automatically. The development container disables SELinux labeling to
+allow that socket connection on Fedora; it has access to the host Docker daemon.
 
 `deno task test` recreates the emulator for a fresh set of fixtures. To run
 against a separate fresh fakecloud instance, set `AWS_TEST_ENDPOINT` when

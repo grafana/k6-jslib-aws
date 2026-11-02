@@ -2,3 +2,4 @@ node_modules/
 /volume
 dist/
 .DS_Store
+/tests/fixtures/lambda/*.zip

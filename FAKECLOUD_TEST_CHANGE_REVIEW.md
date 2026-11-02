@@ -7,6 +7,10 @@ This document records the proposed changes, not approval to keep them. IDs are
 stable discussion references. No tests or implementation files were changed
 while preparing this inventory.
 
+Follow-up, 2026-11-02: FIX-11 and FIX-12 were revised to move Lambda ZIP
+packaging outside k6. The descriptions below reflect that decision; the
+custom JavaScript ZIP writer and inline handler sources have been removed.
+
 ## Scope and classification
 
 | Label | Meaning |
@@ -343,22 +347,30 @@ is added. Classification: fixture relocation; needs validation in the new run.
 
 Creates a `lambda-role` with a Lambda trust policy and registers `test-product`
 and `test-fail` through Lambda's REST create-function endpoint. The Node.js 18
-handlers are inline: one logs the received event and returns the product;
-the other throws. ZIPs are generated and base64-encoded in setup instead of
-using the startup shell script's `zip` command and handler files.
+handlers come from the existing files under
+`localstack/init/testdata/lambda`: one logs the received event and returns the
+product; the other throws. ZIPs are built externally before k6 starts, opened
+as binary fixtures during k6 initialization, and base64-encoded in setup for
+the create-function request.
 
 Creating the IAM role is also new; the old script supplied a fixed ARN. Handler
-source now has a second location while the unused legacy files remain.
+source is no longer duplicated inline; the existing handler files remain the
+source of truth.
 Classification: fixture relocation plus explicit role provisioning; requires
 working host Docker access for subsequent invocation, not merely registration.
 
-### FIX-12 — Build a Lambda ZIP: `tests/fixtures/lambda-zip.js`
+### FIX-12 — Package Lambda ZIPs externally: `tests/fixtures/prepare-lambda.sh`
 
-Adds a custom, single-file, uncompressed ZIP writer for `index.js`, including
-UTF-8 encoding, CRC32, local and central directory records, and the end record.
-This avoids needing an external `zip` executable during k6 setup. It is new
-test-support code to maintain, not required if fixtures are packaged outside
-k6. Classification: fixture plumbing; an external packager is an alternative.
+The initial proposal added a custom ZIP writer using `TextEncoder` in k6.
+That helper has been removed. A shell script now runs the host's `zip` command
+on the two existing `index.js` files, stripping directory paths so each archive
+has the expected handler at its root. Generated archives live under
+`tests/fixtures/lambda/` and are ignored by Git.
+
+`deno task test:fixtures` runs the packaging script. Both `test` and `test:ci`
+invoke it before starting k6; direct k6 invocations need that preparatory step
+first. This adds a host `zip` dependency but removes custom archive/CRC32 logic
+and encoding from test JavaScript. Classification: external fixture packaging.
 
 ## Related non-test changes already in the working tree
 

@@ -6,13 +6,10 @@ import {
   fixtureJson,
   fixtureRequest,
 } from "./request.js";
-import { lambdaZip } from "./lambda-zip.js";
 
 const handlers = {
-  "test-product":
-    'exports.handler = async (event) => { console.log("received event:", JSON.stringify(event)); return event.a * event.b; };',
-  "test-fail":
-    "exports.handler = async (event) => { throw new Error(event); };",
+  "test-product": open("./lambda/test-product.zip", "b"),
+  "test-fail": open("./lambda/test-fail.zip", "b"),
 };
 
 export async function setupFixtures(bootstrapConfig, data) {
@@ -165,7 +162,7 @@ export async function setupFixtures(bootstrapConfig, data) {
       }],
     }),
   });
-  for (const [name, source] of Object.entries(handlers)) {
+  for (const [name, archive] of Object.entries(handlers)) {
     await fixtureRequest(config, "lambda", {
       method: "POST",
       path: "/2015-03-31/functions",
@@ -175,7 +172,7 @@ export async function setupFixtures(bootstrapConfig, data) {
         Runtime: "nodejs18.x",
         Handler: "index.handler",
         Role: role.find("Arn").text(),
-        Code: { ZipFile: b64encode(lambdaZip(source)) },
+        Code: { ZipFile: b64encode(archive) },
       }),
     });
   }
