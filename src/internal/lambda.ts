@@ -5,7 +5,6 @@ import { AWSClient } from "./client.ts";
 import { AWSConfig } from "./config.ts";
 import { AWSError } from "./error.ts";
 import { InvalidSignatureError, SignatureV4 } from "./signature.ts";
-import { AMZ_TARGET_HEADER } from "./constants.ts";
 import { HTTPHeaders, HTTPMethod, QueryParameterBag } from "./http.ts";
 
 /**
@@ -55,7 +54,6 @@ export class LambdaClient extends AWSClient {
     const invocationType = options.invocationType || "RequestResponse";
     const headers = {
       ...this.commonHeaders,
-      [AMZ_TARGET_HEADER]: `AWSLambda.${invocationType}`,
       "X-Amz-Invocation-Type": invocationType,
       "X-Amz-Log-Type": options.logType || "None",
     };
