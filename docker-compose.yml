@@ -1,6 +1,6 @@
 services:
     fakecloud:
-        image: ghcr.io/faiscadev/fakecloud:0.51.0
+        image: ghcr.io/faiscadev/fakecloud:0.51.0@sha256:6242e3b38c7a8dfb6bbfa2b682b0f5fe4f4b2ea8f465128f0f871a2738a65800
         ports:
             - '127.0.0.1:4566:4566'
         environment:

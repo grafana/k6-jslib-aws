@@ -109,6 +109,9 @@ allow that socket connection on Fedora; it has access to the host Docker daemon.
 
 `deno task test` recreates the emulator for a fresh set of fixtures. To run
 against a separate fresh fakecloud instance, set `AWS_TEST_ENDPOINT` when
-invoking k6. The endpoint must support regional S3 subdomains, as the tests
-exercise virtual-hosted requests. The old LocalStack seed files are retained
+invoking k6. By default, tests use `http://amazonaws.com:4566` and k6 host
+overrides route that hostname and its subdomains to `127.0.0.1`, preserving
+AWS-shaped S3 bucket hostnames without depending on external DNS. A custom
+endpoint must support regional S3 subdomains, as the tests exercise
+virtual-hosted requests. The old LocalStack seed files are retained
 temporarily while this test-backend migration is evaluated.

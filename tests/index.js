@@ -18,7 +18,7 @@ import { dynamoDbTestSuite } from "./internal/dynamo-db.js";
 // The Compose stack supplies a fresh fakecloud instance. setup() provisions
 // fixtures through AWS APIs; service tests use generated IAM credentials.
 const awsConfig = new AWSConfig({
-  endpoint: __ENV.AWS_TEST_ENDPOINT || "http://localhost.localstack.cloud:4566",
+  endpoint: __ENV.AWS_TEST_ENDPOINT || "http://amazonaws.com:4566",
   region: "us-east-1",
   // fakecloud reserves test-prefixed credentials for IAM bootstrapping.
   accessKeyId: "test-bootstrap-key",
@@ -81,6 +81,12 @@ const testData = {
 };
 
 export const options = {
+  // Keep AWS-shaped hosts local, including S3 virtual-hosted bucket names,
+  // without relying on LocalStack's public wildcard DNS records.
+  hosts: {
+    "amazonaws.com": "127.0.0.1",
+    "*.amazonaws.com": "127.0.0.1",
+  },
   thresholds: {
     // As we're essentially unit testing here, we want to make sure that
     // the rate of successful checks is 100%
