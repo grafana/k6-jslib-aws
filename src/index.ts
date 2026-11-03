@@ -37,3 +37,13 @@ export {
 export { KinesisClient } from "./internal/kinesis.ts";
 export { EventBridgeClient } from "./internal/event-bridge.ts";
 export { LambdaClient, LambdaInvocationError } from "./lambda.ts";
+export {
+  CognitoIdentityProviderClient,
+  CognitoServiceError,
+} from "./internal/cognito.ts";
+export type {
+  CognitoAuthenticationResult,
+  CognitoAuthOptions,
+  CognitoUserPool,
+  CognitoUserPoolClient,
+} from "./internal/cognito.ts";

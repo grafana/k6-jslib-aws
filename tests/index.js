@@ -14,6 +14,7 @@ import { sqsTestSuite } from "./internal/sqs.js";
 import { eventBridgeTestSuite } from "./internal/event-bridge.js";
 import { lambdaTestSuite } from "./internal/lambda.js";
 import { dynamoDbTestSuite } from "./internal/dynamo-db.js";
+import { cognitoTestSuite } from "./internal/cognito.js";
 
 // The Compose stack supplies a fresh fakecloud instance. setup() provisions
 // fixtures through AWS APIs; service tests use generated IAM credentials.
@@ -67,6 +68,13 @@ const testData = {
     tableName: "test-jslib-aws-table",
   },
 
+  cognito: {
+    poolName: "test-jslib-aws",
+    clientName: "test-jslib-aws",
+    username: "test-user",
+    password: "TestPassword1",
+  },
+
   // Systems Manager tests specific data
   systemsManager: {
     testParameter: {
@@ -117,6 +125,7 @@ export default async function (fixtures) {
     await eventBridgeTestSuite(testData);
     await lambdaTestSuite(testData);
     await dynamoDbTestSuite(testData);
+    await cognitoTestSuite(testData);
   } catch (error) {
     check(null, { "all service suites completed": () => false });
     throw error;

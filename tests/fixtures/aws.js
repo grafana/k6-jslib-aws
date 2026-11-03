@@ -6,6 +6,7 @@ import {
   fixtureJson,
   fixtureRequest,
 } from "./request.js";
+import { setupCognitoFixtures } from "./cognito.js";
 
 const handlers = {
   "test-product": open("./lambda/test-product.zip", "b"),
@@ -171,6 +172,7 @@ export async function setupFixtures(bootstrapConfig, data) {
       }),
     });
   }
+  await setupCognitoFixtures(config, data.cognito);
   return {
     credentials,
     kmsKeyId: kms.KeyMetadata.KeyId,
