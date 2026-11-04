@@ -3,8 +3,10 @@ GO ?= go
 CURL ?= curl
 export PATH := $(abspath $(TOOLS_DIR)):$(PATH)
 
-K6 ?= k6
-K6_VERSION ?= v1.8.2
+K6_V1 ?= $(TOOLS_DIR)/k6-v1/k6
+K6_V1_VERSION ?= v1.8.2
+K6_V2 ?= $(TOOLS_DIR)/k6-v2/k6
+K6_V2_VERSION ?= v2.3.0
 COMPOSE ?= docker compose
 ESBUILD ?= esbuild
 ESBUILD_VERSION ?= 0.25.12
@@ -13,11 +15,12 @@ BIOME_VERSION ?= 2.6.4
 LOCAL_BIOME := $(TOOLS_DIR)/biome
 ENTRY_POINTS := $(wildcard src/*.ts)
 
-.PHONY: build release install-tools install-biome install-esbuild install-k6 \
-	check-esbuild check-biome check-fixture-requirements check-compose fmt fmt-check lint \
-	fixtures test test-ci
+.PHONY: build release install-tools install-biome install-esbuild install-k6-v1 \
+	install-k6-v2 check-esbuild check-biome check-k6-v1 check-k6-v2 \
+	check-fixture-requirements check-compose fmt fmt-check lint fixtures test test-ci \
+	test-v1 test-v2 test-ci-v1 test-ci-v2
 
-install-tools: install-biome install-esbuild install-k6
+install-tools: install-biome install-esbuild install-k6-v1 install-k6-v2
 
 install-biome:
 	@set -eu; \
@@ -35,9 +38,13 @@ install-esbuild:
 	mkdir -p "$(TOOLS_DIR)"
 	GOBIN="$(abspath $(TOOLS_DIR))" $(GO) install github.com/evanw/esbuild/cmd/esbuild@v$(ESBUILD_VERSION)
 
-install-k6:
-	mkdir -p "$(TOOLS_DIR)"
-	GOBIN="$(abspath $(TOOLS_DIR))" $(GO) install go.k6.io/k6@$(K6_VERSION)
+install-k6-v1:
+	mkdir -p "$(TOOLS_DIR)/k6-v1"
+	GOBIN="$(abspath $(TOOLS_DIR)/k6-v1)" $(GO) install go.k6.io/k6@$(K6_V1_VERSION)
+
+install-k6-v2:
+	mkdir -p "$(TOOLS_DIR)/k6-v2"
+	GOBIN="$(abspath $(TOOLS_DIR)/k6-v2)" $(GO) install go.k6.io/k6/v2@$(K6_V2_VERSION)
 
 build: check-esbuild
 	$(ESBUILD) $(ENTRY_POINTS) \
@@ -51,6 +58,12 @@ check-esbuild:
 
 check-biome:
 	@command -v $(BIOME) >/dev/null || { echo "Biome is required; run make install-biome"; exit 1; }
+
+check-k6-v1:
+	@test -x "$(K6_V1)" || { echo "k6 v1 is required; run make install-k6-v1"; exit 1; }
+
+check-k6-v2:
+	@test -x "$(K6_V2)" || { echo "k6 v2 is required; run make install-k6-v2"; exit 1; }
 
 check-fixture-requirements:
 	@command -v bash >/dev/null || { echo "bash is required"; exit 1; }
@@ -71,10 +84,24 @@ lint: check-biome
 fixtures: check-fixture-requirements
 	bash tests/fixtures/prepare-lambda.sh
 
-test: check-compose build fixtures
+test:
+	$(MAKE) test-v1
+	$(MAKE) test-v2
+
+test-v1: check-compose build fixtures check-k6-v1
 	$(COMPOSE) down -v --remove-orphans
 	$(COMPOSE) up --build -d --wait --wait-timeout 300
-	$(K6) run -q tests/index.js
+	$(K6_V1) run -q tests/index.js
 
-test-ci: build fixtures
-	$(K6) run -q tests/index.js
+test-v2: check-compose build fixtures check-k6-v2
+	$(COMPOSE) down -v --remove-orphans
+	$(COMPOSE) up --build -d --wait --wait-timeout 300
+	$(K6_V2) run -q tests/index.js
+
+test-ci: test-ci-v1
+
+test-ci-v1: build fixtures check-k6-v1
+	$(K6_V1) run -q tests/index.js
+
+test-ci-v2: build fixtures check-k6-v2
+	$(K6_V2) run -q tests/index.js

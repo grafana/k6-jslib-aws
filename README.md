@@ -105,12 +105,12 @@ an already-running emulator. Install the pinned development tools without Node:
 make install-tools
 ```
 
-This downloads Biome and installs esbuild and k6 (v1.8.2) into the ignored
+This downloads Biome and installs esbuild plus k6 v1 and v2 into the ignored
 `.tools/bin` directory. It requires Go and `curl`. Docker with Docker Compose,
 Bash, and `zip` are system prerequisites for `make test`; `make test-ci`
-assumes an emulator is already running. Make adds `.tools/bin` to `PATH` first;
-when it is absent, it uses compatible `biome`, `esbuild`, and `k6` binaries
-already available on your `PATH`.
+assumes an emulator is already running. `make test` runs the suite against a
+fresh emulator for each k6 major version. Use `make test-ci-v1` or
+`make test-ci-v2` to run a single version against an existing emulator.
 
 For more details, refer to [CONTRIBUTING.md](./CONTRIBUTING.md).
 

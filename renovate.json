@@ -2,6 +2,45 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>grafana/grafana-renovate-config//presets/k6/k6-engine-base.json",
-    "github>grafana/grafana-renovate-config//presets/k6/k6-engine-automerge.json"
+    "github>grafana/grafana-renovate-config//presets/k6/k6-engine-automerge.json",
+    "customManagers:biomeVersions"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^Makefile$/"],
+      "matchStrings": ["BIOME_VERSION \\?= (?<currentValue>[^\\s]+)"],
+      "datasourceTemplate": "github-releases",
+      "depNameTemplate": "biomejs/biome",
+      "extractVersionTemplate": "^@biomejs/biome@(?<version>.*)$",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^Makefile$/"],
+      "matchStrings": ["ESBUILD_VERSION \\?= (?<currentValue>[^\\s]+)"],
+      "datasourceTemplate": "go",
+      "depNameTemplate": "github.com/evanw/esbuild"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^Makefile$/"],
+      "matchStrings": ["K6_V1_VERSION \\?= (?<currentValue>[^\\s]+)"],
+      "datasourceTemplate": "go",
+      "depNameTemplate": "go.k6.io/k6"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^Makefile$/"],
+      "matchStrings": ["K6_V2_VERSION \\?= (?<currentValue>[^\\s]+)"],
+      "datasourceTemplate": "go",
+      "depNameTemplate": "go.k6.io/k6/v2"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["@biomejs/biome", "biomejs/biome"],
+      "groupName": "Biome"
+    }
   ]
 }
