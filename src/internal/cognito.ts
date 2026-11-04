@@ -10,7 +10,8 @@ import { type HTTPHeaders, type HTTPMethod } from "./http.ts";
 import { SignatureV4 } from "./signature.ts";
 
 // The 3072-bit MODP group used by Cognito's SRP implementation (RFC 3526).
-const SRP_N_HEX = "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
+const SRP_N_HEX =
+  "FFFFFFFFFFFFFFFFC90FDAA22168C234C4C6628B80DC1CD1" +
   "29024E088A67CC74020BBEA63B139B22514A08798E3404DDE" +
   "F9519B3CD3A431B302B0A6DF25F14374FE1356D6D51C245" +
   "E485B576625E7EC6F44C42E9A637ED6B0BFF5CB6F406B7ED" +
@@ -252,7 +253,9 @@ export class CognitoIdentityProviderClient extends AWSClient {
     if (!errored) return false;
     const error = response.json() as JSONObject;
     throw new CognitoServiceError(
-      (error.message || error.Message || error.__type ||
+      (error.message ||
+        error.Message ||
+        error.__type ||
         "Cognito request failed") as string,
       (error.__type || "CognitoException") as string,
       operation as CognitoOperation,
@@ -323,9 +326,7 @@ class CognitoSRP {
 
     const poolName = this.userPoolId.split("_").slice(1).join("_");
     const userPasswordHash = await sha256Hex(
-      utf8ToBytes(
-        `${poolName}${canonicalUsername}:${this.password}`,
-      ).buffer,
+      utf8ToBytes(`${poolName}${canonicalUsername}:${this.password}`).buffer,
     );
     const x = BigInt(`0x${await hexHash(padHex(salt) + userPasswordHash)}`);
     const base = mod(serverB - this.srpK * modPow(SRP_G, x, SRP_N), SRP_N);
@@ -412,10 +413,7 @@ async function deriveKey(ikmHex: string, saltHex: string): Promise<Uint8Array> {
     hexToArrayBuffer(ikmHex),
   );
   const info = utf8ToBytes("Caldera Derived Key");
-  const output = await hmacSha256(
-    prk,
-    new Uint8Array([...info, 1]).buffer,
-  );
+  const output = await hmacSha256(prk, new Uint8Array([...info, 1]).buffer);
   return new Uint8Array(output).slice(0, 16);
 }
 
@@ -505,12 +503,10 @@ function cognitoTimestamp(date: Date): string {
     "Nov",
     "Dec",
   ];
-  const time = `${date.getUTCHours().toString().padStart(2, "0")}:${
-    date
-      .getUTCMinutes()
-      .toString()
-      .padStart(2, "0")
-  }:${date.getUTCSeconds().toString().padStart(2, "0")}`;
+  const time = `${date.getUTCHours().toString().padStart(2, "0")}:${date
+    .getUTCMinutes()
+    .toString()
+    .padStart(2, "0")}:${date.getUTCSeconds().toString().padStart(2, "0")}`;
   return `${weekdays[date.getUTCDay()]} ${
     months[date.getUTCMonth()]
   } ${date.getUTCDate()} ${time} UTC ${date.getUTCFullYear()}`;

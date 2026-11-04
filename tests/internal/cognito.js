@@ -21,13 +21,13 @@ async function runCognitoTestSuite(data) {
   const client = new CognitoIdentityProviderClient(data.awsConfig);
 
   const pools = await client.listUserPools();
-  const pool = pools.find((candidate) =>
-    candidate.Name === data.cognito.poolName
+  const pool = pools.find(
+    (candidate) => candidate.Name === data.cognito.poolName,
   );
   if (!pool) throw new Error("Cognito fixture user pool was not found");
   const appClients = await client.listUserPoolClients(pool.Id);
-  const appClient = appClients.find((candidate) =>
-    candidate.ClientName === data.cognito.clientName
+  const appClient = appClients.find(
+    (candidate) => candidate.ClientName === data.cognito.clientName,
   );
   if (!appClient) throw new Error("Cognito fixture app client was not found");
 
