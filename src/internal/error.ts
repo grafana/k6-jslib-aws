@@ -47,14 +47,17 @@ export class AWSError extends Error {
    */
   static parse(response: Response): AWSError {
     const contentType = (response.headers["Content-Type"] || "")
-      .split(";")[0].trim().toLowerCase();
+      .split(";")[0]
+      .trim()
+      .toLowerCase();
     if (
       contentType === "application/json" ||
       contentType.startsWith("application/x-amz-json-") ||
       contentType.endsWith("+json")
     ) {
       const error = (response.json() as JSONObject) || {};
-      const message = error.Message ||
+      const message =
+        error.Message ||
         error.message ||
         error.__type ||
         "An error occurred on the server side";
@@ -75,8 +78,10 @@ export class AWSError extends Error {
  * @typeparam N - The name of the network error
  * @typeparam K - The kind of the network error
  */
-export class NetworkError<N extends NetworkErrorName, K extends ErrorKind>
-  extends Error {
+export class NetworkError<
+  N extends NetworkErrorName,
+  K extends ErrorKind,
+> extends Error {
   code: K;
   override name: N;
 
@@ -97,8 +102,10 @@ export class NetworkError<N extends NetworkErrorName, K extends ErrorKind>
  * Represents a general network error, as described in:
  * https://grafana.com/docs/k6/latest/javascript-api/error-codes/
  */
-export class GeneralError
-  extends NetworkError<"GeneralError", GeneralErrorKind> {
+export class GeneralError extends NetworkError<
+  "GeneralError",
+  GeneralErrorKind
+> {
   /**
    * Create a GeneralError
    *

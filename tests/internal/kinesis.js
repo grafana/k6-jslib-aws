@@ -67,15 +67,13 @@ export async function kinesisTestSuite(data) {
     async () => {
       const shards = await kinesis.listShards(dummyStream);
       for (const shard of shards.shards) {
-        let iterator = (await kinesis.getShardIterator(
-          dummyStream,
-          shard.id,
-          `TRIM_HORIZON`,
-        ))
-          .shardIterator;
+        let iterator = (
+          await kinesis.getShardIterator(dummyStream, shard.id, `TRIM_HORIZON`)
+        ).shardIterator;
 
         let shouldBreak = false;
-        while (!shouldBreak) { // Use the variable in the condition
+        while (!shouldBreak) {
+          // Use the variable in the condition
           const res = await kinesis.getRecords(iterator);
           iterator = res.nextShardIterator;
 

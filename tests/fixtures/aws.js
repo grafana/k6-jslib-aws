@@ -19,8 +19,9 @@ export async function setupFixtures(bootstrapConfig, data) {
       Version: "2010-05-08",
       ...values,
     })
-      .map(([key, value]) =>
-        `${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+      .map(
+        ([key, value]) =>
+          `${encodeURIComponent(key)}=${encodeURIComponent(value)}`,
       )
       .join("&");
     const response = await fixtureRequest(bootstrapConfig, "iam", {
@@ -70,12 +71,10 @@ export async function setupFixtures(bootstrapConfig, data) {
       SecretString: "test-secret-value",
     });
   }
-  for (
-    const parameter of [
-      data.systemsManager.testParameter,
-      data.systemsManager.testParameterSecret,
-    ]
-  ) {
+  for (const parameter of [
+    data.systemsManager.testParameter,
+    data.systemsManager.testParameterSecret,
+  ]) {
     const secure = parameter === data.systemsManager.testParameterSecret;
     await json("ssm", "AmazonSSM.PutParameter", {
       Name: parameter.name,
@@ -86,29 +85,25 @@ export async function setupFixtures(bootstrapConfig, data) {
   }
 
   const queueUrls = {};
-  for (
-    const name of [
-      "standard-test-queue",
-      "fifo-test-queue.fifo",
-      "responding-test-standard-queue",
-      "responding-test-queue.fifo",
-      "message-deletion-test-queue",
-    ]
-  ) {
+  for (const name of [
+    "standard-test-queue",
+    "fifo-test-queue.fifo",
+    "responding-test-standard-queue",
+    "responding-test-queue.fifo",
+    "message-deletion-test-queue",
+  ]) {
     const queue = await json("sqs", "AmazonSQS.CreateQueue", {
       QueueName: name,
       Attributes: name.endsWith(".fifo") ? { FifoQueue: "true" } : {},
     });
     queueUrls[name] = queue.QueueUrl;
   }
-  for (
-    const [name, body, deduplication] of [
-      ["responding-test-standard-queue", "Hello, k6!"],
-      ["responding-test-queue.fifo", "Goodbye, AWS!", "123"],
-      ["responding-test-queue.fifo", "Farewell, cloud!", "1231"],
-      ["message-deletion-test-queue", "See you later"],
-    ]
-  ) {
+  for (const [name, body, deduplication] of [
+    ["responding-test-standard-queue", "Hello, k6!"],
+    ["responding-test-queue.fifo", "Goodbye, AWS!", "123"],
+    ["responding-test-queue.fifo", "Farewell, cloud!", "1231"],
+    ["message-deletion-test-queue", "See you later"],
+  ]) {
     await json("sqs", "AmazonSQS.SendMessage", {
       QueueUrl: queueUrls[name],
       MessageBody: body,
@@ -138,13 +133,11 @@ export async function setupFixtures(bootstrapConfig, data) {
     ],
     BillingMode: "PAY_PER_REQUEST",
   });
-  for (
-    const [pk, sk, value] of [
-      ["tenant#1", "item#1", "alpha"],
-      ["tenant#1", "item#2", "beta"],
-      ["tenant#2", "item#1", "gamma"],
-    ]
-  ) {
+  for (const [pk, sk, value] of [
+    ["tenant#1", "item#1", "alpha"],
+    ["tenant#1", "item#2", "beta"],
+    ["tenant#2", "item#1", "gamma"],
+  ]) {
     await dynamoDb("PutItem", {
       TableName: data.dynamoDb.tableName,
       Item: { pk: { S: pk }, sk: { S: sk }, value: { S: value } },
@@ -155,11 +148,13 @@ export async function setupFixtures(bootstrapConfig, data) {
     RoleName: "lambda-role",
     AssumeRolePolicyDocument: JSON.stringify({
       Version: "2012-10-17",
-      Statement: [{
-        Effect: "Allow",
-        Principal: { Service: "lambda.amazonaws.com" },
-        Action: "sts:AssumeRole",
-      }],
+      Statement: [
+        {
+          Effect: "Allow",
+          Principal: { Service: "lambda.amazonaws.com" },
+          Action: "sts:AssumeRole",
+        },
+      ],
     }),
   });
   for (const [name, archive] of Object.entries(handlers)) {

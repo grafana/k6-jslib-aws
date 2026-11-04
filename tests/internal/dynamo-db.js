@@ -53,13 +53,9 @@ export async function dynamoDbTestSuite(data) {
 
   await asyncDescribe("dynamoDb.query", async (expect) => {
     // Act
-    const result = await dynamoDb.query(
-      tableName,
-      "pk = :pk",
-      {
-        expressionAttributeValues: { ":pk": { S: "tenant#1" } },
-      },
-    );
+    const result = await dynamoDb.query(tableName, "pk = :pk", {
+      expressionAttributeValues: { ":pk": { S: "tenant#1" } },
+    });
 
     // Assert: the items seeded by the init script that no other test ever
     // removes are present. The exact count isn't asserted, since other
@@ -229,16 +225,11 @@ export async function dynamoDbTestSuite(data) {
     await dynamoDb.putItem(tableName, { ...key, value: { S: "original" } });
 
     // Act
-    const updated = await dynamoDb.updateItem(
-      tableName,
-      key,
-      "SET #v = :v",
-      {
-        expressionAttributeNames: { "#v": "value" },
-        expressionAttributeValues: { ":v": { S: "updated" } },
-        returnValues: "ALL_NEW",
-      },
-    );
+    const updated = await dynamoDb.updateItem(tableName, key, "SET #v = :v", {
+      expressionAttributeNames: { "#v": "value" },
+      expressionAttributeValues: { ":v": { S: "updated" } },
+      returnValues: "ALL_NEW",
+    });
 
     // Assert
     expect(updated.value.S).to.equal("updated");

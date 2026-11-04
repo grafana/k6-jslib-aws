@@ -59,7 +59,8 @@ export async function assertSignatureVerification(config) {
     responseType: "text",
   });
   if (
-    response.status !== 403 || !response.body.includes("SignatureDoesNotMatch")
+    response.status !== 403 ||
+    !response.body.includes("SignatureDoesNotMatch")
   ) {
     throw new Error("fakecloud must reject an incorrectly signed S3 request");
   }

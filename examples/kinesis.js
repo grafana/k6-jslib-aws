@@ -48,9 +48,9 @@ export default async function () {
   });
 
   // List the streams' shards
-  const shards = await kinesis.listShards(dummyStream).Shards.map((shard) =>
-    shard.ShardId
-  );
+  const shards = await kinesis
+    .listShards(dummyStream)
+    .Shards.map((shard) => shard.ShardId);
 
   // For each shard, read all the data
   shards.map(async (shard) => {

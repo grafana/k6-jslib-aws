@@ -61,10 +61,7 @@ export default async function () {
     testBucketName,
     testFileKey,
     multipartUpload.uploadId,
-    [
-      firstPart,
-      secondPart,
-    ],
+    [firstPart, secondPart],
   );
 
   // Let's redownload it verify it's correct, and delete it

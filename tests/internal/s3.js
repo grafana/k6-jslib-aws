@@ -8,8 +8,7 @@ export async function s3TestSuite(data) {
   // Include the region so the emulator can distinguish virtual-hosted buckets
   // from service prefixes when the client switches addressing styles.
   const s3Endpoint = data.awsConfig.endpoint.copy();
-  s3Endpoint.hostname =
-    `s3.${data.awsConfig.region}.${data.awsConfig.endpoint.hostname}`;
+  s3Endpoint.hostname = `s3.${data.awsConfig.region}.${data.awsConfig.endpoint.hostname}`;
   s3Client.endpoint = s3Endpoint;
 
   await asyncDescribe("s3.listBuckets", async (expect) => {
@@ -288,16 +287,15 @@ export async function s3TestSuite(data) {
 
     // Assert
     expect(completeMultipartUploadError).to.be.undefined;
-    expect(completeMultipartUploadNonExistingMultipartUploadIdError).to.be.an
-      .instanceOf(
-        S3ServiceError,
-      );
+    expect(
+      completeMultipartUploadNonExistingMultipartUploadIdError,
+    ).to.be.an.instanceOf(S3ServiceError);
     expect(completeMultipartUploadNonExistingPartError).to.be.an.instanceOf(
       S3ServiceError,
     );
-    expect(completeMultipartUploadNonExistingMultipartUploadIdError.code).to.equal(
-      "NoSuchUpload",
-    );
+    expect(
+      completeMultipartUploadNonExistingMultipartUploadIdError.code,
+    ).to.equal("NoSuchUpload");
     expect(completeMultipartUploadNonExistingPartError.code).to.equal(
       "InvalidPart",
     );
@@ -335,10 +333,9 @@ export async function s3TestSuite(data) {
 
     // Assert
     expect(abortMultipartUploadError).to.be.undefined;
-    expect(abortMultipartUploadNonExistingMultipartUploadIdError).to.be.an
-      .instanceOf(
-        S3ServiceError,
-      );
+    expect(
+      abortMultipartUploadNonExistingMultipartUploadIdError,
+    ).to.be.an.instanceOf(S3ServiceError);
   });
 
   // Teardown

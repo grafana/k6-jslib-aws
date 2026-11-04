@@ -10,7 +10,8 @@ export async function sqsTestSuite(data) {
     "sqs.deleteMessage with invalid handle",
     async (expect) => {
       // Act
-      await sqsClient.deleteMessage(data.sqs.testQueues.standard, "handle")
+      await sqsClient
+        .deleteMessage(data.sqs.testQueues.standard, "handle")
         .then(
           () => {
             throw new Error("Did not receive expected error");
