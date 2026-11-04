@@ -5,7 +5,12 @@ import { AWSClient } from "./client.ts";
 import { AWSConfig } from "./config.ts";
 import { AWSError } from "./error.ts";
 import { SignedHTTPRequest } from "./http.ts";
-import { InvalidSignatureError, SignatureV4 } from "./signature.ts";
+import { escapeURI, InvalidSignatureError, SignatureV4 } from "./signature.ts";
+
+// S3 paths are encoded once, preserving slashes and literal path segments.
+function encodeS3Path(path: string): string {
+  return escapeURI(path).replace(/%2F/g, "/");
+}
 
 /** Class allowing to interact with Amazon AWS's S3 service */
 export class S3Client extends AWSClient {
@@ -118,7 +123,7 @@ export class S3Client extends AWSClient {
       {
         method: method,
         endpoint: this.endpoint,
-        path: encodeURI(`/${bucketName}/`),
+        path: encodeS3Path(`/${bucketName}/`),
         query: {
           "list-type": "2",
           prefix: prefix || "",
@@ -197,7 +202,7 @@ export class S3Client extends AWSClient {
       {
         method: method,
         endpoint: this.endpoint,
-        path: encodeURI(`/${bucketName}/${objectKey}`),
+        path: encodeS3Path(`/${bucketName}/${objectKey}`),
         headers: {
           ...additionalHeaders,
         },
@@ -258,7 +263,7 @@ export class S3Client extends AWSClient {
       {
         method: method,
         endpoint: this.endpoint,
-        path: encodeURI(`/${bucketName}/${objectKey}`),
+        path: encodeS3Path(`/${bucketName}/${objectKey}`),
         headers: {
           Host: this.endpoint.host,
           ...(params?.contentDisposition && {
@@ -310,7 +315,7 @@ export class S3Client extends AWSClient {
       {
         method: method,
         endpoint: this.endpoint,
-        path: encodeURI(`/${bucketName}/${objectKey}`),
+        path: encodeS3Path(`/${bucketName}/${objectKey}`),
         headers: {},
       },
       {},
@@ -353,9 +358,9 @@ export class S3Client extends AWSClient {
       {
         method: method,
         endpoint: bucketEndpoint,
-        path: encodeURI(`/${destinationKey}`),
+        path: encodeS3Path(`/${destinationKey}`),
         headers: {
-          "x-amz-copy-source": `${sourceBucket}/${sourceKey}`,
+          "x-amz-copy-source": encodeS3Path(`${sourceBucket}/${sourceKey}`),
         },
       },
       {},
@@ -397,7 +402,7 @@ export class S3Client extends AWSClient {
       {
         method: method,
         endpoint: bucketEndpoint,
-        path: encodeURI(`/${objectKey}`),
+        path: encodeS3Path(`/${objectKey}`),
         headers: {},
         query: { uploads: "" },
       },
@@ -449,7 +454,7 @@ export class S3Client extends AWSClient {
       {
         method: method,
         endpoint: bucketEndpoint,
-        path: encodeURI(`/${objectKey}`),
+        path: encodeS3Path(`/${objectKey}`),
         headers: {},
         body: data,
         query: {
@@ -506,7 +511,7 @@ export class S3Client extends AWSClient {
       {
         method: method,
         endpoint: bucketEndpoint,
-        path: encodeURI(`/${objectKey}`),
+        path: encodeS3Path(`/${objectKey}`),
         headers: {},
         body: body,
         query: {
@@ -551,7 +556,7 @@ export class S3Client extends AWSClient {
       {
         method: method,
         endpoint: bucketEndpoint,
-        path: encodeURI(`/${objectKey}`),
+        path: encodeS3Path(`/${objectKey}`),
         headers: {},
         query: {
           uploadId: `${uploadId}`,
