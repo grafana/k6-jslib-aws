@@ -18,16 +18,20 @@ jobs:
               with:
                   persist-credentials: false
 
-            - name: Setup Deno
-              uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+            - name: Install Go
+              uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
               with:
-                deno-version: v2.x
+                  go-version: 1.26.x
+                  cache: false
+
+            - name: Install esbuild
+              run: make install-esbuild
 
             - name: Build & archive
               run: |
                   set -x
                   VERSION="${GITHUB_REF##*/}"
-                  deno task release && tar -zcf "k6-jslib-aws-${VERSION}.tar.gz" -C dist .
+                  make release && tar -zcf "k6-jslib-aws-${VERSION}.tar.gz" -C dist .
 
             - name: Create release with assets
               env:

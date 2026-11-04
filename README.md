@@ -89,11 +89,28 @@ The scope of this library is intentionally minimal, focusing on the use cases ne
 
 ```bash
 # Bundle the library in preparation for publication
-deno task build
+make build
 
 # Run the tests
-deno task test
+make test
 ```
+
+The Make targets call their underlying tools directly. `make build` uses the
+native esbuild CLI (version 0.25.12); `make fmt` and `make lint` use Biome
+(version 2.6.4); `make fixtures` packages the Lambda handlers with `zip`;
+`make test` manages fakecloud and runs k6; and `make test-ci` runs k6 against
+an already-running emulator. Install the pinned development tools without Node:
+
+```bash
+make install-tools
+```
+
+This downloads Biome and installs esbuild and k6 (v1.8.2) into the ignored
+`.tools/bin` directory. It requires Go and `curl`. Docker with Docker Compose,
+Bash, and `zip` are system prerequisites for `make test`; `make test-ci`
+assumes an emulator is already running. Make adds `.tools/bin` to `PATH` first;
+when it is absent, it uses compatible `biome`, `esbuild`, and `k6` binaries
+already available on your `PATH`.
 
 For more details, refer to [CONTRIBUTING.md](./CONTRIBUTING.md).
 
@@ -102,12 +119,12 @@ check before k6's `setup()` provisions fixtures through the AWS APIs. Fixture
 setup failures abort the run. Tests use generated IAM credentials with SigV4
 verification enabled; only IAM bootstrapping uses fakecloud's reserved root
 credentials. Lambda tests require the mounted Docker socket to execute their
-handlers. Before k6 starts, `deno task test:fixtures` packages the existing
+handlers. Before k6 starts, `make fixtures` packages the existing
 Lambda handler files using the host's `zip` command; both test tasks run this
 step automatically. The development container disables SELinux labeling to
 allow that socket connection on Fedora; it has access to the host Docker daemon.
 
-`deno task test` recreates the emulator for a fresh set of fixtures. To run
+`make test` recreates the emulator for a fresh set of fixtures. To run
 against a separate fresh fakecloud instance, set `AWS_TEST_ENDPOINT` when
 invoking k6. By default, tests use `http://amazonaws.com:4566` and k6 host
 overrides route that hostname and its subdomains to `127.0.0.1`, preserving

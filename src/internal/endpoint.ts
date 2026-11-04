@@ -15,8 +15,8 @@ export class Endpoint {
      * @param {string} endpoint - The URL to construct an endpoint from. If the URL omits a protocol, the default protocol will be used.
      */
   constructor(endpoint: string) {
-    const isDefaultProtocol = !endpoint.startsWith("http://") &&
-      !endpoint.startsWith("https://");
+    const isDefaultProtocol =
+      !endpoint.startsWith("http://") && !endpoint.startsWith("https://");
     const completeUrl = isDefaultProtocol
       ? `${Endpoint.DEFAULT_PROTOCOL}://${endpoint}`
       : endpoint;

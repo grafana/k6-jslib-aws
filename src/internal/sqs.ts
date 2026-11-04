@@ -95,7 +95,7 @@ export class SQSClient extends AWSClient {
 
     const messages = [] as ReceivedMessage[];
     messagesArray?.forEach((msg) =>
-      messages.push(new ReceivedMessage(msg as JSONObject))
+      messages.push(new ReceivedMessage(msg as JSONObject)),
     );
 
     return messages;
@@ -159,8 +159,8 @@ export class SQSClient extends AWSClient {
     const res = await this._sendRequest(action, body);
 
     const parsed = res.json() as JSONObject;
-    const successful: JSONObject[] = (parsed["Successful"] as JSONObject[]) ||
-      [];
+    const successful: JSONObject[] =
+      (parsed["Successful"] as JSONObject[]) || [];
     const failed: JSONObject[] = (parsed["Failed"] as JSONObject[]) || [];
 
     return {
@@ -245,12 +245,11 @@ export class SQSClient extends AWSClient {
     if (typeof options.messageAttributes !== "undefined") {
       const messageAttributes: Record<string, Record<string, string>> = {};
 
-      for (
-        const [name, attribute] of Object.entries(options.messageAttributes)
-      ) {
-        const valueParameterSuffix = attribute.type === "Binary"
-          ? "BinaryValue"
-          : "StringValue";
+      for (const [name, attribute] of Object.entries(
+        options.messageAttributes,
+      )) {
+        const valueParameterSuffix =
+          attribute.type === "Binary" ? "BinaryValue" : "StringValue";
         messageAttributes[name] = {
           DataType: attribute.type,
         };
@@ -311,8 +310,10 @@ export class SQSClient extends AWSClient {
 
     const error = response.json() as JSONObject;
 
-    const errorMessage: string = (error.Message as string) ||
-      (error.message as string) || (error.__type as string);
+    const errorMessage: string =
+      (error.Message as string) ||
+      (error.message as string) ||
+      (error.__type as string);
 
     switch (error.__type) {
       case "InvalidSignatureException":
@@ -343,8 +344,10 @@ export class SQSClient extends AWSClient {
 
     const error = response.json() as JSONObject;
 
-    const errorMessage: string = (error.Message as string) ||
-      (error.message as string) || (error.__type as string);
+    const errorMessage: string =
+      (error.Message as string) ||
+      (error.message as string) ||
+      (error.__type as string);
 
     switch (error.__type) {
       case "InvalidSignatureException":
@@ -410,10 +413,12 @@ export class ReceivedMessageAttributes {
    * @param capturedMessageAttributes
    */
   constructor(capturedMessageAttributes: JSONObject) {
-    this.MessageGroupId = capturedMessageAttributes
-      ?.["MessageGroupId"] as string;
-    this.AWSTraceHeader = capturedMessageAttributes
-      ?.["AWSTraceHeader"] as string;
+    this.MessageGroupId = capturedMessageAttributes?.[
+      "MessageGroupId"
+    ] as string;
+    this.AWSTraceHeader = capturedMessageAttributes?.[
+      "AWSTraceHeader"
+    ] as string;
     this.SenderId = capturedMessageAttributes?.["SenderId"] as string;
     this.ApproximateFirstReceiveTimestamp = capturedMessageAttributes?.[
       "ApproximateFirstReceiveTimestamp"
@@ -422,8 +427,9 @@ export class ReceivedMessageAttributes {
       "ApproximateReceiveCount"
     ] as string;
     this.SentTimestamp = capturedMessageAttributes?.["SentTimestamp"] as string;
-    this.SequenceNumber = capturedMessageAttributes
-      ?.["SequenceNumber"] as string;
+    this.SequenceNumber = capturedMessageAttributes?.[
+      "SequenceNumber"
+    ] as string;
     this.MessageDeduplicationId = capturedMessageAttributes?.[
       "MessageDeduplicationId"
     ] as string;

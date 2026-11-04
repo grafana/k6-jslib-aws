@@ -38,16 +38,11 @@ export default async function () {
   check(item, { "item was written": (i) => i?.value?.S === "hello from k6" });
 
   // Update a single attribute and get the new value back.
-  const updated = await dynamoDb.updateItem(
-    testTableName,
-    key,
-    "SET #v = :v",
-    {
-      expressionAttributeNames: { "#v": "value" },
-      expressionAttributeValues: { ":v": { S: "updated by k6" } },
-      returnValues: "ALL_NEW",
-    },
-  );
+  const updated = await dynamoDb.updateItem(testTableName, key, "SET #v = :v", {
+    expressionAttributeNames: { "#v": "value" },
+    expressionAttributeValues: { ":v": { S: "updated by k6" } },
+    returnValues: "ALL_NEW",
+  });
   check(updated, { "item was updated": (i) => i.value.S === "updated by k6" });
 
   // Query for this tenant's items, filtering down to the value we just set

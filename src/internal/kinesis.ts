@@ -77,8 +77,9 @@ export class KinesisClient extends AWSClient {
     const body = {
       StreamName: streamName,
       ...(options.shardCount && { ShardCount: options.shardCount }),
-      ...(options.streamModeDetails &&
-        { StreamMode: options.streamModeDetails.streamMode }),
+      ...(options.streamModeDetails && {
+        StreamMode: options.streamModeDetails.streamMode,
+      }),
     };
 
     await this._send_request("CreateStream", body);
@@ -309,8 +310,10 @@ export class KinesisClient extends AWSClient {
     if (errorCode >= 1400 && errorCode <= 1499) {
       // In the event of certain errors, the message is not set.
       // Also, note the inconsistency in casing...
-      const errorMessage: string = (error.Message as string) ||
-        (error.message as string) || (error.__type as string);
+      const errorMessage: string =
+        (error.Message as string) ||
+        (error.message as string) ||
+        (error.__type as string);
 
       // Handle specifically the case of an invalid signature
       if (error.__type === "InvalidSignatureException") {
@@ -541,8 +544,11 @@ export class PutRecordsResponse {
   }
 
   static fromJson(json: JSONObject): PutRecordsResponse {
-    const { EncryptionType = "NONE", FailedRecordCount = 0, Records = [] } =
-      json;
+    const {
+      EncryptionType = "NONE",
+      FailedRecordCount = 0,
+      Records = [],
+    } = json;
     const records = (Records as JSONObject[]).map(
       PutRecordsResultEntry.fromJson,
     );
@@ -619,8 +625,11 @@ export class GetRecordsResponse {
   }
 
   static fromJson(json: JSONObject): GetRecordsResponse {
-    const { NextShardIterator = "", Records = [], MillisBehindLatest = 0 } =
-      json;
+    const {
+      NextShardIterator = "",
+      Records = [],
+      MillisBehindLatest = 0,
+    } = json;
     const records = (Records as JSONObject[]).map(Record.fromJson);
 
     return new GetRecordsResponse(

@@ -1,4 +1,5 @@
 node_modules/
+.tools/
 /volume
 dist/
 .DS_Store

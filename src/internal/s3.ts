@@ -74,7 +74,8 @@ export class S3Client extends AWSClient {
 
     const doc = parseHTML(res.body as string);
 
-    doc.find("Buckets")
+    doc
+      .find("Buckets")
       .children()
       .each((_, bucketDefinition) => {
         const bucket = {};
@@ -263,10 +264,12 @@ export class S3Client extends AWSClient {
           ...(params?.contentDisposition && {
             "Content-Disposition": params.contentDisposition,
           }),
-          ...(params?.contentEncoding &&
-            { "Content-Encoding": params.contentEncoding }),
-          ...(params?.contentLength &&
-            { "Content-Length": params.contentLength }),
+          ...(params?.contentEncoding && {
+            "Content-Encoding": params.contentEncoding,
+          }),
+          ...(params?.contentLength && {
+            "Content-Length": params.contentLength,
+          }),
           ...(params?.contentMD5 && { "Content-MD5": params.contentMD5 }),
           ...(params?.contentType && { "Content-Type": params.contentType }),
         },
@@ -489,14 +492,12 @@ export class S3Client extends AWSClient {
   ) {
     // Prepare request
     const method = "POST";
-    const body = `<CompleteMultipartUpload>${
-      parts
-        .map(
-          (part) =>
-            `<Part><PartNumber>${part.partNumber}</PartNumber><ETag>${part.eTag}</ETag></Part>`,
-        )
-        .join("")
-    }</CompleteMultipartUpload>`;
+    const body = `<CompleteMultipartUpload>${parts
+      .map(
+        (part) =>
+          `<Part><PartNumber>${part.partNumber}</PartNumber><ETag>${part.eTag}</ETag></Part>`,
+      )
+      .join("")}</CompleteMultipartUpload>`;
 
     const bucketEndpoint = this.endpoint.copy();
     bucketEndpoint.hostname = `${bucketName}.${this.endpoint.hostname}`;
@@ -589,7 +590,8 @@ export class S3Client extends AWSClient {
     // See: https://github.com/golang/go/issues/49281
     const errorMessage: string = response.error;
     if (
-      response.status == 301 || (errorMessage && errorMessage.startsWith("301"))
+      response.status == 301 ||
+      (errorMessage && errorMessage.startsWith("301"))
     ) {
       throw new S3ServiceError(
         "Resource not found",

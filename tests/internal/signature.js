@@ -419,7 +419,8 @@ export function signatureV4TestSuite() {
           presigningOptions,
         );
 
-        const expectedURL = "https://foo.us-bar-1.amazonaws.com/foo.txt" +
+        const expectedURL =
+          "https://foo.us-bar-1.amazonaws.com/foo.txt" +
           "?X-Amz-Algorithm=AWS4-HMAC-SHA256" +
           "&X-Amz-Credential=foo%2F20000101%2Fus-bar-1%2Ffoo%2Faws4_request" +
           "&X-Amz-Date=20000101T000000Z" +

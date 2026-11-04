@@ -117,7 +117,10 @@ export class AWSClient {
     // We do not consider 3xx as success as some services such as S3 can use
     // 301 to indicate a bucket not found
     if (
-      status >= 200 && status < 300 && errorMessage == "" && errorCode === 0
+      status >= 200 &&
+      status < 300 &&
+      errorMessage == "" &&
+      errorCode === 0
     ) {
       return false;
     }

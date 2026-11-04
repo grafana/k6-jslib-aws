@@ -23,28 +23,23 @@ jobs:
               with:
                   persist-credentials: false
 
-            - name: Setup Deno
-              uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
-              with:
-                deno-version: v2.x
-
-            - name: Check Formatting
-              run: deno task fmt
-
-            - name: Check Linting
-              run: deno task lint
-
-            - name: Build
-              run: deno task build
-
             - name: Install Go
               uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
               with:
                   go-version: 1.26.x
                   cache: false
 
-            - name: Install k6
-              run: go install go.k6.io/k6@latest
+            - name: Install development tools
+              run: make install-tools
+
+            - name: Check Formatting
+              run: make fmt-check
+
+            - name: Check Linting
+              run: make lint
+
+            - name: Build
+              run: make build
 
             - name: Build the docker-compose stack
               uses: hoverkraft-tech/compose-action@b659c744ee9bed25aea2307c017ad849bd104433 # v3.2.0
@@ -53,4 +48,4 @@ jobs:
                   down-flags: '-v'
 
             - name: Test
-              run: deno task test:ci
+              run: make test-ci

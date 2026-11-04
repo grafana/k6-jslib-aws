@@ -93,8 +93,10 @@ export class EventBridgeClient extends AWSClient {
     if (errorCode >= 1400 && errorCode <= 1499) {
       // In the event of certain errors, the message is not set.
       // Also, note the inconsistency in casing...
-      const errorMessage: string = (error.Message as string) ||
-        (error.message as string) || (error.__type as string);
+      const errorMessage: string =
+        (error.Message as string) ||
+        (error.message as string) ||
+        (error.__type as string);
 
       // Handle specifically the case of an invalid signature
       if (error.__type === "InvalidSignatureException") {

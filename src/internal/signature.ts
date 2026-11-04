@@ -68,12 +68,10 @@ export class SignatureV4 {
     this.service = service;
     this.region = region;
     this.credentials = credentials;
-    this.uriEscapePath = typeof uriEscapePath === "boolean"
-      ? uriEscapePath
-      : true;
-    this.applyChecksum = typeof applyChecksum === "boolean"
-      ? applyChecksum
-      : true;
+    this.uriEscapePath =
+      typeof uriEscapePath === "boolean" ? uriEscapePath : true;
+    this.applyChecksum =
+      typeof applyChecksum === "boolean" ? applyChecksum : true;
   }
 
   /**
@@ -108,8 +106,7 @@ export class SignatureV4 {
     );
     const service = finalOptions.signingService || this.service;
     const region = finalOptions.signingRegion || this.region;
-    const scope =
-      `${shortDate}/${region}/${service}/${constants.KEY_TYPE_IDENTIFIER}`;
+    const scope = `${shortDate}/${region}/${service}/${constants.KEY_TYPE_IDENTIFIER}`;
 
     // Required by the specification:
     //   "For HTTP/1.1 requests, you must include the host header at a minimum.
@@ -236,8 +233,7 @@ export class SignatureV4 {
       );
     }
 
-    const scope =
-      `${shortDate}/${region}/${service}/${constants.KEY_TYPE_IDENTIFIER}`;
+    const scope = `${shortDate}/${region}/${service}/${constants.KEY_TYPE_IDENTIFIER}`;
     const request = this.moveHeadersToQuery(originalRequest, {
       unhoistableHeaders,
     });
@@ -261,9 +257,8 @@ export class SignatureV4 {
     // @see https://docs.aws.amazon.com/general/latest/gr/sigv4-add-signature-to-request.html
     request.query[constants.AMZ_ALGORITHM_QUERY_PARAM] =
       constants.SIGNING_ALGORITHM_IDENTIFIER;
-    request.query[
-      constants.AMZ_CREDENTIAL_QUERY_PARAM
-    ] = `${this.credentials.accessKeyId}/${scope}`;
+    request.query[constants.AMZ_CREDENTIAL_QUERY_PARAM] =
+      `${this.credentials.accessKeyId}/${scope}`;
     request.query[constants.AMZ_DATE_QUERY_PARAM] = longDate;
     request.query[constants.AMZ_EXPIRES_QUERY_PARAM] = expiresIn.toString(10);
 
@@ -299,13 +294,8 @@ export class SignatureV4 {
       payloadHash,
     );
 
-    request.query[constants.AMZ_SIGNATURE_QUERY_PARAM] = this
-      .calculateSignature(
-        longDate,
-        scope,
-        signingKey,
-        canonicalRequest,
-      );
+    request.query[constants.AMZ_SIGNATURE_QUERY_PARAM] =
+      this.calculateSignature(longDate, scope, signingKey, canonicalRequest);
 
     // If a request path was provided, add it to the URL
     let url = originalRequest.endpoint.href;
@@ -512,9 +502,8 @@ export class SignatureV4 {
       // Normalize the URI
       const leading = path?.startsWith("/") ? "/" : "";
       const URI = normalizedURISegments.join("/");
-      const trailing = normalizedURISegments.length > 0 && path?.endsWith("/")
-        ? "/"
-        : "";
+      const trailing =
+        normalizedURISegments.length > 0 && path?.endsWith("/") ? "/" : "";
       const normalizedURI = `${leading}${URI}${trailing}`;
 
       const doubleEncoded = encodeURIComponent(normalizedURI);
@@ -605,11 +594,11 @@ export class SignatureV4 {
       }
 
       if (typeof headers[headerName] === "string") {
-        canonicalHeaders[canonicalHeaderName] =
-          headers[headerName] =
-            headers[headerName]
-              .trim()
-              .replace(/\s+/g, " ");
+        canonicalHeaders[canonicalHeaderName] = headers[headerName] = headers[
+          headerName
+        ]
+          .trim()
+          .replace(/\s+/g, " ");
       }
     }
 
