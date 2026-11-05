@@ -8,6 +8,7 @@ Extensive documentation and examples for each of these clients can be found in t
 
 ## Supported services and features
 
+-   [`Cognito`](./examples/cognito.js): allows users to authenticate with the USER_SRP_AUTH flow.
 -   [`DynamoDB`](./examples/dynamo-db.js): allows to put, get, delete, update, query and scan items in AWS DynamoDB.
 -   [`EventBridge`](https://grafana.com/docs/k6/latest/javascript-api/jslib/aws/eventbridgeclient/): allows to put events to AWS EventBridge.
 -   [`Kinesis`](./examples/kinesis.js): allows to list streams, create streams, put records, list shards, get shard iterators, and get records from AWS Kinesis.
@@ -123,6 +124,9 @@ handlers. Before k6 starts, `make fixtures` packages the existing
 Lambda handler files using the host's `zip` command; both test tasks run this
 step automatically. The development container disables SELinux labeling to
 allow that socket connection on Fedora; it has access to the host Docker daemon.
+
+The Cognito suite checks successful SRP login, rejection of an incorrect
+password, and deterministic SRP compatibility with xk6-cognito-srp.
 
 `make test` recreates the emulator for a fresh set of fixtures. To run
 against a separate fresh fakecloud instance, set `AWS_TEST_ENDPOINT` when
